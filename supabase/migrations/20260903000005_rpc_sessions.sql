@@ -558,7 +558,11 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public;
 
--- ═══ cron יומי (per-clinic loop, ר' app/api/cron) — רולינג 90 יום לכל המנויים הפעילים ═══
+-- ═══ cron יומי — רולינג 90 יום לכל המנויים הפעילים בכל הקליניקות. עוטפת כל
+-- מנוי ב-exception handler משלו (SAASMIGRATIONSPEC §14: "תקלה בקליניקה אחת
+-- לא תעצור את כולן") — גם אם materialize_subscription_bookings עצמה כבר
+-- תופסת exclusion_violation בודד, זו רשת ביטחון נוספת לכל שגיאה בלתי צפויה
+-- אחרת (למשל הגדרת timezone שגויה בקליניקה בודדת). ═══
 create or replace function materialize_session_bookings()
 returns void as $$
 declare
@@ -567,9 +571,15 @@ begin
   perform assert_service_or_admin();
 
   for v_sub in
-    select id from session_subscriptions where status in ('active', 'pending_cancellation')
+    select id, clinic_id from session_subscriptions where status in ('active', 'pending_cancellation')
   loop
-    perform materialize_subscription_bookings(v_sub.id, 90);
+    begin
+      perform materialize_subscription_bookings(v_sub.id, 90);
+    exception when others then
+      insert into audit_log (clinic_id, actor_id, action, entity, entity_id, after)
+      values (v_sub.clinic_id, null, 'session_materialization_job_error', 'session_subscriptions', v_sub.id,
+              jsonb_build_object('error', sqlerrm));
+    end;
   end loop;
 end;
 $$ language plpgsql security definer set search_path = public;
