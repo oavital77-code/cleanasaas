@@ -7,7 +7,6 @@ import { NextRequest, NextResponse } from "next/server";
 // תעודת SSL תואמת ב-Vercel; ישוקל כשיהיו כמה עשרות קליניקות שדורשות brand
 // נפרד. עד אז ה-middleware כאן עושה רק דבר אחד: לרענן את ה-session cookie.
 export async function middleware(request: NextRequest) {
-  const url = request.nextUrl.clone();
   let response = NextResponse.next();
 
   const supabase = createServerClient(

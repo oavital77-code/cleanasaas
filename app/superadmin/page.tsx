@@ -3,6 +3,19 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { setClinicStatusAction } from "./actions";
 
+// תואם ל-RETURNS TABLE של superadmin_list_clinics (ר' migration ה-superadmin).
+type ClinicRow = {
+  clinic_id: string;
+  name: string;
+  status: string;
+  plan: string | null;
+  subscription_status: string | null;
+  branches_count: number;
+  rooms_count: number;
+  therapists_count: number;
+  created_at: string;
+};
+
 // SAASMIGRATIONSPEC §8: ראייה חוצת-קליניקות. אין impersonation ב-MVP הזה —
 // ר' הערה ב-migration ה-superadmin על למה זו החלטה מכוונת.
 export default async function SuperadminPage() {
@@ -38,7 +51,7 @@ export default async function SuperadminPage() {
             </tr>
           </thead>
           <tbody>
-            {(clinics ?? []).map((c) => (
+            {((clinics ?? []) as ClinicRow[]).map((c) => (
               <tr key={c.clinic_id} className="border-t">
                 <td className="p-3">{c.name}</td>
                 <td className="p-3">{c.status}</td>

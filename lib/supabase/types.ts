@@ -1,8 +1,12 @@
-// טיפוסי DB — ידניים בשלב זה (אין עדיין פרויקט Supabase מחובר להריץ מולו
-// `supabase gen types typescript`). מכסה את הטבלאות שבהן משתמש קוד ה-lib
-// וה-actions כרגע. יש להחליף בקובץ שנוצר אוטומטית ברגע שיש פרויקט Supabase
-// אמיתי מחובר (supabase gen types typescript --project-id <id> > lib/supabase/types.ts) —
-// אל תוסיפו עוד טבלאות/עמודות כאן ידנית לאחר מכן.
+// טיפוסי DB — טיוטה ידנית להתמצאות בלבד, **לא מחוברת כרגע** כ-generic
+// ל-createClient/createServerClient/createBrowserClient. סופאבייס דורשת גם
+// Views/Functions/Enums/CompositeTypes מלאים כדי שה-generic הזה יעבוד נכון
+// (בלעדיהם כל query/rpc מסתכם ב-never/undefined — כך שקוד תקין נכשל
+// ב-type-check). למלא את כל זה ידנית לכל אחת מ-~35 ה-RPCs זו עבודה שלא
+// שווה לעשות כפעם-חד-פעמית — יש להריץ
+// `supabase gen types typescript --project-id <id> > lib/supabase/types.ts`
+// ברגע שיש פרויקט Supabase אמיתי מחובר, ואז לחבר אותו כ-generic בשלושת
+// קבצי ה-client (server.ts/client.ts/admin.ts) ובכל SupabaseClient<Database>.
 
 export type Database = {
   public: {

@@ -1,7 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toE164Israel } from "@/lib/phone";
-import type { Database } from "@/lib/supabase/types";
 
 // לוגיקת עיבוד הזמנת Woo של קליניקה בודדת — משותפת בין ה-webhook (push) ובין
 // polling (pull). ר' SAASMIGRATIONSPEC §6: processWooOrder נשאר כמעט זהה
@@ -36,7 +35,7 @@ function effectiveProductId(item: { product_id: number; variation_id?: number })
 export const PAID_STATUSES = new Set(["processing", "completed"]);
 
 export async function processWooOrder(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient,
   clinicId: string,
   order: WooOrderPayload,
 ): Promise<{ ok: boolean; skipped?: string }> {
@@ -157,7 +156,7 @@ export async function processWooOrder(
 // ═══ ססיה: מטפל/ת עם חשבון קיים — מותאם ישירות לתשלום הממתין שלו/ה. 🔴 כל
 // שאילתת profiles כאן מסוננת clinic_id — זה בדיוק התיקון לבאג spec §9. ═══
 async function activateSessionFromWooOrder(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient,
   clinicId: string,
   params: { phone: string | null; email: string | null; wooOrderId: number; amountTotal: number },
 ) {
