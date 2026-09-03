@@ -83,10 +83,14 @@ login (המלצת המפרט ל-MVP, §11) — `clinic_id` נגזר מ-`profiles
 
 ## ⚠️ 8. QA מקצה לקצה
 
-בוצע QA ברמת ה-DB (isolation smoke test, שתי קליניקות, ניסיון פריצה מכוון).
-**לא בוצע**: הרצת `npm install && npm run build`/`npm run dev` בפועל מול
-פרויקט Supabase אמיתי, ובדיקה ידנית של הזרימות ב-UI בדפדפן. יש להריץ את
-זה לפני production אמיתי.
+בוצע QA ברמת ה-DB (isolation smoke test, שתי קליניקות, ניסיון פריצה מכוון)
++ QA ברמת הקוד: `npm install`, `tsc --noEmit`, `eslint`, `vitest` (13/13),
+ו-`npm run build` מלא (כל 15 ה-routes, כולל כל Server Action וקריאת RPC)
+— כולם ירוקים (ר' היסטוריית קומיטים ל"Fix build"). **לא בוצע**: `npm run
+dev`/QA ידני בדפדפן מול פרויקט Supabase אמיתי (יש להריץ את המיגרציות על
+פרויקט אמיתי קודם, ר' README) — כלומר הזרימות עצמן (הרשמה→wizard→הזמנה→
+Woo webhook) לא נבדקו קצה-לקצה מול UI חי, רק כל חוליה בנפרד (DB מול
+isolation test, קוד מול build).
 
 ## ⚠️ 9. מסמכי ToS/DPA + admin actions מסוכנות ל-self-serve
 
@@ -107,8 +111,14 @@ trial.
 - **`clinic_payment_settings`**: הסודות (`woo_consumer_secret`,
   `woo_webhook_secret`) מאוחסנים כטקסט רגיל, מוגנים רק ב-RLS (admin +
   clinic_id שלו). לפני production: הצפנה אמיתית (pgsodium/Supabase Vault).
-- **`lib/supabase/types.ts`**: נכתב ידנית (אין עדיין פרויקט Supabase מחובר
-  להריץ מולו `supabase gen types typescript`). להחליף מיד כשיש פרויקט אמיתי.
+- **`lib/supabase/types.ts`**: טיוטה ידנית ל**עיון** בלבד — **לא מחוברת**
+  כ-`Database` generic לשלושת ה-clients (server/client/admin), כי סופאבייס
+  דורשת גם Views/Functions/Enums/CompositeTypes מלאים כדי שהגנריק הזה יעבוד
+  (בלעדיהם כל query/rpc נופל ל-never/undefined — כך גילינו את זה, ר'
+  היסטוריית קומיטים). כלומר: כרגע **אין type-check אמיתי** על שאילתות
+  Supabase בכל הריפו — שגיאת עמודה/טבלה תתגלה רק ב-runtime. להריץ
+  `supabase gen types typescript --project-id <id>` ברגע שיש פרויקט אמיתי,
+  ואז לחבר את זה בפועל כ-generic.
 - **UI**: פונקציונלי, לא מוקפד. אין תצוגת יומן/לוח שבועי אמיתית (spec §8.3
   — "הלב" של האפליקציה), אין Realtime מחובר בצד ה-UI (הטבלה/ה-triggers
   קיימים ב-DB), אין מסכי דוחות/ביקורת/היסטוריית תשלומים לאדמין, אין עריכת
