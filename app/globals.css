@@ -1,0 +1,368 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Cleana · Design tokens v1 — לפי מסמך השפה העיצובית (tokens.css המקורי).
+   הטוקנים הגולמיים כאן, ואז מיפוי לשמות הסמנטיים של shadcn/ui (--background,
+   --primary וכו') כדי שכל class קיים בקוד (bg-background, text-muted-foreground
+   וכו') ימשיך לעבוד בלי לגעת בכל קובץ בנפרד. */
+:root {
+  /* Brand · violet */
+  --violet-50: #f4f1fe;
+  --violet-100: #eae4fd;
+  --violet-200: #d6ccfc;
+  --violet-300: #b9a7f9;
+  --violet-400: #9a80f9;
+  --violet-500: #7a5af8; /* פעולה ראשית, מצב נבחר, לוגו */
+  --violet-600: #6440e4; /* hover, קישורים */
+  --violet-700: #5230be; /* טקסט ניווט פעיל */
+  --violet-900: #2e1a6b;
+
+  /* Neutral · cool grey */
+  --canvas: #fbfbfd; /* רקע עמוד */
+  --surface: #ffffff; /* כרטיסים */
+  --subtle: #f4f5f8; /* שורות שקועות, רקע segmented */
+  --border-1: #e8eaf0;
+  --border-strong: #d3d7e2; /* שדות, כפתורים */
+  --grey-400: #9aa1b4; /* טקסט disabled, 14px+ בלבד */
+  --text-muted: #6b7288;
+  --text-secondary: #454b5c;
+  --text-1: #1b1e27;
+  --ink-800: #2a2e3b; /* פאנלים כהים */
+
+  /* Status */
+  --success: #12876a;
+  --success-fg: #0b5c49;
+  --success-bg: #e6f6f1;
+  --success-border: #bee6da;
+  --warning: #b26a00;
+  --warning-fg: #8a5200;
+  --warning-bg: #fff4e3;
+  --warning-border: #f5dfb8;
+  --danger: #c93a54;
+  --danger-fg: #8e2338;
+  --danger-bg: #fdedf0;
+  --danger-border: #f3c9d1;
+  --info: #0e7490;
+  --info-fg: #0a5a6e;
+  --info-bg: #e4f4f8;
+  --info-border: #b7dee8;
+
+  /* Radius — לפי סוג רכיב, לא סקאלה אחת */
+  --radius: 10px; /* ברירת מחדל כללית = רדיוס כפתור */
+  --r-field: 8px;
+  --r-button: 10px;
+  --r-card: 14px;
+  --r-modal: 16px;
+  --r-pill: 999px;
+
+  /* Elevation — קו הוא ברירת המחדל להפרדה, לא צל. צל רק ל-dropdown/toast/modal/drawer */
+  --e-0: none;
+  --e-1: 0 1px 2px rgba(20, 22, 29, 0.06);
+  --e-2: 0 8px 24px -8px rgba(20, 22, 29, 0.18);
+  --e-3: 0 24px 60px -16px rgba(20, 22, 29, 0.28);
+
+  /* Focus ring — חובה על כל רכיב לחיץ */
+  --focus-ring: 0 0 0 3px var(--violet-100);
+
+  /* Layout */
+  --sidebar-w: 220px;
+  --page-header-h: 68px;
+  --content-max: 1280px;
+  --form-max: 720px;
+  --control-h: 40px;
+  --control-h-mobile: 48px;
+  --tap-min: 44px;
+  --drawer-w: 480px;
+
+  /* ── מיפוי סמנטי ל-shadcn/ui (כל class קיים בקוד ממשיך לעבוד) ── */
+  --background: var(--canvas);
+  --foreground: var(--text-1);
+  --card: var(--surface);
+  --card-foreground: var(--text-1);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-1);
+  --primary: var(--violet-500);
+  --primary-foreground: #ffffff;
+  --secondary: var(--violet-50);
+  --secondary-foreground: var(--violet-700);
+  --muted: var(--subtle);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--subtle);
+  --accent-foreground: var(--text-1);
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--border-1);
+  --input: var(--border-strong);
+  --ring: var(--violet-500);
+}
+
+.dark {
+  --canvas: #1b1e27;
+  --surface: var(--ink-800);
+  --subtle: #333849;
+  --border-1: #3a3f52;
+  --border-strong: #4a5068;
+  --text-muted: #9aa1b4;
+  --text-secondary: #c7cbdb;
+  --text-1: #f4f5f8;
+
+  --violet-50: #2e1a6b;
+  --violet-100: #3d2494;
+  --violet-500: #9a80f9;
+  --violet-600: #b9a7f9;
+  --violet-700: #d6ccfc;
+
+  --background: var(--canvas);
+  --foreground: var(--text-1);
+  --card: var(--surface);
+  --card-foreground: var(--text-1);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-1);
+  --primary: var(--violet-500);
+  --primary-foreground: var(--ink-800);
+  --secondary: var(--subtle);
+  --secondary-foreground: var(--violet-700);
+  --muted: var(--subtle);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--subtle);
+  --accent-foreground: var(--text-1);
+  --destructive: #e0637a;
+  --destructive-foreground: var(--ink-800);
+  --border: var(--border-1);
+  --input: var(--border-strong);
+  --ring: var(--violet-500);
+  --focus-ring: 0 0 0 3px var(--violet-100);
+}
+
+@theme inline {
+  --radius-sm: var(--r-field);
+  --radius-md: var(--r-button);
+  --radius-lg: var(--r-card);
+  --radius-xl: var(--r-modal);
+  --radius-field: var(--r-field);
+  --radius-button: var(--r-button);
+  --radius-card: var(--r-card);
+  --radius-modal: var(--r-modal);
+  --radius-pill: var(--r-pill);
+
+  --shadow-e1: var(--e-1);
+  --shadow-e2: var(--e-2);
+  --shadow-e3: var(--e-3);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-violet-50: var(--violet-50);
+  --color-violet-100: var(--violet-100);
+  --color-violet-200: var(--violet-200);
+  --color-violet-300: var(--violet-300);
+  --color-violet-400: var(--violet-400);
+  --color-violet-500: var(--violet-500);
+  --color-violet-600: var(--violet-600);
+  --color-violet-700: var(--violet-700);
+  --color-violet-900: var(--violet-900);
+
+  --color-success: var(--success);
+  --color-success-fg: var(--success-fg);
+  --color-success-bg: var(--success-bg);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-fg: var(--warning-fg);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-danger: var(--danger);
+  --color-danger-fg: var(--danger-fg);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-border: var(--danger-border);
+  --color-info: var(--info);
+  --color-info-fg: var(--info-fg);
+  --color-info-bg: var(--info-bg);
+  --color-info-border: var(--info-border);
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-subtle: var(--subtle);
+  --color-border-strong: var(--border-strong);
+  --color-grey-400: var(--grey-400);
+  --color-text-muted: var(--text-muted);
+  --color-text-secondary: var(--text-secondary);
+
+  --font-sans: var(--font-heebo);
+  --font-mono: var(--font-plex-mono);
+}
+
+/* אתר עברי, RTL בלבד. בלי רקע מצויר — נשאר רק במסך הכניסה (/login), ר'
+   login-backdrop.tsx. משטח נקי (--canvas) הוא ברירת המחדל לכל האזורים
+   הפנימיים, לפי מסמך השפה העיצובית. */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-heebo), Arial, Helvetica, sans-serif;
+}
+
+/* מספרים, שעות וסכומים — תמיד ברוחב אחיד כדי שעמודות ולוחות יתיישרו */
+.tabular-nums,
+[data-tabular] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* כתמי רקע רכים ומטושטשים — שמורים למסך הכניסה/שיווק בלבד (login-backdrop.tsx).
+   הצבע חייב להיות מוטבע ישירות ב-SVG (לא currentColor/CSS var): כש-SVG
+   נטען כ-background-image הוא מטופל כמסמך עצמאי בלי גישה לצבעי הדף
+   המארח, אז currentColor שם היה נופל תמיד לשחור. בהיר מהרקע עצמו
+   (לא primary/secondary הכהים) כדי שיאירו את הרקע במקום להכהות אותו. */
+.bg-decor {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-decor span {
+  position: absolute;
+  display: block;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.bg-decor .blob-1 {
+  top: -9rem;
+  inset-inline-end: -7rem;
+  width: 34rem;
+  height: 34rem;
+  opacity: 0.55;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cfilter id='a' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='38'/%3E%3C/filter%3E%3Cpath filter='url(%23a)' fill='%23EFEAFE' d='M300,60 C370,110 380,260 310,330 C240,400 100,390 55,300 C10,210 40,90 130,50 C220,10 260,30 300,60 Z'/%3E%3C/svg%3E");
+}
+
+.bg-decor .blob-2 {
+  bottom: -11rem;
+  inset-inline-start: -9rem;
+  width: 32rem;
+  height: 32rem;
+  opacity: 0.6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cfilter id='b' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='42'/%3E%3C/filter%3E%3Cpath filter='url(%23b)' fill='%23EFEAFE' d='M90,90 C160,30 300,40 350,120 C400,200 360,320 270,360 C180,400 60,360 40,270 C20,180 30,140 90,90 Z'/%3E%3C/svg%3E");
+}
+
+.bg-decor .blob-3 {
+  top: 30%;
+  inset-inline-start: 38%;
+  width: 26rem;
+  height: 26rem;
+  opacity: 0.65;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cfilter id='c' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='36'/%3E%3C/filter%3E%3Cpath filter='url(%23c)' fill='%23EFEAFE' d='M140,60 C230,30 340,90 350,180 C360,270 280,350 190,350 C100,350 40,280 50,190 C60,110 70,85 140,60 Z'/%3E%3C/svg%3E");
+}
+
+.dark .bg-decor .blob-1 {
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cfilter id='a' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='38'/%3E%3C/filter%3E%3Cpath filter='url(%23a)' fill='%239C82FF' d='M300,60 C370,110 380,260 310,330 C240,400 100,390 55,300 C10,210 40,90 130,50 C220,10 260,30 300,60 Z'/%3E%3C/svg%3E");
+}
+
+.dark .bg-decor .blob-2 {
+  opacity: 0.18;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cfilter id='b' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='42'/%3E%3C/filter%3E%3Cpath filter='url(%23b)' fill='%237A5AF8' d='M90,90 C160,30 300,40 350,120 C400,200 360,320 270,360 C180,400 60,360 40,270 C20,180 30,140 90,90 Z'/%3E%3C/svg%3E");
+}
+
+.dark .bg-decor .blob-3 {
+  opacity: 0.14;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cfilter id='c' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='36'/%3E%3C/filter%3E%3Cpath filter='url(%23c)' fill='%23FAF9FC' d='M140,60 C230,30 340,90 350,180 C360,270 280,350 190,350 C100,350 40,280 50,190 C60,110 70,85 140,60 Z'/%3E%3C/svg%3E");
+}
+
+/* ציורי קו רכים — קווים זורמים וגרסת מתאר של סימן הלוגו, כתוספת עדינה
+   לכתמי הצבע. stroke בלבד (בלי fill), אז אפילו בגוון סגול על רקע בהיר
+   זה נשאר "קו דק" ולא "כתם" שמכהה את הרקע. */
+.bg-decor .mark-outline {
+  bottom: -6rem;
+  inset-inline-end: -4rem;
+  width: 22rem;
+  height: 22rem;
+  opacity: 0.07;
+  transform: rotate(-8deg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='6' y='6' width='88' height='88' rx='22' fill='none' stroke='%237A5AF8' stroke-width='2.2'/%3E%3Ccircle cx='50' cy='50' r='23' fill='none' stroke='%237A5AF8' stroke-width='2.2'/%3E%3C/svg%3E");
+}
+
+.bg-decor .line-1 {
+  top: 12%;
+  inset-inline-start: -4rem;
+  width: 40rem;
+  height: 14rem;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 240'%3E%3Cpath d='M0,150 C100,60 180,220 300,120 C400,40 480,160 600,80' fill='none' stroke='%237A5AF8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.bg-decor .line-2 {
+  bottom: 8%;
+  inset-inline-end: -2rem;
+  width: 28rem;
+  height: 12rem;
+  opacity: 0.1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Cpath d='M0,40 C80,140 160,10 240,100 C300,170 340,60 400,120' fill='none' stroke='%237A5AF8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.bg-decor .ring-1 {
+  top: 16%;
+  inset-inline-start: 6%;
+  width: 7rem;
+  height: 7rem;
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='34' fill='none' stroke='%237A5AF8' stroke-width='2.5'/%3E%3C/svg%3E");
+}
+
+.bg-decor .ring-2 {
+  top: 62%;
+  inset-inline-end: 14%;
+  width: 5rem;
+  height: 5rem;
+  opacity: 0.14;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='34' fill='none' stroke='%239C82FF' stroke-width='2.5'/%3E%3C/svg%3E");
+}
+
+.dark .bg-decor .mark-outline {
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='6' y='6' width='88' height='88' rx='22' fill='none' stroke='%23FAF9FC' stroke-width='2.2'/%3E%3Ccircle cx='50' cy='50' r='23' fill='none' stroke='%23FAF9FC' stroke-width='2.2'/%3E%3C/svg%3E");
+}
+
+.dark .bg-decor .line-1 {
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 240'%3E%3Cpath d='M0,150 C100,60 180,220 300,120 C400,40 480,160 600,80' fill='none' stroke='%239C82FF' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.dark .bg-decor .line-2 {
+  opacity: 0.14;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Cpath d='M0,40 C80,140 160,10 240,100 C300,170 340,60 400,120' fill='none' stroke='%239C82FF' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.dark .bg-decor .ring-1 {
+  opacity: 0.18;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='34' fill='none' stroke='%239C82FF' stroke-width='2.5'/%3E%3C/svg%3E");
+}
+
+.dark .bg-decor .ring-2 {
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='34' fill='none' stroke='%237A5AF8' stroke-width='2.5'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bg-decor span {
+    transition: opacity 0.6s ease;
+  }
+}
