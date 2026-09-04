@@ -70,3 +70,10 @@ export async function getAuthState(): Promise<{
 }> {
   return loadAuthState();
 }
+
+/** ל-AppHeader — האם למשתמש יש גישת סופר-אדמין (חוצה-קליניקות). */
+export async function isSuperadmin(userId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle();
+  return !!data;
+}

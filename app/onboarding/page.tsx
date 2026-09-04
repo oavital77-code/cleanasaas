@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { AppHeader } from "@/components/app-header";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +18,14 @@ import {
 // כל שלב כותב ישירות דרך RPC/direct-write ומרענן את אותו עמוד — לא state
 // בצד לקוח. אין ברירת מחדל גלובלית משותפת בין עסקים: כל שורה כאן נוצרת עם
 // clinic_id של הקליניקה הזו בלבד (נגזר מהמשתמש המחובר בתוך ה-RPCs עצמן).
+function StepNumber({ n }: { n: number }) {
+  return (
+    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-violet-500 text-sm font-semibold text-white">
+      {n}
+    </span>
+  );
+}
+
 export default async function OnboardingPage() {
   await completeSignupClinicFromMetadata();
 
@@ -38,113 +48,154 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 p-8">
-      <div>
-        <h1 className="text-2xl font-semibold">הקמת {clinic?.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          שלושה שלבים בסיסיים — הכל ניתן לעריכה מאוחר יותר דרך פאנל הניהול.
-        </p>
-      </div>
+    <div className="flex flex-1 flex-col">
+      <AppHeader clinicName={clinic?.name} role={profile.role} />
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 p-6 sm:p-8">
+        <div>
+          <h1 className="text-2xl font-semibold">הקמת {clinic?.name}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            שלושה שלבים בסיסיים — הכל ניתן לעריכה מאוחר יותר דרך פאנל הניהול.
+          </p>
+        </div>
 
-      <section className="flex flex-col gap-4 rounded-lg border p-5">
-        <h2 className="font-medium">1. סניפים</h2>
-        <ul className="flex flex-col gap-1 text-sm">
-          {(branches ?? []).map((b) => (
-            <li key={b.id} className="text-muted-foreground">
-              {b.name} — {b.address}
-            </li>
-          ))}
-        </ul>
-        <form action={addBranchAction} className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="branch_name">שם הסניף</Label>
-            <Input id="branch_name" name="name" required />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="branch_address">כתובת</Label>
-            <Input id="branch_address" name="address" required />
-          </div>
-          <Button type="submit">הוספת סניף</Button>
-        </form>
-      </section>
+        <Card className="shadow-e1">
+          <CardHeader className="flex-row items-center gap-3 space-y-0">
+            <StepNumber n={1} />
+            <CardTitle className="text-base font-medium">סניפים</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-1 text-sm">
+              {(branches ?? []).map((b) => (
+                <li key={b.id} className="text-muted-foreground">
+                  {b.name} — {b.address}
+                </li>
+              ))}
+            </ul>
+            <form action={addBranchAction} className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="branch_name">שם הסניף</Label>
+                <Input id="branch_name" name="name" required />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="branch_address">כתובת</Label>
+                <Input id="branch_address" name="address" required />
+              </div>
+              <Button type="submit">הוספת סניף</Button>
+            </form>
+          </CardContent>
+        </Card>
 
-      <section className="flex flex-col gap-4 rounded-lg border p-5">
-        <h2 className="font-medium">2. חדרים</h2>
-        <ul className="flex flex-col gap-1 text-sm">
-          {(rooms ?? []).map((r) => (
-            <li key={r.id} className="text-muted-foreground">
-              {r.name} ({(r.branches as { name?: string } | null)?.name})
-            </li>
-          ))}
-        </ul>
-        {branches && branches.length > 0 ? (
-          <form action={addRoomAction} className="flex flex-wrap items-end gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="room_branch">סניף</Label>
-              <select id="room_branch" name="branch_id" required className="h-10 rounded-md border border-input bg-background px-3">
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
+        <Card className="shadow-e1">
+          <CardHeader className="flex-row items-center gap-3 space-y-0">
+            <StepNumber n={2} />
+            <CardTitle className="text-base font-medium">חדרים</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-1 text-sm">
+              {(rooms ?? []).map((r) => (
+                <li key={r.id} className="text-muted-foreground">
+                  {r.name} ({(r.branches as { name?: string } | null)?.name})
+                </li>
+              ))}
+            </ul>
+            {branches && branches.length > 0 ? (
+              <form action={addRoomAction} className="flex flex-wrap items-end gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="room_branch">סניף</Label>
+                  <select
+                    id="room_branch"
+                    name="branch_id"
+                    required
+                    className="h-10 rounded-field border border-input bg-background px-3"
+                  >
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="room_name">שם החדר</Label>
+                  <Input id="room_name" name="name" required />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="room_type">סוג</Label>
+                  <select
+                    id="room_type"
+                    name="room_type"
+                    className="h-10 rounded-field border border-input bg-background px-3"
+                  >
+                    <option value="talk">שיח</option>
+                    <option value="touch">מגע</option>
+                    <option value="podcast">פודקאסט</option>
+                    <option value="group">קבוצתי</option>
+                  </select>
+                </div>
+                <Button type="submit">הוספת חדר</Button>
+              </form>
+            ) : (
+              <p className="text-sm text-muted-foreground">הוסיפו סניף קודם.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-e1">
+          <CardHeader className="flex-row items-center gap-3 space-y-0">
+            <StepNumber n={3} />
+            <CardTitle className="text-base font-medium">תמחור כרטיסייה</CardTitle>
+            <CardDescription className="mr-auto">ברירת מחדל — לעריכה בהגדרות</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-right text-muted-foreground">
+                  <th className="font-normal">שעות</th>
+                  <th className="font-normal">₪/שעה</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(tiers ?? []).map((t) => (
+                  <tr key={t.id}>
+                    <td className="tabular-nums py-1">{t.hours}</td>
+                    <td className="tabular-nums py-1">{t.price_per_hour}</td>
+                  </tr>
                 ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="room_name">שם החדר</Label>
-              <Input id="room_name" name="name" required />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="room_type">סוג</Label>
-              <select id="room_type" name="room_type" className="h-10 rounded-md border border-input bg-background px-3">
-                <option value="talk">שיח</option>
-                <option value="touch">מגע</option>
-                <option value="podcast">פודקאסט</option>
-                <option value="group">קבוצתי</option>
-              </select>
-            </div>
-            <Button type="submit">הוספת חדר</Button>
-          </form>
-        ) : (
-          <p className="text-sm text-muted-foreground">הוסיפו סניף קודם.</p>
-        )}
-      </section>
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
 
-      <section className="flex flex-col gap-4 rounded-lg border p-5">
-        <h2 className="font-medium">3. תמחור כרטיסייה (ברירת מחדל — לעריכה בהגדרות)</h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-right text-muted-foreground">
-              <th className="font-normal">שעות</th>
-              <th className="font-normal">₪/שעה</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(tiers ?? []).map((t) => (
-              <tr key={t.id}>
-                <td>{t.hours}</td>
-                <td>{t.price_per_hour}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+        <Card className="shadow-e1">
+          <CardHeader className="flex-row items-center gap-3 space-y-0">
+            <StepNumber n={4} />
+            <CardTitle className="text-base font-medium">מודל ססיה (מנוי חודשי קבוע)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form action={toggleSessionsAction} className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="sessions_enabled"
+                name="sessions_enabled"
+                defaultChecked={clinic?.sessions_enabled}
+                className="size-4 accent-violet-500"
+              />
+              <Label htmlFor="sessions_enabled" className="font-normal">
+                יש בעסק שלי גם מודל ססיה, לא רק כרטיסיות
+              </Label>
+              <Button type="submit" variant="outline" size="sm">
+                שמירה
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-      <section className="flex flex-col gap-4 rounded-lg border p-5">
-        <h2 className="font-medium">4. מודל ססיה (מנוי חודשי קבוע)</h2>
-        <form action={toggleSessionsAction} className="flex items-center gap-3">
-          <input type="checkbox" id="sessions_enabled" name="sessions_enabled" defaultChecked={clinic?.sessions_enabled} />
-          <Label htmlFor="sessions_enabled">יש בעסק שלי גם מודל ססיה, לא רק כרטיסיות</Label>
-          <Button type="submit" variant="outline">
-            שמירה
+        <form action={finishOnboardingAction}>
+          <Button type="submit" size="lg" className="w-full">
+            סיום — כניסה למערכת
           </Button>
         </form>
-      </section>
-
-      <form action={finishOnboardingAction}>
-        <Button type="submit" className="w-full">
-          סיום — כניסה למערכת
-        </Button>
-      </form>
-    </main>
+      </main>
+    </div>
   );
 }
