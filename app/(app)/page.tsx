@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { getAuthState, isSuperadmin } from "@/lib/auth/guards";
+import { getAuthState } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTimeHe } from "@/lib/time";
-import { AppHeader } from "@/components/app-header";
+import { AppShell } from "@/components/app-shell";
 import { BrandBackdrop } from "@/components/brand-backdrop";
 import { Logo } from "@/components/logo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,7 +68,7 @@ export default async function HomePage() {
   }
 
   const supabase = await createClient();
-  const [{ data: clinic }, { data: cards }, { data: nextBooking }, superadmin] = await Promise.all([
+  const [{ data: clinic }, { data: cards }, { data: nextBooking }] = await Promise.all([
     supabase.from("clinics").select("name").eq("id", profile.clinic_id).single(),
     supabase.from("punch_cards").select("hours_remaining").eq("user_id", userId).eq("active", true),
     supabase
@@ -80,15 +80,14 @@ export default async function HomePage() {
       .order("starts_at")
       .limit(1)
       .maybeSingle(),
-    isSuperadmin(userId),
   ]);
 
   const totalHours = (cards ?? []).reduce((sum, c) => sum + Number(c.hours_remaining), 0);
+  const isAdmin = profile.role === "owner" || profile.role === "admin";
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AppHeader clinicName={clinic?.name} role={profile.role} isSuperadmin={superadmin} />
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-6 sm:p-8">
+    <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} isAdmin={isAdmin}>
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
         <div>
           <h1 className="text-2xl font-semibold">שלום, {profile.full_name}</h1>
           <p className="text-muted-foreground">{clinic?.name}</p>
@@ -113,17 +112,20 @@ export default async function HomePage() {
           </Card>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button asChild>
             <Link href="/schedule">הזמנת חדר</Link>
           </Button>
-          {(profile.role === "owner" || profile.role === "admin") && (
+          <Button asChild variant="outline">
+            <Link href="/purchase">רכישת כרטיסייה</Link>
+          </Button>
+          {isAdmin && (
             <Button asChild variant="outline">
-              <Link href="/admin/settings">ניהול הקליניקה</Link>
+              <Link href="/admin">ניהול הקליניקה</Link>
             </Button>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

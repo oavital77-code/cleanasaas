@@ -28,3 +28,20 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
   const { data: profile } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
   redirect(profile ? "/" : "/onboarding");
 }
+
+export type ResetRequestState = { sent?: boolean; error?: string };
+
+export async function requestPasswordResetAction(
+  _prevState: ResetRequestState,
+  formData: FormData,
+): Promise<ResetRequestState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "נא למלא אימייל" };
+
+  const supabase = await createClient();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${appUrl}/reset-password` });
+
+  // אין הבדל בתשובה בין מייל קיים ללא-קיים — לא לחשוף אילו מיילים רשומים.
+  return { sent: true };
+}

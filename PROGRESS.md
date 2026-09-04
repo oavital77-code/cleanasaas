@@ -120,9 +120,14 @@ Functions/Enums/CompositeTypes מלאים. שלושת ה-clients (`server.ts`/
 ירוקים מול הפרויקט האמיתי (URL + anon key אמיתיים ב-`.env.local`, לא
 placeholder).
 
-**לא בוצע עדיין**: `npm run dev`/QA ידני בדפדפן (יש להריץ בפועל ולעבור על
-signup→onboarding→הזמנה→Woo webhook כמשתמש), הגדרת Auth settings בפרויקט
-(site URL/redirect URLs לאימות מייל), יצירת superadmin ראשון.
+**בוצע מאז**: Auth URL Configuration הוגדר (site URL + redirect URLs, גם
+ל-localhost וגם לדומיין הפריסה ב-Vercel), ופריסה ראשונה עלתה בהצלחה
+ב-`https://cleanasaas.vercel.app` (Vercel git-linked לריפו — כל push ל-main
+מפעיל דיפלוי אוטומטי). זרימת signup→email confirm→onboarding נבדקה ידנית
+ועובדת מול הפרויקט האמיתי (קליניקת בדיקה נוצרה בפועל: `orc`/"אור קליניקה").
+
+**עדיין לא בוצע**: יצירת superadmin ראשון (`insert into platform_admins
+...` עם ה-service role), בדיקת Woo webhook מקצה לקצה מול חנות אמיתית.
 
 ## ⚠️ 9. מסמכי ToS/DPA + admin actions מסוכנות ל-self-serve
 
@@ -134,27 +139,67 @@ trial.
 
 ---
 
+## ✅ 10. מפת מסכים מלאה לפי CLEANASITEMAPANDDESIGN.md
+
+המשתמש שלח מסמך תכולה אמיתי (מפת מסכים/ניווט/עיצוב של Cleana המקורי) אחרי
+שהעיצוב הראשוני כאן כבר עלה — והוא לא תאם: היו כ-9 מסכים במקום ~20+, וסרגל
+ניווט עליון פשוט במקום שני "צדדים" נפרדים עם סרגל צד קבוע. תוקן במלואו:
+
+- **שלד**: `app/(app)/*` ו-`app/(admin)/admin/*` — route groups אמיתיים,
+  לא רק תיקיות שטוחות. `components/app-shell.tsx` — סרגל צד 220px קבוע
+  בדסקטופ (RTL: `inset-inline-start`, כך שהוא מימין אוטומטית), תפריט
+  המבורגר נשלף במובייל, אייקוני lucide-react. שני סטים שונים של פריטי
+  ניווט (7 בצד מטפל/ת, 9 בצד אדמין) לפי המסמך, + קישור-צולב בין הצדדים.
+  `AuthShell`/`AppHeader` הקודמים נשארו רק למסכים שבמפורש **לא** אמורים
+  להיות בסרגל (`/login`, `/signup`, `/onboarding`, `/superadmin`, וכו').
+- **צד מטפל/ת (7)**: `/` (דשבורד), `/schedule` (לוח **יום אמיתי** —
+  רשת חדרים×משבצות-30-דק לפי `public_availability`, לחיצה על "פנוי"
+  מזמינה ישירות; לא היה קיים קודם, רק טופס), `/bookings` (הופרד מ-
+  `/schedule`), `/purchase` + `/purchase/success` + `/purchase/failure`,
+  `/sessions` + `/sessions/new` (בונה משבצות משותף, `components/slot-
+  builder.tsx`, גם לבקשת מטפל/ת וגם לקביעת אדמין), `/payments`,
+  `/profile` (כולל קישור פיד ICS). + `/reset-password`, `/privacy` (מחוץ
+  לסרגל, כמו במסמך).
+- **צד אדמין (9)**: `/admin` (דשבורד ווידג'טים), `/admin/board` (לוח מלא
+  חוצה-חדרים עם שמות מטפלים, ביטול, שיבוץ ידני דרך `admin_create_booking`),
+  `/admin/therapists` + `/admin/therapists/[id]` (כרטיס מלא: כרטיסיות,
+  הזמנות, תשלומים, ססיות, הערה פנימית, שינוי role/status, הענקת שעות,
+  איפוס סיסמה), `/admin/sessions` (תור אישור/דחייה) + `/admin/sessions/new`
+  (`admin_create_session` חופשי), `/admin/payments` (+ סימון תשלום ססיה
+  כמזומן), `/admin/rooms` (CRUD סניפים/חדרים — כתיבה ישירה, לא RPC, מותר
+  לפי CLAUDE.md #1), `/admin/settings` (הועבר, נשאר ממוקד תמחור/Woo בלבד —
+  "הזמנת מטפלים" עברה ל-`/admin/therapists` כי זה שם המקום שלה במסמך),
+  `/admin/reports` (מונים בסיסיים לחודש), `/admin/audit` (`audit_log`).
+- **תשתית**: `/api/ics/[token]` — פיד ICS ציבורי לפי `profiles.ics_token`
+  (admin client, כי אין session; מסונן לפרופיל בודד — לא חושף מטפל אחר).
+  "שכחתי סיסמה" נוסף כטוגל בתוך `/login` (לא route נפרד, כמו במקור).
+- **באג DST אמיתי שנתפס תוך כדי**: `createBookingAction` בנתה
+  `new Date(\`${date}T${time}:00\`)` — מתפרש בשעון השרת (UTC ב-Vercel), לא
+  שעון הקליניקה. נוסף `zonedDateTimeToUtc()` ל-`lib/time` (עוטף
+  `date-fns-tz#fromZonedTime`) ותוקן בכל מקום שבונה `starts_at` מ-קלט
+  תאריך+שעה (schedule, board, sessions).
+- כל ה-9 מסכי אדמין + 7 מסכי מטפל/ת רק **מחברים UI** ל-RPCs/טבלאות
+  שכבר היו קיימים ומוכנים מ-milestone RPCs — לא נדרשה שום מיגרציית DB
+  חדשה בשביל זה.
+
+`tsc --noEmit`/`eslint`/`vitest`/`npm run build` — כולם ירוקים, 34 routes
+מקומפלים (היה 15 לפני).
+
 ## מגבלות/פשרות ידועות (לא כיסוי מלא של הספק המקורי)
 
 - **אין עדיין**: מיילים (Resend) — `lib/email/*` מהמקור לא הועבר. ה-cron
-  של תזכורות מזהה ומסמן (`*_notified_at`) אבל לא שולח בפועל.
-  אין ICS, אין PWA (manifest/service worker/icons), אין Sentry עם tag
-  `clinic_id` (המפרט §15 מבקש את זה — עוד לא חובר כי אין עדיין DSN אמיתי).
+  של תזכורות מזהה ומסמן (`*_notified_at`) אבל לא שולח בפועל. אין PWA
+  (manifest/service worker/icons), אין Sentry עם tag `clinic_id` (המפרט
+  §15 מבקש את זה — עוד לא חובר כי אין עדיין DSN אמיתי).
 - **`clinic_payment_settings`**: הסודות (`woo_consumer_secret`,
   `woo_webhook_secret`) מאוחסנים כטקסט רגיל, מוגנים רק ב-RLS (admin +
   clinic_id שלו). לפני production: הצפנה אמיתית (pgsodium/Supabase Vault).
-- **`lib/supabase/types.ts`**: טיוטה ידנית ל**עיון** בלבד — **לא מחוברת**
-  כ-`Database` generic לשלושת ה-clients (server/client/admin), כי סופאבייס
-  דורשת גם Views/Functions/Enums/CompositeTypes מלאים כדי שהגנריק הזה יעבוד
-  (בלעדיהם כל query/rpc נופל ל-never/undefined — כך גילינו את זה, ר'
-  היסטוריית קומיטים). כלומר: כרגע **אין type-check אמיתי** על שאילתות
-  Supabase בכל הריפו — שגיאת עמודה/טבלה תתגלה רק ב-runtime. להריץ
-  `supabase gen types typescript --project-id <id>` ברגע שיש פרויקט אמיתי,
-  ואז לחבר את זה בפועל כ-generic.
-- **UI**: פונקציונלי, לא מוקפד. אין תצוגת יומן/לוח שבועי אמיתית (spec §8.3
-  — "הלב" של האפליקציה), אין Realtime מחובר בצד ה-UI (הטבלה/ה-triggers
-  קיימים ב-DB), אין מסכי דוחות/ביקורת/היסטוריית תשלומים לאדמין, אין עריכת
-  פרופיל עצמית למטפל/ת.
+- **שעות פעילות**: `/schedule` ו-`/admin/board` משתמשים ב-08:00–22:00
+  קבוע בקוד — אין עדיין שדה "שעות פעילות" per-clinic/per-branch (מסומן
+  [לאפיון] ב-CLEANASITEMAPANDDESIGN.md, סעיף א').
+- **Realtime**: הטבלה/triggers (`availability_events`) קיימים ב-DB אבל
+  אין subscription בצד ה-UI — לוח הזמנים מתעדכן ב-revalidatePath (רענון
+  בקשה), לא בזמן אמת בין משתמשים.
 - **טלפון**: `toE164Israel` הוא ישראל-בלבד — קליניקה עתידית מחוץ לישראל
   (spec §1) תצטרך ולידציה בין-לאומית.
 - **superadmin ראשון**: אין מסך הרשמה ל-superadmin (במתכוון — זה לא flow
@@ -163,8 +208,7 @@ trial.
 
 ## מה הכי דחוף להמשיך בו
 
-1. Email (Resend) + ICS — כי בלעדיהם חלק גדול מ-§10 של המפרט המקורי לא קיים.
-2. UI ליומן/לוח אמיתי (spec §8.3) — הטופס הנוכחי ב-`/schedule` פונקציונלי
-   אך לא שימיש בפועל ע"י ~300 מטפלים.
-3. הצפנת `clinic_payment_settings` לפני חיבור קליניקה אמיתית ראשונה.
-4. ToS/DPA + החלטה על `grant_bonus_hours` בהרשמה עצמאית — לפני פתיחה לציבור.
+1. Email (Resend) — תזכורות/יתרה-נמוכה/חידוש ססיה מזוהות אבל לא נשלחות.
+2. הצפנת `clinic_payment_settings` לפני חיבור קליניקה אמיתית ראשונה.
+3. ToS/DPA + החלטה על `grant_bonus_hours` בהרשמה עצמאית — לפני פתיחה לציבור.
+4. שעות פעילות per-clinic (כרגע קבוע 08:00–22:00) + PWA (manifest/SW).

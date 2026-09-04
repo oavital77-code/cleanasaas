@@ -78,13 +78,3 @@ export async function updatePaymentSettingsAction(formData: FormData) {
 
   revalidatePath("/admin/settings");
 }
-
-export async function createInviteAction(formData: FormData) {
-  await requireClinicAdmin();
-  const supabase = await createClient();
-  const role = String(formData.get("role") ?? "therapist") as "admin" | "therapist";
-
-  const { error } = await supabase.rpc("create_therapist_invite", { p_role: role });
-  if (error) throw new Error(error.message);
-  revalidatePath("/admin/settings");
-}

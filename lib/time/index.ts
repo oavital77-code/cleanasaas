@@ -1,4 +1,4 @@
-import { formatInTimeZone, toZonedTime } from "date-fns-tz";
+import { formatInTimeZone, toZonedTime, fromZonedTime } from "date-fns-tz";
 import { he } from "date-fns/locale";
 
 // ברירת מחדל בלבד — כל קליניקה קובעת אזור זמן משלה ב-clinics.timezone
@@ -35,6 +35,16 @@ export function formatTimeHe(date: Date, timezone: string = DEFAULT_TIMEZONE) {
 
 export function formatDateTimeHe(date: Date, timezone: string = DEFAULT_TIMEZONE) {
   return formatInTimeZone(date, timezone, "dd/MM/yyyy HH:mm", { locale: he });
+}
+
+/**
+ * "2026-04-20" + "09:00" בזמן מקומי של הקליניקה → Date אמיתי (UTC).
+ * 🔴 בלי זה, `new Date(\`${date}T${time}:00\`)` היה מתפרש בשעון השרת
+ * (UTC ב-Vercel) ולא בשעון הקליניקה — הזמנה ל-09:00 הייתה נשמרת כ-12:00
+ * בפועל (או 11:00/13:00 סביב מעברי שעון). ר' CLAUDE.md סעיף 8.
+ */
+export function zonedDateTimeToUtc(dateStr: string, timeStr: string, timezone: string = DEFAULT_TIMEZONE): Date {
+  return fromZonedTime(`${dateStr}T${timeStr}:00`, timezone);
 }
 
 /** "עכשיו פחות X ימים", כ-ISO — עזר ל-queries. */

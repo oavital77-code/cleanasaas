@@ -1,44 +1,30 @@
-import { requireClinicAdmin, isSuperadmin } from "@/lib/auth/guards";
+import { requireClinicAdmin } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
-import { AppHeader } from "@/components/app-header";
+import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  updatePunchCardTierAction,
-  updateSessionPricingAction,
-  updatePaymentSettingsAction,
-  createInviteAction,
-} from "./actions";
+import { updatePunchCardTierAction, updateSessionPricingAction, updatePaymentSettingsAction } from "./actions";
 
 export default async function AdminSettingsPage() {
-  const { userId, profile, clinicId } = await requireClinicAdmin();
+  const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
 
-  const [{ data: tiers }, { data: settingsRows }, { data: paymentSettings }, { data: invites }, { data: clinic }, superadmin] =
-    await Promise.all([
-      supabase.from("punch_card_tiers").select("*").eq("clinic_id", clinicId).order("sort_order"),
-      supabase.from("app_settings").select("key, value").eq("clinic_id", clinicId),
-      supabase.from("clinic_payment_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
-      supabase
-        .from("clinic_invites")
-        .select("token, role, created_at, expires_at, used_at")
-        .eq("clinic_id", clinicId)
-        .order("created_at", { ascending: false })
-        .limit(10),
-      supabase.from("clinics").select("name").eq("id", clinicId).single(),
-      isSuperadmin(userId),
-    ]);
+  const [{ data: tiers }, { data: settingsRows }, { data: paymentSettings }, { data: clinic }] = await Promise.all([
+    supabase.from("punch_card_tiers").select("*").eq("clinic_id", clinicId).order("sort_order"),
+    supabase.from("app_settings").select("key, value").eq("clinic_id", clinicId),
+    supabase.from("clinic_payment_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
+    supabase.from("clinics").select("name").eq("id", clinicId).single(),
+  ]);
 
   const settings = Object.fromEntries((settingsRows ?? []).map((r) => [r.key, r.value]));
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AppHeader clinicName={clinic?.name} role={profile.role} isSuperadmin={superadmin} />
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 p-6 sm:p-8">
-        <h1 className="text-2xl font-semibold">תשלומים וכרטיסיות</h1>
+    <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name}>
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+        <h1 className="text-2xl font-semibold">הגדרות</h1>
 
         <Card className="shadow-e1">
           <CardHeader>
@@ -126,35 +112,7 @@ export default async function AdminSettingsPage() {
             </form>
           </CardContent>
         </Card>
-
-        <Card className="shadow-e1">
-          <CardHeader>
-            <CardTitle className="text-base font-medium">הזמנת מטפלים</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <form action={createInviteAction} className="flex items-end gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="role">תפקיד</Label>
-                <select id="role" name="role" className="h-10 rounded-field border border-input bg-background px-3">
-                  <option value="therapist">מטפל/ת</option>
-                  <option value="admin">אדמין/ית</option>
-                </select>
-              </div>
-              <Button type="submit">יצירת קישור הזמנה</Button>
-            </form>
-            <ul className="flex flex-col gap-1 text-sm">
-              {(invites ?? []).map((inv) => (
-                <li key={inv.token} className="flex items-center justify-between gap-3 text-muted-foreground">
-                  <code dir="ltr" className="truncate text-xs">
-                    {appUrl}/invite/{inv.token}
-                  </code>
-                  <span>{inv.used_at ? "נוצל" : new Date(inv.expires_at) < new Date() ? "פג תוקף" : "פעיל"}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
