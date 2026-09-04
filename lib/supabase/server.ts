@@ -1,16 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "@/lib/supabase/types";
 
 // לשימוש ב-Server Components / Route Handlers. פועל עם RLS לפי המשתמש
 // המחובר — כל קליניקה מבודדת דרך current_clinic_id() בצד ה-DB, לא כאן.
-//
-// ⚠️ לא מחובר ל-Database generic (ר' lib/supabase/types.ts) — עד שיש
-// טיפוסים אמיתיים מ-`supabase gen types`, queries כאן לא type-checked מול
-// הסכמה. שגיאות עמודה/טבלה יתגלו ב-runtime, לא ב-compile.
+// Database מיוצר מ-`supabase gen types typescript` מול הפרויקט האמיתי —
+// לרענן (mcp Supabase generate_typescript_types) אחרי כל migration חדשה.
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {

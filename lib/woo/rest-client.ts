@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 import type { WooOrderPayload } from "./process-order";
 
 // גישה ל-WooCommerce REST API — פר-קליניקה. הפרטים (URL/Key/Secret) מגיעים
@@ -12,7 +13,7 @@ export interface ClinicWooCredentials {
 }
 
 export async function getClinicWooCredentials(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   clinicId: string,
 ): Promise<ClinicWooCredentials | null> {
   const { data } = await supabase

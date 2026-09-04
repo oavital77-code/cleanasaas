@@ -44,11 +44,15 @@ export async function addBranchAction(formData: FormData) {
   revalidatePath("/onboarding");
 }
 
+const ROOM_TYPES = ["talk", "touch", "podcast", "group"] as const;
+type RoomType = (typeof ROOM_TYPES)[number];
+
 export async function addRoomAction(formData: FormData) {
   const supabase = await createClient();
   const branchId = String(formData.get("branch_id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
-  const roomType = String(formData.get("room_type") ?? "talk");
+  const rawRoomType = String(formData.get("room_type") ?? "talk");
+  const roomType: RoomType = ROOM_TYPES.includes(rawRoomType as RoomType) ? (rawRoomType as RoomType) : "talk";
   if (!branchId || !name) return;
 
   const { error } = await supabase.rpc("create_room", {

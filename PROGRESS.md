@@ -81,16 +81,48 @@ login (המלצת המפרט ל-MVP, §11) — `clinic_id` נגזר מ-`profiles
 מ-subdomain. Middleware לא עושה rewrite לפי host יותר (זה היה קיים במקור
 בשביל `admin.cleana.co.il`, שגם שם היה "מתוכנן, טרם הופעל").
 
-## ⚠️ 8. QA מקצה לקצה
+## ✅ 8. פרויקט Supabase אמיתי מחובר
 
-בוצע QA ברמת ה-DB (isolation smoke test, שתי קליניקות, ניסיון פריצה מכוון)
-+ QA ברמת הקוד: `npm install`, `tsc --noEmit`, `eslint`, `vitest` (13/13),
-ו-`npm run build` מלא (כל 15 ה-routes, כולל כל Server Action וקריאת RPC)
-— כולם ירוקים (ר' היסטוריית קומיטים ל"Fix build"). **לא בוצע**: `npm run
-dev`/QA ידני בדפדפן מול פרויקט Supabase אמיתי (יש להריץ את המיגרציות על
-פרויקט אמיתי קודם, ר' README) — כלומר הזרימות עצמן (הרשמה→wizard→הזמנה→
-Woo webhook) לא נבדקו קצה-לקצה מול UI חי, רק כל חוליה בנפרד (DB מול
-isolation test, קוד מול build).
+פרויקט ייעודי לגמרי (ארגון **Cleanaplus**, `hayqlgcnncuhugwkajve`,
+eu-central-1) — **לא** אחד משני הפרויקטים שהיו כבר מחוברים לחשבון הקודם
+(אחד מהם התברר להיות ה-DB **האמיתי של הפרודקשן** של המערכת החד-דיירית
+המקורית — 24 הזמנות אמיתיות, 1580 `room_blocks` מייבוא Skedda; לא נגענו
+בו כלל). כל 13 המיגרציות רצות עליו בהצלחה (`supabase/migrations/*.sql`,
+כולל שלוש מיגרציות הקשחה חדשות — ר' למטה).
+
+**`get_advisors` (security) הורץ ותוקן בפועל, לא רק ברמת עיקרון:**
+- 46 RPCs היו EXECUTE-able גם ל-`anon` וגם דרך ה-grant הגורף ל-PUBLIC
+  שסופאבייס נותנת אוטומטית בכל `create function`. תוקן: `revoke ... from
+  public` + `grant ... to authenticated` רק לכ-30 ה-RPCs שדורשים משתמש
+  מחובר בפועל; ~13 פונקציות עזר פנימיות (cron/webhook/triggers) לא
+  קיבלו execute בחזרה לאף role חיצוני. `is_admin`/`is_superadmin`/
+  `current_clinic_id` **לא נגעו בהם במתכוון** — הן חלק מביטויי RLS POLICY
+  עצמם, וה-EXECUTE שלהן ל-anon+authenticated הכרחי כדי שהערכת policy לא
+  תיפול. **ניסיון ראשון היה שגוי** (revoke מ-role ישיר בלי revoke מ-PUBLIC
+  — לא עשה כלום בפועל; התגלה ע"י בדיקת `has_function_privilege()` ישירות,
+  לא ע"י הרצת ה-linter מחדש בלבד).
+- `btree_gist` הועבר מ-`public` ל-`extensions` (תואם `pgcrypto`) — אומת
+  שאילוצי ה-EXCLUDE על `bookings`/`room_blocks` נשארו valid אחרי המעבר.
+- הממצא היחיד שנשאר במתכוון: `public_availability` הוא view בסגנון
+  SECURITY DEFINER (ERROR-level ב-linter) — זו בדיוק המנגנון שמאפשר
+  למטפל/ת לראות תפוסת חדרים של מטפלים אחרים באותה קליניקה בלי לדעת מי
+  הזמין; הופך ל-security_invoker היה שובר את זה. מתועד בהערה במיגרציית
+  ה-RLS.
+
+`lib/supabase/types.ts` הוחלף מטיוטה ידנית ל-**קובץ אמיתי שנוצר עם
+`supabase gen types typescript` מול הפרויקט האמיתי** — עם Tables/Views/
+Functions/Enums/CompositeTypes מלאים. שלושת ה-clients (`server.ts`/
+`client.ts`/`admin.ts`) ו-`lib/woo/*` חוברו בחזרה ל-`Database` generic.
+תיקן שתי שגיאות type-check אמיתיות שהיו סמויות עד עכשיו (`create_room`
+עם מחרוזת גולמית במקום ה-enum `room_type`; `p_token_uid: null` שלא תואם
+את הטיפוס `string | undefined` שסופאבייס מייצרת לפרמטר אופציונלי).
+`npm install`/`tsc --noEmit`/`eslint`/`vitest`/`npm run build` — כולם
+ירוקים מול הפרויקט האמיתי (URL + anon key אמיתיים ב-`.env.local`, לא
+placeholder).
+
+**לא בוצע עדיין**: `npm run dev`/QA ידני בדפדפן (יש להריץ בפועל ולעבור על
+signup→onboarding→הזמנה→Woo webhook כמשתמש), הגדרת Auth settings בפרויקט
+(site URL/redirect URLs לאימות מייל), יצירת superadmin ראשון.
 
 ## ⚠️ 9. מסמכי ToS/DPA + admin actions מסוכנות ל-self-serve
 
