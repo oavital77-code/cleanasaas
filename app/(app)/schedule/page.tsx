@@ -4,11 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { formatInTimeZone } from "date-fns-tz";
 import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
 import { BookingForm } from "./booking-form";
-import { bookSlotAction } from "./actions";
+import { bookSlotAction, cancelBookingAction } from "./actions";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft } from "lucide-react";
+import { ChevronRight, ChevronLeft, X } from "lucide-react";
 
 // לוח יום — CLEANASITEMAPANDDESIGN §2 מסך 2: תצוגת יום/שבוע של זמינות
 // חדרים לפי public_availability (בלי לחשוף מי תפס משבצת — חוק #3 ב-
@@ -43,7 +43,7 @@ export default async function SchedulePage({
 }: {
   searchParams: Promise<{ date?: string }>;
 }) {
-  const { profile } = await requireTherapistProfile();
+  const { userId, profile } = await requireTherapistProfile();
   const supabase = await createClient();
   const { date: dateParam } = await searchParams;
 
@@ -59,11 +59,23 @@ export default async function SchedulePage({
   const dayStart = zonedDateTimeToUtc(date, "00:00", timezone);
   const dayEnd = zonedDateTimeToUtc(addDays(date, 1), "00:00", timezone);
 
-  const { data: availability } = await supabase
-    .from("public_availability")
-    .select("room_id, starts_at, ends_at, kind")
-    .lt("starts_at", dayEnd.toISOString())
-    .gt("ends_at", dayStart.toISOString());
+  const [{ data: availability }, { data: myBookings }] = await Promise.all([
+    supabase
+      .from("public_availability")
+      .select("room_id, starts_at, ends_at, kind")
+      .lt("starts_at", dayEnd.toISOString())
+      .gt("ends_at", dayStart.toISOString()),
+    // ההזמנות של עצמי בלבד — כדי לאפשר ביטול ישיר מהלוח, בלי לחשוף מי תפס
+    // משבצות אחרות (חוק #3). מבוסס על bookings (לא public_availability),
+    // ש-RLS שלה כבר מגבילה ל-user_id = עצמי או אדמין.
+    supabase
+      .from("bookings")
+      .select("id, room_id, starts_at, ends_at, source")
+      .eq("user_id", userId)
+      .eq("status", "confirmed")
+      .lt("starts_at", dayEnd.toISOString())
+      .gt("ends_at", dayStart.toISOString()),
+  ]);
 
   const slots = buildSlots();
   const now = new Date();
@@ -121,6 +133,12 @@ export default async function SchedulePage({
                       <tr key={slot} className="border-b border-border last:border-0">
                         <td className="tabular-nums p-2 text-xs text-muted-foreground">{slot}</td>
                         {rooms.map((r) => {
+                          const mine = (myBookings ?? []).find(
+                            (b) =>
+                              b.room_id === r.id &&
+                              new Date(b.starts_at) < slotEnd &&
+                              new Date(b.ends_at) > slotStart,
+                          );
                           const overlap = (availability ?? []).find(
                             (a) =>
                               a.room_id === r.id &&
@@ -130,16 +148,30 @@ export default async function SchedulePage({
                           if (isPast) {
                             return <td key={r.id} className="bg-subtle/50 p-1" />;
                           }
+                          // ההזמנה שלי — לפני הבדיקה הכללית, כדי לאפשר ביטול
+                          // ישיר מהלוח (ולא רק דרך /bookings).
+                          if (mine) {
+                            const cancellable = mine.source !== "session";
+                            return (
+                              <td key={r.id} className="p-1">
+                                <div className="flex h-8 items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700">
+                                  <span className="truncate">שלך</span>
+                                  {cancellable && (
+                                    <form action={cancelBookingAction}>
+                                      <input type="hidden" name="booking_id" value={mine.id} />
+                                      <button type="submit" className="shrink-0 text-violet-500 hover:text-danger" title="ביטול">
+                                        <X className="size-3.5" />
+                                      </button>
+                                    </form>
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          }
                           if (overlap) {
                             return (
                               <td key={r.id} className="p-1">
-                                <div
-                                  className={`flex h-8 items-center justify-center rounded-field text-xs ${
-                                    overlap.kind === "booked"
-                                      ? "bg-violet-100 text-violet-700"
-                                      : "bg-subtle text-muted-foreground"
-                                  }`}
-                                >
+                                <div className="flex h-8 items-center justify-center rounded-field bg-subtle text-xs text-muted-foreground">
                                   {overlap.kind === "booked" ? "תפוס" : "חסום"}
                                 </div>
                               </td>
