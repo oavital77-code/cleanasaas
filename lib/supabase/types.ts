@@ -397,6 +397,7 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          published: boolean
           sessions_enabled: boolean
           slug: string
           status: Database["public"]["Enums"]["clinic_status"]
@@ -406,6 +407,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name: string
+          published?: boolean
           sessions_enabled?: boolean
           slug: string
           status?: Database["public"]["Enums"]["clinic_status"]
@@ -415,6 +417,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
+          published?: boolean
           sessions_enabled?: boolean
           slug?: string
           status?: Database["public"]["Enums"]["clinic_status"]
@@ -1512,6 +1515,12 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
+      join_clinic_as_therapist: {
+        Args: { p_full_name: string; p_phone: string; p_slug: string }
+        Returns: {
+          clinic_id: string
+        }[]
+      }
       materialize_session_bookings: { Args: never; Returns: undefined }
       materialize_subscription_bookings: {
         Args: { p_horizon_days: number; p_subscription_id: string }

@@ -2,9 +2,9 @@ import Link from "next/link";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/app-shell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { createInviteAction, adminResetPasswordAction } from "./actions";
+import { createInviteAction, adminResetPasswordAction, toggleClinicPublishedAction } from "./actions";
 
 const ROLE_LABEL: Record<string, string> = { owner: "בעלים", admin: "אדמין/ית", therapist: "מטפל/ת" };
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
@@ -18,7 +18,7 @@ export default async function TherapistsPage() {
   const supabase = await createClient();
 
   const [{ data: clinic }, { data: profiles }, { data: cards }, { data: invites }] = await Promise.all([
-    supabase.from("clinics").select("name").eq("id", clinicId).single(),
+    supabase.from("clinics").select("name, slug, published").eq("id", clinicId).single(),
     supabase.from("profiles").select("id, full_name, phone, email, role, status").eq("clinic_id", clinicId).order("full_name"),
     supabase.from("punch_cards").select("user_id, hours_remaining").eq("clinic_id", clinicId).eq("active", true),
     supabase
@@ -35,11 +35,39 @@ export default async function TherapistsPage() {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const joinUrl = clinic?.slug ? `${appUrl}/join/${clinic.slug}` : "";
 
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name}>
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
         <h1 className="text-2xl font-semibold">מטפלים</h1>
+
+        <Card className="shadow-e1">
+          <CardHeader>
+            <CardTitle className="text-base font-medium">קישור הצטרפות לקליניקה</CardTitle>
+            <CardDescription>
+              קישור אחד וקבוע — כל מי שמקבל אותו יכול/ה להירשם ישירות כמטפל/ת אצלכם, בלי
+              שתצטרכו ליצור הזמנה בנפרד לכל אחד/ת. גישת אדמין/ית עדיין ניתנת רק דרך הזמנה
+              ידנית למטה.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <form action={toggleClinicPublishedAction} className="flex items-center gap-3">
+              <input type="hidden" name="published" value={clinic?.published ? "off" : "on"} />
+              <Button type="submit" variant={clinic?.published ? "outline" : "default"} size="sm">
+                {clinic?.published ? "כיבוי ההרשמה" : "פרסום קליניקה — פתיחת הרשמה"}
+              </Button>
+              <span className={`text-sm ${clinic?.published ? "text-success" : "text-muted-foreground"}`}>
+                {clinic?.published ? "פתוח להרשמה" : "סגור להרשמה"}
+              </span>
+            </form>
+            {clinic?.published && joinUrl && (
+              <code dir="ltr" className="block truncate rounded bg-muted px-2 py-1.5 text-xs">
+                {joinUrl}
+              </code>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className="shadow-e1 overflow-hidden p-0">
           <CardContent className="overflow-x-auto p-0">
@@ -94,7 +122,8 @@ export default async function TherapistsPage() {
 
         <Card className="shadow-e1">
           <CardHeader>
-            <CardTitle className="text-base font-medium">הוספת מטפל/ת חדש/ה</CardTitle>
+            <CardTitle className="text-base font-medium">הזמנה ידנית (חד-פעמית)</CardTitle>
+            <CardDescription>למקרה שרוצים להזמין אדמין/ית נוסף/ת, או מטפל/ת ספציפי/ת בלי לפרסם קישור כללי.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <form action={createInviteAction} className="flex items-end gap-3">
