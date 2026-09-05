@@ -1,60 +1,38 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
 
-export type JoinSignupState = { error?: string; needsConfirmation?: boolean };
+export type JoinResult = { error?: string };
 
+// נקרא מ-<ClerkSignupForm> אחרי setActive() — ר' app/signup/actions.ts
+// להסבר המלא על התבנית (session פעיל לפני שה-RPC יכול לקרוא
+// auth.jwt()->>'sub', והאימייל מ-currentUser() ולא משדה טופס).
+//
 // 🔴 קישור פתוח/קבוע — לכן role תמיד 'therapist' בקוד עצמו (RPC), אף פעם
 // לא מקבל role כפרמטר מהלקוח. הזמנת אדמין/ית ממשיכה אך ורק דרך
 // /admin/therapists (create_therapist_invite, טוקן חד-פעמי).
-export async function joinSignupAction(slug: string, _prevState: JoinSignupState, formData: FormData): Promise<JoinSignupState> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+export async function completeJoinAction(slug: string, formData: FormData): Promise<JoinResult> {
   const fullName = String(formData.get("full_name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
-  if (!email || !password || !fullName || !phone) {
+  if (!fullName || !phone) {
     return { error: "נא למלא את כל השדות" };
   }
 
+  const email = (await currentUser())?.primaryEmailAddress?.emailAddress;
+  if (!email) {
+    return { error: "שגיאה באימות החשבון — נסה/י שוב" };
+  }
+
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { pending_join_slug: slug, pending_full_name: fullName, pending_phone: phone } },
-  });
-  if (error) return { error: error.message };
-
-  if (!data.session) return { needsConfirmation: true };
-
-  const { error: joinError } = await supabase.rpc("join_clinic_as_therapist", {
+  const { error } = await supabase.rpc("join_clinic_as_therapist", {
     p_slug: slug,
     p_full_name: fullName,
     p_phone: phone,
+    p_email: email,
   });
-  if (joinError) return { error: translateJoinError(joinError.message) };
-
-  redirect("/");
-}
-
-export async function completeJoinFromMetadata(slug: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { data: existing } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
-  if (existing) return;
-
-  const meta = user.user_metadata as Record<string, string | undefined>;
-  if (meta.pending_join_slug !== slug || !meta.pending_full_name || !meta.pending_phone) return;
-
-  await supabase.rpc("join_clinic_as_therapist", {
-    p_slug: slug,
-    p_full_name: meta.pending_full_name,
-    p_phone: meta.pending_phone,
-  });
+  if (error) return { error: translateJoinError(error.message) };
+  return {};
 }
 
 function translateJoinError(code: string): string {

@@ -1,0 +1,23 @@
+-- ═══════════════════════════════════════════════════════════════════════
+-- הסרת FK חוסם: profiles.id → auth.users(id)
+-- ═══════════════════════════════════════════════════════════════════════
+--
+-- נתפס ע"י dry-run אמיתי מול ה-DB (לא ב-code review) לפני שנכתב קוד UI:
+-- קריאה ל-signup_clinic() המומרת עם sub מדומה של Clerk נכשלה ב-
+-- foreign key violation, כי profiles.id חייב עד עכשיו להיות uuid שקיים
+-- ב-auth.users — הנחה שהייתה נכונה כשה-id תמיד היה auth.uid() בפועל, אבל
+-- שוברת כל פרופיל חדש שנוצר עם gen_random_uuid() תחת Clerk.
+--
+-- ההסרה בטוחה: ה-FK היה ON DELETE CASCADE גרידא, בלי אכיפת עסקית מעבר
+-- ל"האם יש שורת auth.users תואמת" — וזו בדיוק ההנחה שכבר לא מחזיקה
+-- ברגע שיש שני מקורות זהות. פרופילים ישנים (עדיין עם id = auth.uid()
+-- אמיתי) לא נפגעים; רק ה-CASCADE האוטומטי בעת מחיקת auth.users משם
+-- מפסיק לחול (מחיקת משתמש Supabase Auth ישן/ידני לא תמחק אוטומטית את
+-- הפרופיל שלו — במקרה כזה, נדיר, יש למחוק את שניהם ידנית).
+--
+-- ⚠️ אותה בעיה בדיוק קיימת גם ב-platform_admins.user_id → auth.users(id)
+-- (superadmin) — לא תוקן כאן כי לא רלוונטי לזרימות שהומרו היום
+-- (signup_clinic/accept_therapist_invite/join_clinic_as_therapist), רק
+-- למשימה "יצירת superadmin ראשון" שעוד לא בוצעה. לתקן לפני שמנסים ליצור
+-- superadmin עם זהות Clerk.
+alter table profiles drop constraint profiles_id_fkey;

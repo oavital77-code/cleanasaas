@@ -1,51 +1,54 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
 
-export type SignupState = { error?: string; needsConfirmation?: boolean };
+export type SignupResult = { error?: string };
 
-// שלב 1 של ההרשמה (SAASMIGRATIONSPEC §5): פרטי החשבון + פרטי העסק הבסיסיים
-// נאספים כאן, אבל clinics+profiles נוצרים רק ב-signup_clinic (RPC), שרצה רק
-// אחרי שיש auth.uid() אמיתי. פרטי הקליניקה/owner נשמרים זמנית ב-user
-// metadata כדי לשרוד גם זרימת "אימות מייל לפני login" (auth.uid() עדיין לא
-// קיים באותו רגע) — /onboarding משלים את signup_clinic ברגע שיש session.
-export async function signupAction(_prevState: SignupState, formData: FormData): Promise<SignupState> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+// נקרא מ-<ClerkSignupForm> אחרי setActive() — כלומר יש כבר session פעיל של
+// Clerk ברגע שהפונקציה הזו רצה, ו-signup_clinic (RPC) קוראת את הזהות דרך
+// auth.jwt()->>'sub'. האימייל מגיע מ-currentUser() (Backend API מאומת של
+// Clerk) ולא משדה טופס — זהה לעיקרון של link_clerk_identity().
+export async function completeSignupClinicAction(formData: FormData): Promise<SignupResult> {
   const clinicName = String(formData.get("clinic_name") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim().toLowerCase();
   const ownerFullName = String(formData.get("owner_full_name") ?? "").trim();
   const ownerPhone = String(formData.get("owner_phone") ?? "").trim();
 
-  if (!email || !password || !clinicName || !slug || !ownerFullName || !ownerPhone) {
+  if (!clinicName || !slug || !ownerFullName || !ownerPhone) {
     return { error: "נא למלא את כל השדות" };
   }
   if (!/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/.test(slug)) {
     return { error: "כתובת (slug) לא תקינה — אותיות לועזיות קטנות, ספרות ומקף בלבד" };
   }
 
+  const email = (await currentUser())?.primaryEmailAddress?.emailAddress;
+  if (!email) {
+    return { error: "שגיאה באימות החשבון — נסה/י שוב" };
+  }
+
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        pending_clinic_name: clinicName,
-        pending_slug: slug,
-        pending_owner_full_name: ownerFullName,
-        pending_owner_phone: ownerPhone,
-      },
-    },
+  const { error } = await supabase.rpc("signup_clinic", {
+    p_clinic_name: clinicName,
+    p_slug: slug,
+    p_owner_full_name: ownerFullName,
+    p_owner_phone: ownerPhone,
+    p_owner_email: email,
   });
 
-  if (error) {
-    return { error: error.message };
-  }
+  if (error) return { error: translateSignupError(error.message) };
+  return {};
+}
 
-  if (!data.session) {
-    return { needsConfirmation: true };
+function translateSignupError(code: string): string {
+  const map: Record<string, string> = {
+    SLUG_TAKEN: "הכתובת (slug) הזו כבר תפוסה — נסה/י אחרת",
+    INVALID_SLUG: "כתובת (slug) לא תקינה",
+    INVALID_INPUT: "נא למלא את כל השדות",
+    ALREADY_REGISTERED: "כבר יש לך חשבון במערכת",
+  };
+  for (const key of Object.keys(map)) {
+    if (code.includes(key)) return map[key];
   }
-
-  redirect("/onboarding");
+  return "שגיאה ביצירת הקליניקה";
 }

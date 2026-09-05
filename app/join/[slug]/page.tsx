@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { completeJoinFromMetadata } from "./actions";
+import { getAuthState } from "@/lib/auth/guards";
 import { JoinSignupForm } from "./join-signup-form";
 import { AuthShell } from "@/components/auth-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,17 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 export default async function JoinPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  await completeJoinFromMetadata(slug);
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    const { data: profile } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
-    if (profile) redirect("/");
-  }
+  // join_clinic_as_therapist רץ עכשיו בתוך <JoinSignupForm> עצמו, מיד אחרי
+  // setActive() של Clerk — ר' app/signup/actions.ts להסבר המלא. אם כבר יש
+  // session+פרופיל (מישהו/י שכבר הצטרפ/ה חוזר/ת לקישור) — ישר ל-/.
+  const { userId } = await getAuthState();
+  if (userId) redirect("/");
 
   const admin = createAdminClient();
   const { data: clinic } = await admin.from("clinics").select("name, published, status").eq("slug", slug).maybeSingle();

@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { completeInviteFromMetadata } from "./actions";
+import { getAuthState } from "@/lib/auth/guards";
 import { InviteSignupForm } from "./invite-signup-form";
 import { AuthShell } from "@/components/auth-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,17 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
 
-  await completeInviteFromMetadata(token);
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    const { data: profile } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
-    if (profile) redirect("/");
-  }
+  // accept_therapist_invite רץ עכשיו בתוך <InviteSignupForm> עצמו, מיד אחרי
+  // setActive() של Clerk — ר' app/signup/actions.ts להסבר המלא.
+  const { userId } = await getAuthState();
+  if (userId) redirect("/");
 
   // בדיקת תקפות ההזמנה — service role כי עוד אין profile/session מתאים
   // לקרוא ישירות דרך RLS (admin_manage_invites דורש is_admin() על הקליניקה).

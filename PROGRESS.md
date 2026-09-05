@@ -525,6 +525,80 @@ NULL. כלומר אי אפשר להדליק את Clerk בדשבורד ולתקן
   ב-Click-na) — כרגע אין דבר שמנקה `clerk_user_id` אם משתמש/ת נמחק/ת
   מ-Clerk ישירות בדשבורד (מסלול נדיר, לא חוסם).
 
+## ✅ 20. מעבר ל-Clerk — שלב 4: שלוש זרימות היצירה (owner + שני סוגי מטפל/ת)
+
+ממשיך את סעיפים 18-19. זה הצד השני שהמערכת משרתת (חוץ ממנהל/ת הקליניקה
+שכבר עבד/ה): מטפל/ת שמצטרף/ת דרך הקישור הציבורי או הזמנה ידנית. אופציה ב'
+שנבחרה: מסך אחד ממזג יצירת חשבון + הפרטים העסקיים, לא <SignUp> המוכן של
+Clerk + מסך נפרד.
+
+### 🔴 באג חוסם אמיתי — לא תיאורטי, נתפס לפני כתיבת UI
+
+לפני שנכתב קוד מסך אחד, כל שלוש ה-RPCs הומרו ונבדקו **ישירות מול ה-DB
+החי** (Supabase MCP: sub מדומה של Clerk, קריאה אמיתית לפונקציה, ניקוי
+מלא בסוף) — לא code review בלבד. הבדיקה הראשונה (`signup_clinic`) נכשלה:
+
+```
+ERROR: insert or update on table "profiles" violates foreign key
+constraint "profiles_id_fkey" — Key (id)=(...) is not present in "users"
+```
+
+`profiles.id` היה עם `FOREIGN KEY ... REFERENCES auth.users(id) ON DELETE
+CASCADE` — הנחה סמויה שהחזיקה תמיד עד עכשיו כי `id` היה תמיד `auth.uid()`
+אמיתי. ברגע שפרופיל חדש נוצר עם `gen_random_uuid()` (אין יותר שורת
+`auth.users` מאחורי זהות Clerk), ה-FK חוסם כל insert. תוקן במיגרציה
+`20260905000007` (`alter table profiles drop constraint profiles_id_fkey`).
+**נמצא FK זהה על `platform_admins.user_id` — לא תוקן** (לא רלוונטי
+לזרימות של היום, רק למשימה "יצירת superadmin ראשון"; יתפוצץ באותו אופן
+בדיוק אם ינסו ליצור superadmin עם זהות Clerk לפני שיתוקן).
+
+אחרי התיקון: כל שלוש הפונקציות (`signup_clinic`, `join_clinic_as_therapist`,
+`accept_therapist_invite`) נבדקו בהצלחה עד הסוף — כולל `app_user_id()`
+ו-`is_admin()` שמתאמתים על התוצאה — ונוקו מה-DB בלי להשאיר שאריות.
+
+### שינויי DB (מיגרציה `20260905000006`)
+
+אותו דפוס בדיוק בשלושתן: `auth.uid()` (ערך אמיתי מ-`auth.users`) →
+`gen_random_uuid()` + `clerk_user_id := auth.jwt()->>'sub'`; בדיקת
+"ALREADY_REGISTERED" עברה מ-`id = v_uid` ל-`clerk_user_id = v_clerk_sub`;
+האימייל (היה `select ... from auth.users`, שכבר לא רלוונטי) עבר לפרמטר
+חדש (`p_email`/`p_owner_email`) שמגיע מ-`currentUser()` בקוד השרת — לא
+משדה טופס, אותו עיקרון בדיוק כמו `link_clerk_identity()` (סעיף 19): מקור
+מאומת של Clerk, לא קלט לקוח. שלוש הפונקציות הישנות (4 פרמטרים, בלי
+`p_email`) נמחקו במפורש — `create or replace` עם imprint פרמטרים שונה
+היה יוצר overload חופף ולא מחליף.
+
+### שינויי אפליקציה
+
+- **`components/clerk-signup-form.tsx`** (חדש, משותף לשלושת המסכים):
+  `useSignUp` מ-**`@clerk/nextjs/legacy`** — 🔴 ממצא לא-מתועד: בגרסה
+  המותקנת (7.9.1) `useSignUp()` הרגיל מחזיר כברירת מחדל API חדש
+  מבוסס-signals (`SignUpFutureResource`), צורה שונה לגמרי מ-`{ isLoaded,
+  signUp, setActive }` המתועד בדוגמאות הרשמיות. `/legacy` הוא הנתיב
+  הנתמך לצורה הקלאסית. הרכיב מנהל: יצירת חשבון → קוד אימות מייל (אם
+  Clerk דורש; מדלג אוטומטית אם `status === "complete"` מיד) →
+  `setActive()` → קריאה ל-server action העסקי שמועבר לו (`onSubmitBusinessLogic`)
+  רק **אחרי** שיש session פעיל — כי ה-RPCs קוראות `auth.jwt()->>'sub'`.
+- **`/signup`**: הוחלף מ-`useActionState` + `supabase.auth.signUp()` +
+  "אימות מייל דחוי דרך user_metadata + השלמה ב-/onboarding" ל-מסך אחד
+  עם `<ClerkSignupForm>`. `signup_clinic` רץ מיד, לא יותר נדחה.
+- **`/join/[slug]`, `/invite/[token]`**: אותה תבנית בדיוק (server actions
+  חדשים `completeJoinAction`/`completeInviteAction`, forms מבוססי
+  `<ClerkSignupForm>`). `completeJoinFromMetadata`/`completeInviteFromMetadata`
+  הישנות נמחקו לגמרי.
+- **`/onboarding`**: `completeSignupClinicFromMetadata()` נמחקה (כבר לא
+  צריך — הקליניקה נוצרת בתוך `/signup` עצמו). `seedDefaultPricingAction`/
+  `toggleSessionsAction` עברו מ-`supabase.auth.getUser()` גולמי (שמחזיר
+  תמיד `null` לזהות Clerk — אין GoTrue session מאחורי client מבוסס-
+  accessToken) ל-`requireTherapistProfile()`. שער הכניסה לעמוד עצמו עבר
+  ל-`getAuthState()` עם fallback ל-`/signup` (לא `/onboarding` — זה היה
+  יוצר redirect ללולאה על עצמו).
+
+**אימות**: `tsc`/`eslint`/`vitest` (21) ו-`npm run build` נקיים. שלוש
+ה-RPCs עברו בדיקת round-trip אמיתית מול ה-DB. **לא נבדק**: הזרימה
+המלאה בדפדפן אמיתי (אין גישת רשת מהסביבה הזו ל-URL הפרוס) — כולל
+CAPTCHA/bot-protection של Clerk, שרק דפדפן אמיתי יכול לעורר.
+
 ## מה הכי דחוף להמשיך בו
 
 1. Email (Resend) — תזכורות/יתרה-נמוכה/חידוש ססיה מזוהות אבל לא נשלחות.

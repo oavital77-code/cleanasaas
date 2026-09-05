@@ -1,19 +1,13 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthState } from "@/lib/auth/guards";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import {
-  completeSignupClinicFromMetadata,
-  addBranchAction,
-  addRoomAction,
-  seedDefaultPricingAction,
-  toggleSessionsAction,
-  finishOnboardingAction,
-} from "./actions";
+import { addBranchAction, addRoomAction, seedDefaultPricingAction, toggleSessionsAction, finishOnboardingAction } from "./actions";
 
 // wizard הקמה (SAASMIGRATIONSPEC §5): סניפים → חדרים → תמחור → הפעלת ססיה.
 // כל שלב כותב ישירות דרך RPC/direct-write ומרענן את אותו עמוד — לא state
@@ -28,17 +22,15 @@ function StepNumber({ n }: { n: number }) {
 }
 
 export default async function OnboardingPage() {
-  await completeSignupClinicFromMetadata();
+  // signup_clinic כבר רץ בתוך /signup עצמו (מיד אחרי setActive() של Clerk —
+  // ר' app/signup/actions.ts) — בהגעה לכאן הפרופיל אמור כבר להתקיים. אם
+  // בכל זאת אין (למשל מישהו/י ניגש/ת ל-URL ישירות בלי לעבור הרשמה) —
+  // חוזרים ל-/signup, לא ל-/onboarding עצמו (זה היה גורם ל-redirect ללולאה).
+  const { userId, profile } = await getAuthState();
+  if (!userId) redirect("/login");
+  if (!profile) redirect("/signup");
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase.from("profiles").select("clinic_id, role").eq("id", user.id).maybeSingle();
-  if (!profile) redirect("/login");
-
   const { data: clinic } = await supabase.from("clinics").select("*").eq("id", profile.clinic_id).single();
   const { data: branches } = await supabase.from("branches").select("*").order("sort_order");
   const { data: rooms } = await supabase.from("rooms").select("*, branches(name)").order("sort_order");

@@ -3,35 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireTherapistProfile } from "@/lib/auth/guards";
 
-// idempotent: אם כבר יש profile, signup_clinic זורק ALREADY_REGISTERED —
-// זה תקין (המשתמש חוזר ל-/onboarding אחרי ה-refresh), לא שגיאה אמיתית.
-export async function completeSignupClinicFromMetadata() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: existing } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
-  if (existing) return;
-
-  const meta = user.user_metadata as Record<string, string | undefined>;
-  if (!meta.pending_clinic_name || !meta.pending_slug || !meta.pending_owner_full_name || !meta.pending_owner_phone) {
-    // המשתמש הגיע לכאן בלי לעבור /signup (למשל invite למטפל) — לא הזרימה הזו.
-    return;
-  }
-
-  const { error } = await supabase.rpc("signup_clinic", {
-    p_clinic_name: meta.pending_clinic_name,
-    p_slug: meta.pending_slug,
-    p_owner_full_name: meta.pending_owner_full_name,
-    p_owner_phone: meta.pending_owner_phone,
-  });
-  if (error && !error.message.includes("ALREADY_REGISTERED")) {
-    throw new Error(error.message);
-  }
-}
+// 🔴 completeSignupClinicFromMetadata (הישנה) נמחקה: signup_clinic רץ
+// עכשיו בתוך /signup עצמו, מיד אחרי setActive() של Clerk — עד שהמשתמש/ת
+// מגיע/ה ל-/onboarding הקליניקה והפרופיל כבר קיימים. גרסה קודמת של הפונקציה
+// הזו הייתה קוראת supabase.auth.getUser() ישירות, שמחזיר תמיד null לזהות
+// Clerk (אין GoTrue session מאחורי ה-client מבוסס-accessToken) — כל
+// הפעולות כאן עברו ל-requireTherapistProfile() (dual-mode, ר' lib/auth/guards.ts).
 
 export async function addBranchAction(formData: FormData) {
   const supabase = await createClient();
@@ -77,13 +56,8 @@ const DEFAULT_TIERS = [
 // שדורשות RPC (רק bookings/punch_cards/session_subscriptions) — כתיבה ישירה
 // מספיקה, מוגנת ע"י RLS (admin + clinic_id שלו בלבד).
 export async function seedDefaultPricingAction() {
+  const { profile } = await requireTherapistProfile();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-  const { data: profile } = await supabase.from("profiles").select("clinic_id").eq("id", user.id).maybeSingle();
-  if (!profile) return;
 
   const { data: existing } = await supabase.from("punch_card_tiers").select("id").eq("clinic_id", profile.clinic_id);
   if (existing && existing.length > 0) return;
@@ -95,14 +69,9 @@ export async function seedDefaultPricingAction() {
 }
 
 export async function toggleSessionsAction(formData: FormData) {
+  const { profile } = await requireTherapistProfile();
   const supabase = await createClient();
   const enabled = formData.get("sessions_enabled") === "on";
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-  const { data: profile } = await supabase.from("profiles").select("clinic_id").eq("id", user.id).maybeSingle();
-  if (!profile) return;
 
   await supabase.from("clinics").update({ sessions_enabled: enabled }).eq("id", profile.clinic_id);
   revalidatePath("/onboarding");

@@ -1320,7 +1320,12 @@ export type Database = {
     }
     Functions: {
       accept_therapist_invite: {
-        Args: { p_full_name: string; p_phone: string; p_token: string }
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_phone: string
+          p_token: string
+        }
         Returns: {
           clinic_id: string
         }[]
@@ -1520,7 +1525,12 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
       join_clinic_as_therapist: {
-        Args: { p_full_name: string; p_phone: string; p_slug: string }
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_phone: string
+          p_slug: string
+        }
         Returns: {
           clinic_id: string
         }[]
@@ -1611,6 +1621,7 @@ export type Database = {
       signup_clinic: {
         Args: {
           p_clinic_name: string
+          p_owner_email: string
           p_owner_full_name: string
           p_owner_phone: string
           p_slug: string
