@@ -725,6 +725,7 @@ export type Database = {
           business_number: string | null
           card_expiry: string | null
           card_last4: string | null
+          clerk_user_id: string | null
           clinic_id: string
           created_at: string | null
           door_code: string | null
@@ -745,6 +746,7 @@ export type Database = {
           business_number?: string | null
           card_expiry?: string | null
           card_last4?: string | null
+          clerk_user_id?: string | null
           clinic_id: string
           created_at?: string | null
           door_code?: string | null
@@ -765,6 +767,7 @@ export type Database = {
           business_number?: string | null
           card_expiry?: string | null
           card_last4?: string | null
+          clerk_user_id?: string | null
           clinic_id?: string
           created_at?: string | null
           door_code?: string | null
@@ -1406,6 +1409,7 @@ export type Database = {
         Args: { p_subscription_id: string; p_term_months: number }
         Returns: undefined
       }
+      app_user_id: { Args: never; Returns: string }
       approve_session: {
         Args: { p_subscription_id: string; p_term_months?: number }
         Returns: undefined
@@ -1520,6 +1524,36 @@ export type Database = {
         Returns: {
           clinic_id: string
         }[]
+      }
+      link_clerk_identity: {
+        Args: { p_clerk_user_id: string; p_email: string }
+        Returns: {
+          business_number: string | null
+          card_expiry: string | null
+          card_last4: string | null
+          clerk_user_id: string | null
+          clinic_id: string
+          created_at: string | null
+          door_code: string | null
+          email: string
+          full_name: string
+          ics_token: string | null
+          id: string
+          national_id: string | null
+          payplus_token_uid: string | null
+          phone: string
+          profession: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["user_status"]
+          terms_accepted_at: string | null
+          terms_version: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       materialize_session_bookings: { Args: never; Returns: undefined }
       materialize_subscription_bookings: {

@@ -469,6 +469,62 @@ NULL. כלומר אי אפשר להדליק את Clerk בדשבורד ולתקן
 `join_clinic_as_therapist`) שהוחרגו במכוון — הן כותבות `id = auth.uid()`,
 כלומר משתמשות בזהות כערך ולא כשאילתה, ומומרות יחד עם זרימת ההרשמה.
 
+## ✅ 19. מעבר ל-Clerk — שלב 3 (צד האפליקציה) הושלם ל-/login
+
+ממשיך את סעיף 18 (שכבת ה-DB הדו-מצבית). אפליקציית Clerk נפרדת נוצרה
+(`CleanaSaaS`, לא `Cleana+` של Click-na — בכוונה: Third-Party Auth סומך על
+**כל** טוקן חתום מאותו Clerk instance, ושני מוצרים נפרדים לא חולקים בסיס
+משתמשים) וחוברה ל-Supabase דרך Third-Party Auth (לא JWT Templates — זה
+הופסק באפריל 2025).
+
+- **`app/layout.tsx`**: `ClerkProvider` עם `localization={heIL}` ו-
+  `appearance` שממופה לטוקני העיצוב שלנו (`--violet-500`, `--font-heebo`,
+  `--radius`) — כך שהווידג'טים של Clerk לא נראים כמו מוצר זר בתוך העמוד.
+- **`middleware.ts`**: `clerkMiddleware` עוטף את ה-middleware הקיים.
+  ריענון ה-session הישן של Supabase Auth נשאר בפנים — dual-mode.
+- **`lib/supabase/server.ts`**: יש session של Clerk → client עם
+  `accessToken: getToken` (Clerk כבר מנהל cookie session משלו). אין →
+  נופל ל-client מבוסס-cookies הישן. **תקלה אמיתית שנתפסה כאן**: אם
+  הפונקציה מחזירה union של שני ה-client instantiations בלי טיפוס guiding
+  מפורש, TypeScript לא מאחד אותם ל-overload set קריא — `.from()`/`.rpc()`
+  נשברים עם "expression is not callable" **בכל קובץ בקוד** שקורא
+  ל-`createClient()`. תוקן עם `Promise<SupabaseClient<Database>>` מפורש.
+- **`lib/auth/guards.ts`**: `loadAuthState` בודק קודם session של Clerk
+  (מחפש `profiles.clerk_user_id`); רק בלעדיו נופל ל-`supabase.auth.getUser()`
+  הישן. `userId` המוחזר תמיד `profiles.id` הפנימי, לא מזהה הזהות הגולמי.
+- **`link_clerk_identity()` (מיגרציה `20260905000005`)**: קישור אוטומטי
+  חד-פעמי בכניסה הראשונה — מי שהתחבר/ה לפני המעבר (יש לו/ה פרופיל עם
+  `clerk_user_id is null`) מקושר/ת אוטומטית אם האימייל תואם, כדי לא לאבד
+  גישה לקליניקה הקיימת. **שיקול אבטחה שנפתר כאן**: לא UPDATE ישיר מהקוד
+  (chicken-and-egg עם RLS — `app_user_id()` עוד NULL לפני הקישור עצמו,
+  והטריגר `enforce_profile_privilege_columns` חוסם שינוי `clerk_user_id`
+  ממילא), וגם לא RPC שמקבל אימייל כפרמטר מהלקוח (משתמש/ת Clerk כלשהו/י
+  היה/הייתה יכול/ה "לתפוס" פרופיל אדמין קיים רק בידיעת האימייל שלו/ה).
+  הפתרון: RPC עם `SECURITY DEFINER`, מוגבל בהרשאות ל-`service_role` בלבד
+  (`revoke ... from anon/authenticated`), נקרא מ-`guards.ts` עם האימייל
+  שמגיע מ-`currentUser()` — קריאת Backend API מאומתת של Clerk, לא קלט לקוח.
+- **`/login`**: הוחלף מטופס email/password מותאם ל-`<SignIn routing="path"
+  path="/login">` בנתיב `[[...rest]]` (catch-all חובה — Clerk מנהל בעצמו
+  תת-נתיבים כמו איפוס סיסמה). הקובץ הישן ואת ה-actions שלו נמחקו — השארה
+  שלהם לצד הראוט החדש יצרה שני routes חופפים (`/login` הישן קדם לחדש).
+
+**אימות**: `tsc`/`eslint`/`vitest` (21 בדיקות) נקיים, `npm run build`
+עבר עם המפתח הציבורי האמיתי + מפתח סוד placeholder.
+
+### מה נשאר (לא בוצע היום)
+
+- **`/signup`** (יצירת קליניקה חדשה) ו-**`/join/[slug]`**/**`/invite/[token]`**
+  (הצטרפות מטפל/ת) עדיין על הזרימה הישנה — שלושתם *יוצרים* פרופיל חדש עם
+  `id = auth.uid()`, כלומר משתמשים בזהות כערך ולא כשאילתה, ולכן לא הומרו
+  אוטומטית (ר' סעיף 18). צריך החלטת מוצר: `<SignUp>` המוכן של Clerk לפני
+  הטופס, או טופס מותאם עם ה-hooks החשופים (`useSignUp`) שממוזג בעמוד אחד
+  עם איסוף פרטי הקליניקה/ההזמנה.
+- מסך `/reset-password` (Supabase Auth) לא נמחק — עדיין רלוונטי לסשנים
+  ישנים בזמן המעבר; יתייתר כשכל המשתמשים יעברו ל-Clerk.
+- לא הוגדר webhook `user.deleted`/`user.created` מ-Clerk (יש דוגמה
+  ב-Click-na) — כרגע אין דבר שמנקה `clerk_user_id` אם משתמש/ת נמחק/ת
+  מ-Clerk ישירות בדשבורד (מסלול נדיר, לא חוסם).
+
 ## מה הכי דחוף להמשיך בו
 
 1. Email (Resend) — תזכורות/יתרה-נמוכה/חידוש ססיה מזוהות אבל לא נשלחות.

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Heebo, IBM_Plex_Mono, Outfit } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import { heIL } from "@clerk/localizations";
 import "./globals.css";
 
 const heebo = Heebo({
@@ -35,12 +37,26 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html
-      lang="he"
-      dir="rtl"
-      className={`${heebo.variable} ${outfit.variable} ${ibmPlexMono.variable} h-full antialiased`}
+    // heIL: כל הטקסטים המובנים של רכיבי Clerk (<SignIn>/<SignUp>/<UserButton>)
+    // בעברית. appearance מיישר את הצבע/גופן/רדיוס לשפה העיצובית שלנו —
+    // בלי זה הווידג'טים של Clerk היו נראים כמו מוצר אחר בתוך העמוד.
+    <ClerkProvider
+      localization={heIL}
+      appearance={{
+        variables: {
+          colorPrimary: "#7a5af8",
+          fontFamily: "var(--font-heebo)",
+          borderRadius: "10px",
+        },
+      }}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
-    </html>
+      <html
+        lang="he"
+        dir="rtl"
+        className={`${heebo.variable} ${outfit.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      >
+        <body className="min-h-full flex flex-col">{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }
