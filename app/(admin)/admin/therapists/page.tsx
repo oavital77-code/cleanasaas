@@ -75,11 +75,11 @@ export default async function TherapistsPage() {
               <thead className="bg-muted text-right">
                 <tr>
                   <th className="p-3 font-medium">שם</th>
-                  <th className="p-3 font-medium">טלפון</th>
-                  <th className="p-3 font-medium">אימייל</th>
+                  <th className="hidden p-3 font-medium sm:table-cell">טלפון</th>
+                  <th className="hidden p-3 font-medium md:table-cell">אימייל</th>
                   <th className="p-3 font-medium">תפקיד</th>
                   <th className="p-3 font-medium">סטטוס</th>
-                  <th className="p-3 font-medium">שעות</th>
+                  <th className="hidden p-3 font-medium sm:table-cell">שעות</th>
                   <th className="p-3 font-medium" />
                 </tr>
               </thead>
@@ -93,17 +93,17 @@ export default async function TherapistsPage() {
                           {p.full_name}
                         </Link>
                       </td>
-                      <td className="p-3" dir="ltr">
+                      <td className="hidden p-3 sm:table-cell" dir="ltr">
                         {p.phone}
                       </td>
-                      <td className="p-3" dir="ltr">
+                      <td className="hidden p-3 md:table-cell" dir="ltr">
                         {p.email}
                       </td>
                       <td className="p-3">{ROLE_LABEL[p.role] ?? p.role}</td>
                       <td className="p-3">
                         <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${status.tone}`}>{status.label}</span>
                       </td>
-                      <td className="tabular-nums p-3">{hoursByUser.get(p.id) ?? 0}</td>
+                      <td className="tabular-nums hidden p-3 sm:table-cell">{hoursByUser.get(p.id) ?? 0}</td>
                       <td className="p-3">
                         <form action={adminResetPasswordAction}>
                           <input type="hidden" name="email" value={p.email} />
