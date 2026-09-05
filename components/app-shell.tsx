@@ -183,7 +183,10 @@ export function AppShell({
       {/* min-w-0 חובה: פריט flex מקבל min-width:auto כברירת מחדל, ואז טבלה
           או קוד ארוך בתוכן דוחפים את כל העמודה מעבר לרוחב המסך. */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-[var(--page-header-h)] shrink-0 items-center justify-between border-b border-border bg-surface px-4 md:hidden">
+        {/* sticky top-0: נשאר צמוד לראש המסך בגלילה. תלוי ב-overflow-x:clip
+            (לא hidden) על body ב-globals.css — hidden היה הופך את body
+            ל-scroll container חדש ומבטל sticky של צאצא. */}
+        <header className="sticky top-0 z-30 flex h-[var(--page-header-h)] shrink-0 items-center justify-between border-b border-border bg-surface px-4 md:hidden">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}

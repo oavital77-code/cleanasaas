@@ -167,30 +167,41 @@ export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: 
         </tbody>
       </table>
 
+      {/* מרווח בתחתית הזרימה הרגילה: אלמנט fixed לא תופס מקום בעצמו, אז
+          בלעדי זה הפס היה מכסה את השורה האחרונה של הטבלה/את הכפתורים
+          מתחתיה כשיש בחירה פעילה. */}
+      {selection && <div className="h-20 sm:h-14" aria-hidden />}
+
+      {/* fixed לגמרי למסך — לא sticky בתוך תיבת הטבלה. כך הפס נשאר צמוד
+          לתחתית המסך גם כשגוללים את שאר הדף (ולא רק את הלוח עצמו), בלי
+          תלות בגובה/גלילה של אף ancestor. z-40: מתחת למגירת הניווט
+          (z-50) שנפתחת מעל הכל, מעל ה-header העליון ה-sticky (z-30). */}
       {selection && (
-        <div className="sticky inset-x-0 bottom-0 z-10 mt-2 flex flex-col gap-2 border-t border-border bg-surface p-3 shadow-e2 [padding-bottom:calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm">
-            <span className="font-medium">{columns[selection.colIdx].header}</span>
-            <span className="text-muted-foreground"> · {slots[selLo]}–{addHalfHour(slots[selHi])}</span>
-            <span className="text-muted-foreground"> · {(selHi - selLo + 1) * 0.5} שעות</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {error && <span className="text-xs text-destructive">{error}</span>}
-            <button
-              type="button"
-              onClick={() => setSelection(null)}
-              className="flex h-10 items-center justify-center rounded-button border border-border-strong px-3 text-sm hover:bg-subtle md:h-9"
-            >
-              ביטול
-            </button>
-            <button
-              type="button"
-              onClick={confirm}
-              disabled={pending}
-              className="flex h-10 items-center justify-center rounded-button bg-violet-600 px-4 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60 md:h-9"
-            >
-              {pending ? "שולח/ת…" : "אישור הזמנה"}
-            </button>
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface shadow-e3 [padding-bottom:env(safe-area-inset-bottom)]">
+          <div className="mx-auto flex w-full max-w-[var(--content-max)] flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm">
+              <span className="font-medium">{columns[selection.colIdx].header}</span>
+              <span className="text-muted-foreground"> · {slots[selLo]}–{addHalfHour(slots[selHi])}</span>
+              <span className="text-muted-foreground"> · {(selHi - selLo + 1) * 0.5} שעות</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {error && <span className="text-xs text-destructive">{error}</span>}
+              <button
+                type="button"
+                onClick={() => setSelection(null)}
+                className="flex h-10 items-center justify-center rounded-button border border-border-strong px-3 text-sm hover:bg-subtle md:h-9"
+              >
+                ביטול
+              </button>
+              <button
+                type="button"
+                onClick={confirm}
+                disabled={pending}
+                className="flex h-10 items-center justify-center rounded-button bg-violet-600 px-4 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60 md:h-9"
+              >
+                {pending ? "שולח/ת…" : "אישור הזמנה"}
+              </button>
+            </div>
           </div>
         </div>
       )}
