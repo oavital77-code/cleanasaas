@@ -35,7 +35,7 @@ import { SignOutButton } from "./sign-out-button";
 type NavItem = { href: string; label: string; icon: LucideIcon };
 
 const APP_NAV: NavItem[] = [
-  { href: "/", label: "בית", icon: Home },
+  { href: "/dashboard", label: "בית", icon: Home },
   { href: "/schedule", label: "לוח זמנים", icon: CalendarDays },
   { href: "/bookings", label: "ההזמנות שלי", icon: ClipboardList },
   { href: "/purchase", label: "רכישת כרטיסייה", icon: ShoppingCart },
@@ -138,7 +138,7 @@ export function AppShell({
 
   // הלוגו הוא קישור לדף הבית של הצד שבו נמצאים (מסך הבית של האדמין, או
   // הבית של המטפל/ת) — התנהגות מצופה בכל דשבורד.
-  const homeHref = side === "admin" ? "/admin" : "/";
+  const homeHref = side === "admin" ? "/admin" : "/dashboard";
 
   const sidebarBody = (
     <>

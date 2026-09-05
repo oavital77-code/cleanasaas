@@ -1,13 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Building2, CalendarCheck2, ShieldCheck, TicketCheck, Users } from "lucide-react";
 import { getAuthState } from "@/lib/auth/guards";
-import { createClient } from "@/lib/supabase/server";
-import { formatDateTimeHe } from "@/lib/time";
-import { AppShell } from "@/components/app-shell";
 import { BrandBackdrop } from "@/components/brand-backdrop";
 import { Logo } from "@/components/logo";
 import { SiteFooter } from "@/components/site-footer";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 // שלוש התשובות בסדר שבו מנהל/ת קליניקה נתקל/ת בהן, לא רשימת פיצ'רים —
@@ -62,183 +59,139 @@ const FAQ = [
   },
 ];
 
+// דף הבית הציבורי — לוגיקה, לא רק עיצוב, נפרד מ-/dashboard: זו הייתה
+// אותה כתובת (/) עם שני ענפים שונים לגמרי (שיווקי מול מסך מטפל/ת
+// מחובר/ת), מה שהקשה לאבחן איזה מהם קרס. משתמש/ת עם פרופיל קיים
+// מופנה/ית ישר ל-/dashboard; כל השאר (כולל session בלי פרופיל, עדיין
+// באמצע ה-onboarding) רואה את דף הנחיתה.
 export default async function HomePage() {
   const { userId, profile } = await getAuthState();
+  if (userId && profile) redirect("/dashboard");
 
-  if (!userId || !profile) {
-    return (
-      <div className="relative flex flex-1 flex-col">
-        <BrandBackdrop />
+  return (
+    <div className="relative flex flex-1 flex-col">
+      <BrandBackdrop />
 
-        <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-sm">
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4 md:px-8">
-            <Link href="/" className="inline-flex min-h-11 items-center">
-              <Logo />
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-sm">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4 md:px-8">
+          <Link href="/" className="inline-flex min-h-11 items-center">
+            <Logo />
+          </Link>
+          <div className="flex items-center gap-4 text-sm">
+            <Link href="/login" className="inline-flex min-h-11 items-center text-muted-foreground hover:text-foreground">
+              כניסה
             </Link>
-            <div className="flex items-center gap-4 text-sm">
-              <Link href="/login" className="inline-flex min-h-11 items-center text-muted-foreground hover:text-foreground">
-                כניסה
-              </Link>
-              <Button asChild>
-                <Link href="/signup">פתיחת קליניקה חדשה</Link>
-              </Button>
-            </div>
+            <Button asChild>
+              <Link href="/signup">פתיחת קליניקה חדשה</Link>
+            </Button>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <main className="flex flex-1 flex-col">
-          <section className="relative overflow-hidden">
-            <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-6 px-5 py-16 text-center md:px-8 md:py-24 lg:py-32">
-              <span className="kicker">פלטפורמת ניהול קליניקות</span>
-              <h1 className="text-4xl font-semibold text-balance sm:text-5xl lg:text-6xl">
-                הקליניקה מתנהלת לבד.
-              </h1>
-              <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-                לוח זמנים שלא מתבלבל, כרטיסיות שמתנהלות מעצמן, וכל מטפל/ת
-                קובע/ת תור בלי לערב אתכם. זו כל התוכנית — והיא מספיקה.
-              </p>
-              <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row">
-                <Button asChild size="lg">
-                  <Link href="/signup">פתיחת קליניקה חדשה</Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <Link href="/login">כניסה</Link>
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">הקמה תוך דקות, בלי התקנה.</p>
-            </div>
-          </section>
-
-          <section className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 px-5 py-16 md:grid-cols-2 md:gap-8 md:px-8 md:py-24 lg:grid-cols-3 lg:gap-12 lg:py-32">
-            {ANSWERS.map((answer, i) => (
-              <div key={answer.title} className="flex flex-col gap-3">
-                <span className="text-2xl font-semibold text-violet-500">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <p className="font-medium">{answer.title}</p>
-                <p className="text-sm leading-relaxed text-muted-foreground">{answer.body}</p>
-              </div>
-            ))}
-          </section>
-
-          <section className="border-t border-border/60">
-            <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-10 px-5 py-16 text-center md:px-8 md:py-24 lg:py-32">
-              <h2 className="text-3xl font-semibold sm:text-4xl">
-                בנוי לניהול קליניקה שלמה, לא למטפל/ת בודד/ת
-              </h2>
-              <div className="flex flex-wrap justify-center gap-x-10 gap-y-8">
-                {CAPACITY.map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex flex-col items-center gap-3">
-                    <div className="flex size-14 items-center justify-center rounded-full border border-violet-200 bg-violet-50">
-                      <Icon className="size-5 text-violet-600" strokeWidth={1.75} />
-                    </div>
-                    <span className="text-sm">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="border-t border-border/60">
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-5 py-16 md:px-8 md:py-24 lg:py-32">
-              <div className="flex flex-col items-center gap-4 text-center">
-                <h2 className="text-3xl font-semibold sm:text-4xl">מנוהל, לא מנוהל ידנית.</h2>
-                <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
-                  כל קליניקה מקבלת את כל היכולות מהיום הראשון — לא גרסה
-                  חלקית שמחכה לשדרוג.
-                </p>
-              </div>
-
-              <ul className="mx-auto flex max-w-xl flex-col gap-3">
-                {OMISSIONS.map((line) => (
-                  <li
-                    key={line}
-                    className="border-t border-border/60 pt-3 text-sm leading-relaxed text-muted-foreground first:border-t-0 first:pt-0"
-                  >
-                    {line}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          <section className="border-t border-border/60">
-            <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-16 md:px-8 md:py-24 lg:py-32">
-              <h2 className="text-center text-3xl font-semibold sm:text-4xl">שאלות נפוצות</h2>
-              <div className="flex flex-col gap-6">
-                {FAQ.map((item) => (
-                  <div key={item.q} className="border-t border-border/60 pt-6 first:border-t-0 first:pt-0">
-                    <p className="font-medium">{item.q}</p>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.a}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="border-t border-border/60">
-            <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-5 px-5 py-16 text-center md:px-8 md:py-24 lg:py-32">
-              <h2 className="text-3xl font-semibold sm:text-4xl">מוכנים להפסיק לתאם ידנית?</h2>
-              <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
-                פתחו את הקליניקה שלכם עכשיו — הגדרה ראשונית תוך דקות.
-              </p>
+      <main className="flex flex-1 flex-col">
+        <section className="relative overflow-hidden">
+          <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-6 px-5 py-16 text-center md:px-8 md:py-24 lg:py-32">
+            <span className="kicker">פלטפורמת ניהול קליניקות</span>
+            <h1 className="text-4xl font-semibold text-balance sm:text-5xl lg:text-6xl">
+              הקליניקה מתנהלת לבד.
+            </h1>
+            <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
+              לוח זמנים שלא מתבלבל, כרטיסיות שמתנהלות מעצמן, וכל מטפל/ת
+              קובע/ת תור בלי לערב אתכם. זו כל התוכנית — והיא מספיקה.
+            </p>
+            <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row">
               <Button asChild size="lg">
                 <Link href="/signup">פתיחת קליניקה חדשה</Link>
               </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/login">כניסה</Link>
+              </Button>
             </div>
-          </section>
-        </main>
+            <p className="text-xs text-muted-foreground">הקמה תוך דקות, בלי התקנה.</p>
+          </div>
+        </section>
 
-        <SiteFooter />
-      </div>
-    );
-  }
+        <section className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 px-5 py-16 md:grid-cols-2 md:gap-8 md:px-8 md:py-24 lg:grid-cols-3 lg:gap-12 lg:py-32">
+          {ANSWERS.map((answer, i) => (
+            <div key={answer.title} className="flex flex-col gap-3">
+              <span className="text-2xl font-semibold text-violet-500">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <p className="font-medium">{answer.title}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{answer.body}</p>
+            </div>
+          ))}
+        </section>
 
-  const supabase = await createClient();
-  const [{ data: clinic }, { data: cards }, { data: nextBooking }] = await Promise.all([
-    supabase.from("clinics").select("name").eq("id", profile.clinic_id).single(),
-    supabase.from("punch_cards").select("hours_remaining").eq("user_id", userId).eq("active", true),
-    supabase
-      .from("bookings")
-      .select("starts_at, room_id, rooms(name)")
-      .eq("user_id", userId)
-      .eq("status", "confirmed")
-      .gt("starts_at", new Date().toISOString())
-      .order("starts_at")
-      .limit(1)
-      .maybeSingle(),
-  ]);
+        <section className="border-t border-border/60">
+          <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-10 px-5 py-16 text-center md:px-8 md:py-24 lg:py-32">
+            <h2 className="text-3xl font-semibold sm:text-4xl">
+              בנוי לניהול קליניקה שלמה, לא למטפל/ת בודד/ת
+            </h2>
+            <div className="flex flex-wrap justify-center gap-x-10 gap-y-8">
+              {CAPACITY.map(({ icon: Icon, label }) => (
+                <div key={label} className="flex flex-col items-center gap-3">
+                  <div className="flex size-14 items-center justify-center rounded-full border border-violet-200 bg-violet-50">
+                    <Icon className="size-5 text-violet-600" strokeWidth={1.75} />
+                  </div>
+                  <span className="text-sm">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-  const totalHours = (cards ?? []).reduce((sum, c) => sum + Number(c.hours_remaining), 0);
-  const isAdmin = profile.role === "owner" || profile.role === "admin";
-
-  return (
-    <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} isAdmin={isAdmin}>
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-semibold">שלום, {profile.full_name}</h1>
-          <p className="text-muted-foreground">{clinic?.name}</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="shadow-e1">
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">יתרת שעות</p>
-              <p className="tabular-nums text-2xl font-semibold">{totalHours}</p>
-            </CardContent>
-          </Card>
-          <Card className="shadow-e1">
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">ההזמנה הבאה</p>
-              <p className="text-lg">
-                {nextBooking
-                  ? `${(nextBooking.rooms as { name?: string } | null)?.name} · ${formatDateTimeHe(new Date(nextBooking.starts_at))}`
-                  : "אין הזמנות קרובות"}
+        <section className="border-t border-border/60">
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-5 py-16 md:px-8 md:py-24 lg:py-32">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <h2 className="text-3xl font-semibold sm:text-4xl">מנוהל, לא מנוהל ידנית.</h2>
+              <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
+                כל קליניקה מקבלת את כל היכולות מהיום הראשון — לא גרסה
+                חלקית שמחכה לשדרוג.
               </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </AppShell>
+            </div>
+
+            <ul className="mx-auto flex max-w-xl flex-col gap-3">
+              {OMISSIONS.map((line) => (
+                <li
+                  key={line}
+                  className="border-t border-border/60 pt-3 text-sm leading-relaxed text-muted-foreground first:border-t-0 first:pt-0"
+                >
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="border-t border-border/60">
+          <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-16 md:px-8 md:py-24 lg:py-32">
+            <h2 className="text-center text-3xl font-semibold sm:text-4xl">שאלות נפוצות</h2>
+            <div className="flex flex-col gap-6">
+              {FAQ.map((item) => (
+                <div key={item.q} className="border-t border-border/60 pt-6 first:border-t-0 first:pt-0">
+                  <p className="font-medium">{item.q}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-border/60">
+          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-5 px-5 py-16 text-center md:px-8 md:py-24 lg:py-32">
+            <h2 className="text-3xl font-semibold sm:text-4xl">מוכנים להפסיק לתאם ידנית?</h2>
+            <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
+              פתחו את הקליניקה שלכם עכשיו — הגדרה ראשונית תוך דקות.
+            </p>
+            <Button asChild size="lg">
+              <Link href="/signup">פתיחת קליניקה חדשה</Link>
+            </Button>
+          </div>
+        </section>
+      </main>
+
+      <SiteFooter />
+    </div>
   );
 }
