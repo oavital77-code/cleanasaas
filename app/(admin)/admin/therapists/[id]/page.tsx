@@ -16,6 +16,16 @@ import {
   completeDepositAction,
 } from "./actions";
 
+// לפני התיקון הוצג כאן ה-enum הגולמי מה-DB (confirmed/cancelled_by_user/…) —
+// אדמין לא היה מבחין בקלות אילו הזמנות בוטלו. עכשיו תווית עברית + צבע.
+const BOOKING_STATUS_LABEL: Record<string, { label: string; tone: string }> = {
+  confirmed: { label: "מאושרת", tone: "bg-success-bg text-success-fg" },
+  cancelled_by_user: { label: 'בוטלה ע"י המטפל/ת', tone: "bg-danger-bg text-danger" },
+  cancelled_by_admin: { label: 'בוטלה ע"י אדמין', tone: "bg-danger-bg text-danger" },
+  completed: { label: "הסתיימה", tone: "bg-subtle text-muted-foreground" },
+  no_show: { label: "לא הגיע/ה", tone: "bg-warning-bg text-warning-fg" },
+};
+
 export default async function TherapistDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { profile, clinicId } = await requireClinicAdmin();
@@ -160,14 +170,17 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
             <CardTitle className="text-base font-medium">הזמנות אחרונות</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 text-sm">
-            {(bookings ?? []).map((b) => (
-              <div key={b.id} className="flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  {(b.rooms as { name?: string } | null)?.name} · {formatDateTimeHe(new Date(b.starts_at))}
-                </span>
-                <span className="text-muted-foreground">{b.status}</span>
-              </div>
-            ))}
+            {(bookings ?? []).map((b) => {
+              const status = BOOKING_STATUS_LABEL[b.status] ?? { label: b.status, tone: "bg-subtle" };
+              return (
+                <div key={b.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span>
+                    {(b.rooms as { name?: string } | null)?.name} · {formatDateTimeHe(new Date(b.starts_at))}
+                  </span>
+                  <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${status.tone}`}>{status.label}</span>
+                </div>
+              );
+            })}
             {(!bookings || bookings.length === 0) && <p className="text-muted-foreground">אין הזמנות.</p>}
           </CardContent>
         </Card>

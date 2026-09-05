@@ -47,29 +47,6 @@ export async function createBookingAction(_prevState: BookingState, formData: Fo
   return { success: true };
 }
 
-/** הזמנה ישירה ממשבצת פתוחה בלוח הזמנים — אותה RPC, בלי useActionState. */
-export async function bookSlotAction(formData: FormData) {
-  const supabase = await createClient();
-  const roomId = String(formData.get("room_id") ?? "");
-  const date = String(formData.get("date") ?? "");
-  const startTime = String(formData.get("start_time") ?? "");
-  const durationHours = Number(formData.get("duration_hours") ?? 1);
-  if (!roomId || !date || !startTime) return;
-
-  const timezone = await getClinicTimezone(supabase);
-  const startsAt = zonedDateTimeToUtc(date, startTime, timezone);
-  const endsAt = new Date(startsAt.getTime() + durationHours * 60 * 60_000);
-
-  await supabase.rpc("create_booking", {
-    p_room_id: roomId,
-    p_starts_at: startsAt.toISOString(),
-    p_ends_at: endsAt.toISOString(),
-  });
-
-  revalidatePath("/schedule");
-  revalidatePath("/bookings");
-}
-
 export async function cancelBookingAction(formData: FormData) {
   const supabase = await createClient();
   const bookingId = String(formData.get("booking_id") ?? "");

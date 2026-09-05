@@ -27,6 +27,32 @@ export async function createInviteAction(formData: FormData) {
   revalidatePath("/admin/therapists");
 }
 
+// clinic_invites לא ברשימת הכתיבה-הישירה-האסורה של CLAUDE.md (רק
+// bookings/punch_cards/session_subscriptions) — RLS ייעודי
+// (admin_manage_invites) כבר מגביל מחיקה לאדמין ולקליניקה שלו/ה בלבד.
+export async function revokeInviteAction(formData: FormData) {
+  const { clinicId } = await requireClinicAdmin();
+  const supabase = await createClient();
+  const token = String(formData.get("token") ?? "");
+  if (!token) return;
+
+  await supabase.from("clinic_invites").delete().eq("token", token).eq("clinic_id", clinicId);
+  revalidatePath("/admin/therapists");
+}
+
+// ניקוי — מסיר מהרשימה קישורים שכבר נוצלו או שפג תוקפם, בלי לגעת בפעילים.
+export async function clearUsedInvitesAction() {
+  const { clinicId } = await requireClinicAdmin();
+  const supabase = await createClient();
+
+  await supabase
+    .from("clinic_invites")
+    .delete()
+    .eq("clinic_id", clinicId)
+    .or(`used_at.not.is.null,expires_at.lt.${new Date().toISOString()}`);
+  revalidatePath("/admin/therapists");
+}
+
 // שולח מייל איפוס סיסמה סטנדרטי של Supabase Auth לכתובת המטפל/ת — לא
 // חושף/משנה סיסמה בעצמו, רק מתחיל את אותה זרימה כמו "שכחתי סיסמה".
 export async function adminResetPasswordAction(formData: FormData) {

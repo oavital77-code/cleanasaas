@@ -5,7 +5,14 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { createInviteAction, adminResetPasswordAction, toggleClinicPublishedAction } from "./actions";
+import { X } from "lucide-react";
+import {
+  createInviteAction,
+  adminResetPasswordAction,
+  toggleClinicPublishedAction,
+  revokeInviteAction,
+  clearUsedInvitesAction,
+} from "./actions";
 
 const ROLE_LABEL: Record<string, string> = { owner: "בעלים", admin: "אדמין/ית", therapist: "מטפל/ת" };
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
@@ -136,16 +143,41 @@ export default async function TherapistsPage() {
                 יצירת קישור הזמנה
               </Button>
             </form>
-            <ul className="flex flex-col gap-1 text-sm">
-              {(invites ?? []).map((inv) => (
-                <li key={inv.token} className="flex items-center justify-between gap-3 text-muted-foreground">
-                  <code dir="ltr" className="min-w-0 truncate text-xs">
-                    {appUrl}/invite/{inv.token}
-                  </code>
-                  <span className="shrink-0">{inv.used_at ? "נוצל" : new Date(inv.expires_at) < new Date() ? "פג תוקף" : "פעיל"}</span>
-                </li>
-              ))}
-            </ul>
+            {invites && invites.length > 0 && (
+              <>
+                <ul className="flex flex-col gap-1 text-sm">
+                  {invites.map((inv) => {
+                    const used = Boolean(inv.used_at);
+                    const expired = !used && new Date(inv.expires_at) < new Date();
+                    return (
+                      <li key={inv.token} className="flex items-center justify-between gap-2 text-muted-foreground">
+                        <code dir="ltr" className="min-w-0 truncate text-xs">
+                          {appUrl}/invite/{inv.token}
+                        </code>
+                        <span className="shrink-0 text-xs">{used ? "נוצל" : expired ? "פג תוקף" : "פעיל"}</span>
+                        <form action={revokeInviteAction}>
+                          <input type="hidden" name="token" value={inv.token} />
+                          <button
+                            type="submit"
+                            className="flex size-8 shrink-0 items-center justify-center rounded-button text-muted-foreground hover:text-danger"
+                            title="ביטול קישור"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        </form>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {invites.some((inv) => inv.used_at || new Date(inv.expires_at) < new Date()) && (
+                  <form action={clearUsedInvitesAction}>
+                    <Button type="submit" size="sm" variant="outline">
+                      ניקוי קישורים שנוצלו / פג תוקפם
+                    </Button>
+                  </form>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

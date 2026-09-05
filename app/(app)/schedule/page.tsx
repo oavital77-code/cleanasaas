@@ -6,11 +6,11 @@ import { he } from "date-fns/locale";
 import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
 import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES } from "@/lib/calendar";
 import { BookingForm } from "./booking-form";
-import { bookSlotAction, cancelBookingAction } from "./actions";
+import { SlotGrid, type CellState, type GridColumn } from "./slot-grid";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft, X } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 
 // לוח זמנים — CLEANASITEMAPANDDESIGN §2 מסך 2: תצוגת יום/שבוע/חודש של
 // זמינות חדרים לפי public_availability (בלי לחשוף מי תפס משבצת — חוק #3
@@ -193,128 +193,57 @@ async function DayView({
 
       <Card className="shadow-e1 overflow-hidden p-0">
         <CardContent className="overflow-x-auto p-0">
-          {/* minWidth דינמי לפי מספר החדרים: במסך צר הלוח גולל אופקית במקום
-              לרסק את העמודות לרוחב לא קריא. בדסקטופ w-full גובר ממילא. */}
-          <table className="w-full border-collapse text-sm" style={{ minWidth: `${64 + rooms.length * 92}px` }}>
-            <thead>
-              <tr className="border-b border-border bg-muted">
-                <th className="w-16 p-2 text-xs font-normal text-muted-foreground">שעה</th>
-                {rooms.map((r) => (
-                  <th key={r.id} className="p-2 text-center font-medium">
-                    {r.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {slots.map((slot) => {
-                const slotStart = zonedDateTimeToUtc(date, slot, timezone);
-                const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60_000);
-                const isPast = slotEnd <= now;
-                return (
-                  <tr key={slot} className="border-b border-border last:border-0">
-                    <td className="tabular-nums p-2 text-xs text-muted-foreground">{slot}</td>
-                    {rooms.map((r) => (
-                      <SlotCell
-                        key={r.id}
-                        roomId={r.id}
-                        date={date}
-                        slot={slot}
-                        slotStart={slotStart}
-                        slotEnd={slotEnd}
-                        isPast={isPast}
-                        availability={availability ?? []}
-                        myBookings={myBookings ?? []}
-                      />
-                    ))}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <SlotGrid
+            slots={slots}
+            columns={rooms.map((r): GridColumn => ({ key: r.id, roomId: r.id, date, header: r.name }))}
+            cells={buildCellStates(
+              rooms.map((r) => ({ roomId: r.id, date })),
+              slots,
+              timezone,
+              now,
+              availability ?? [],
+              myBookings ?? [],
+            )}
+          />
         </CardContent>
       </Card>
     </>
   );
 }
 
-function SlotCell({
-  roomId,
-  date,
-  slot,
-  slotStart,
-  slotEnd,
-  isPast,
-  availability,
-  myBookings,
-}: {
-  roomId: string;
-  date: string;
-  slot: string;
-  slotStart: Date;
-  slotEnd: Date;
-  isPast: boolean;
-  availability: { room_id: string | null; starts_at: string | null; ends_at: string | null; kind: string | null }[];
-  myBookings: { id: string; room_id: string; starts_at: string; ends_at: string; source: string }[];
-}) {
-  const mine = myBookings.find(
-    (b) => b.room_id === roomId && new Date(b.starts_at) < slotEnd && new Date(b.ends_at) > slotStart,
-  );
-  const overlap = availability.find(
-    (a) =>
-      a.room_id === roomId &&
-      new Date(a.starts_at as string) < slotEnd &&
-      new Date(a.ends_at as string) > slotStart,
-  );
+// בונה את מטריצת מצב התאים (עמודה × שורת-שעה) עבור SlotGrid, מתוך אותם
+// availability/myBookings ש-DayView/WeekView כבר שולפים. משותף לשני
+// התצוגות — ההבדל היחיד הוא מה מייצג "עמודה" (חדר קבוע ביום אחד, או יום
+// קבוע לחדר אחד בשבוע).
+function buildCellStates(
+  columns: { roomId: string; date: string }[],
+  slots: string[],
+  timezone: string,
+  now: Date,
+  availability: { room_id: string | null; starts_at: string | null; ends_at: string | null; kind: string | null }[],
+  myBookings: { id: string; room_id: string; starts_at: string; ends_at: string; source: string }[],
+): CellState[][] {
+  return columns.map((col) =>
+    slots.map((slot) => {
+      const slotStart = zonedDateTimeToUtc(col.date, slot, timezone);
+      const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60_000);
+      if (slotEnd <= now) return { status: "past" };
 
-  if (isPast) return <td className="bg-subtle/50 p-1" />;
+      const mine = myBookings.find(
+        (b) => b.room_id === col.roomId && new Date(b.starts_at) < slotEnd && new Date(b.ends_at) > slotStart,
+      );
+      if (mine) return { status: "mine", bookingId: mine.id, cancellable: mine.source !== "session" };
 
-  // ההזמנה שלי — לפני הבדיקה הכללית, כדי לאפשר ביטול ישיר מהלוח (ולא רק
-  // דרך /bookings).
-  if (mine) {
-    const cancellable = mine.source !== "session";
-    return (
-      <td className="p-1">
-        <div className="flex h-11 items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700 md:h-8">
-          <span className="min-w-0 truncate">שלך</span>
-          {cancellable && (
-            <form action={cancelBookingAction}>
-              <input type="hidden" name="booking_id" value={mine.id} />
-              <button type="submit" className="-me-1 flex size-8 shrink-0 items-center justify-center rounded-button text-violet-500 hover:text-danger md:size-5" title="ביטול">
-                <X className="size-3.5" />
-              </button>
-            </form>
-          )}
-        </div>
-      </td>
-    );
-  }
+      const overlap = availability.find(
+        (a) =>
+          a.room_id === col.roomId &&
+          new Date(a.starts_at as string) < slotEnd &&
+          new Date(a.ends_at as string) > slotStart,
+      );
+      if (overlap) return { status: overlap.kind === "booked" ? "taken" : "blocked" };
 
-  if (overlap) {
-    return (
-      <td className="p-1">
-        <div className="flex h-11 items-center justify-center rounded-field bg-subtle text-xs text-muted-foreground md:h-8">
-          {overlap.kind === "booked" ? "תפוס" : "חסום"}
-        </div>
-      </td>
-    );
-  }
-
-  return (
-    <td className="p-1">
-      <form action={bookSlotAction}>
-        <input type="hidden" name="room_id" value={roomId} />
-        <input type="hidden" name="date" value={date} />
-        <input type="hidden" name="start_time" value={slot} />
-        <input type="hidden" name="duration_hours" value="1" />
-        <button
-          type="submit"
-          className="flex h-11 w-full items-center justify-center rounded-field border border-success-border bg-success-bg text-xs text-success-fg hover:bg-success/20 md:h-8"
-        >
-          פנוי
-        </button>
-      </form>
-    </td>
+      return { status: "available" };
+    }),
   );
 }
 
@@ -390,45 +319,27 @@ async function WeekView({
         <CardContent className="overflow-x-auto p-0">
           {/* 7 ימים + עמודת שעה לא נכנסים ברוחב מובייל — גלילה אופקית
               במקום עמודות מרוסקות. */}
-          <table className="w-full min-w-[680px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted">
-                <th className="w-16 p-2 text-xs font-normal text-muted-foreground">שעה</th>
-                {days.map((d, i) => (
-                  <th key={d} className="p-2 text-center font-medium">
-                    <Link href={viewHref("day", d)} className="hover:underline">
-                      {HEB_WEEKDAYS[i]} · {d.slice(8, 10)}/{d.slice(5, 7)}
-                    </Link>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {slots.map((slot) => (
-                <tr key={slot} className="border-b border-border last:border-0">
-                  <td className="tabular-nums p-2 text-xs text-muted-foreground">{slot}</td>
-                  {days.map((d) => {
-                    const slotStart = zonedDateTimeToUtc(d, slot, timezone);
-                    const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60_000);
-                    const isPast = slotEnd <= now;
-                    return (
-                      <SlotCell
-                        key={d}
-                        roomId={selectedRoomId}
-                        date={d}
-                        slot={slot}
-                        slotStart={slotStart}
-                        slotEnd={slotEnd}
-                        isPast={isPast}
-                        availability={availability ?? []}
-                        myBookings={myBookings ?? []}
-                      />
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="min-w-[680px]">
+            <SlotGrid
+              slots={slots}
+              columns={days.map(
+                (d, i): GridColumn => ({
+                  key: d,
+                  roomId: selectedRoomId,
+                  date: d,
+                  header: `${HEB_WEEKDAYS[i]} · ${d.slice(8, 10)}/${d.slice(5, 7)}`,
+                }),
+              )}
+              cells={buildCellStates(
+                days.map((d) => ({ roomId: selectedRoomId, date: d })),
+                slots,
+                timezone,
+                now,
+                availability ?? [],
+                myBookings ?? [],
+              )}
+            />
+          </div>
         </CardContent>
       </Card>
     </>
