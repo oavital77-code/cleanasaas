@@ -41,16 +41,16 @@ export default async function ProfilePage() {
                 <Label htmlFor="profession">מקצוע</Label>
                 <Input id="profession" name="profession" defaultValue={profile.profession ?? ""} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-muted-foreground">טלפון</Label>
-                  <p className="text-sm" dir="ltr">
+                  <p className="break-all text-sm" dir="ltr">
                     {profile.phone}
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-muted-foreground">אימייל</Label>
-                  <p className="text-sm" dir="ltr">
+                  <p className="break-all text-sm" dir="ltr">
                     {profile.email}
                   </p>
                 </div>

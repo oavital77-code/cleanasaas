@@ -75,10 +75,10 @@ export default async function AdminSessionsPage() {
               <CardContent className="flex flex-col gap-3">
                 <SlotList s={s} />
                 {s.start_date && <p className="text-xs text-muted-foreground">תאריך התחלה מבוקש: {formatDateHe(new Date(s.start_date))}</p>}
-                <div className="flex flex-wrap items-end gap-3">
-                  <form action={approveSessionAction} className="flex items-end gap-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                  <form action={approveSessionAction} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="subscription_id" value={s.id} />
-                    <select name="term_months" className="h-9 rounded-field border border-input bg-background px-2 text-sm">
+                    <select name="term_months" className="h-9 flex-1 rounded-field border border-input bg-background px-2 text-sm sm:flex-none">
                       <option value="">ללא התחייבות</option>
                       <option value="1">חודש</option>
                       <option value="3">3 חודשים</option>
@@ -89,9 +89,9 @@ export default async function AdminSessionsPage() {
                       אישור
                     </Button>
                   </form>
-                  <form action={rejectSessionAction} className="flex items-end gap-2">
+                  <form action={rejectSessionAction} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="subscription_id" value={s.id} />
-                    <Input name="reason" placeholder="סיבת דחייה" className="h-9 w-40" />
+                    <Input name="reason" placeholder="סיבת דחייה" className="h-9 w-full sm:w-40" />
                     <Button type="submit" size="sm" variant="destructive">
                       דחייה
                     </Button>

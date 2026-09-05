@@ -37,10 +37,14 @@ export default async function AdminNewSessionPage() {
                 submitLabel="קביעת ססיה"
                 pendingLabel="קובע/ת…"
                 extraFields={
-                  <div className="flex flex-wrap gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
                     <div className="flex flex-col gap-1.5">
                       <Label>מטפל/ת</Label>
-                      <select name="user_id" required className="h-10 rounded-field border border-input bg-background px-3">
+                      <select
+                        name="user_id"
+                        required
+                        className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
+                      >
                         {users.map((u) => (
                           <option key={u.id} value={u.id}>
                             {u.full_name}
@@ -50,7 +54,10 @@ export default async function AdminNewSessionPage() {
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <Label>התחייבות</Label>
-                      <select name="term_months" className="h-10 rounded-field border border-input bg-background px-3">
+                      <select
+                        name="term_months"
+                        className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
+                      >
                         <option value="">ללא</option>
                         <option value="1">חודש</option>
                         <option value="3">3 חודשים</option>

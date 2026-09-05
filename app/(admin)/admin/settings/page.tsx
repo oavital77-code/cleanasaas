@@ -36,19 +36,19 @@ export default async function AdminSettingsPage() {
                 <form
                   key={tier.id}
                   action={updatePunchCardTierAction}
-                  className="flex flex-wrap items-end gap-3 border-b border-border pb-3 last:border-0"
+                  className="flex flex-col gap-3 border-b border-border pb-3 last:border-0 sm:flex-row sm:flex-wrap sm:items-end"
                 >
                   <input type="hidden" name="id" value={tier.id} />
-                  <span className="w-16 text-sm text-muted-foreground">{tier.hours} שעות</span>
+                  <span className="text-sm text-muted-foreground sm:w-16 sm:pb-2">{tier.hours} שעות</span>
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs">₪/שעה</Label>
-                    <Input name="price_per_hour" type="number" step="0.01" defaultValue={tier.price_per_hour} className="w-28" />
+                    <Input name="price_per_hour" type="number" step="0.01" defaultValue={tier.price_per_hour} className="w-full sm:w-28" />
                   </div>
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs">פיקדון (שעות)</Label>
-                    <Input name="deposit_hours" type="number" defaultValue={tier.deposit_hours} className="w-24" />
+                    <Input name="deposit_hours" type="number" defaultValue={tier.deposit_hours} className="w-full sm:w-24" />
                   </div>
-                  <Button type="submit" size="sm" variant="outline">
+                  <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
                     שמירה
                   </Button>
                 </form>
@@ -57,16 +57,16 @@ export default async function AdminSettingsPage() {
 
             <div className="border-t border-border pt-4">
               <h3 className="mb-3 text-sm font-medium">ססיה (מנוי חודשי קבוע)</h3>
-              <form action={updateSessionPricingAction} className="flex flex-wrap items-end gap-3">
+              <form action={updateSessionPricingAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                 <div className="flex flex-col gap-1">
                   <Label className="text-xs">שעות שבועיות קבועות</Label>
-                  <Input name="session_base_hours" type="number" defaultValue={Number(settings.session_base_hours ?? 5)} className="w-24" />
+                  <Input name="session_base_hours" type="number" defaultValue={Number(settings.session_base_hours ?? 5)} className="w-full sm:w-24" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <Label className="text-xs">מחיר חודשי (₪)</Label>
-                  <Input name="session_base_price" type="number" defaultValue={Number(settings.session_base_price ?? 600)} className="w-28" />
+                  <Input name="session_base_price" type="number" defaultValue={Number(settings.session_base_price ?? 600)} className="w-full sm:w-28" />
                 </div>
-                <Button type="submit" size="sm" variant="outline">
+                <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
                   שמירה
                 </Button>
               </form>
@@ -79,7 +79,7 @@ export default async function AdminSettingsPage() {
             <CardTitle className="text-base font-medium">שיטת תשלום — WooCommerce</CardTitle>
             <CardDescription>
               חברו את החנות שלכם. כתובת ה-webhook הייעודית שלכם:{" "}
-              <code dir="ltr" className="rounded bg-muted px-1 py-0.5 text-xs">
+              <code dir="ltr" className="break-all rounded bg-muted px-1 py-0.5 text-xs">
                 {appUrl}/api/woo/webhook/{clinicId}
               </code>
             </CardDescription>

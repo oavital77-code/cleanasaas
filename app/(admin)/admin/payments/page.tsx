@@ -46,10 +46,10 @@ export default async function AdminPaymentsPage() {
               <thead className="bg-muted text-right">
                 <tr>
                   <th className="p-3 font-medium">מטפל/ת</th>
-                  <th className="p-3 font-medium">סוג</th>
+                  <th className="hidden p-3 font-medium sm:table-cell">סוג</th>
                   <th className="p-3 font-medium">סכום</th>
                   <th className="p-3 font-medium">סטטוס</th>
-                  <th className="p-3 font-medium">תאריך</th>
+                  <th className="hidden p-3 font-medium md:table-cell">תאריך</th>
                   <th className="p-3 font-medium" />
                 </tr>
               </thead>
@@ -60,12 +60,14 @@ export default async function AdminPaymentsPage() {
                   return (
                     <tr key={p.id} className="border-t border-border">
                       <td className="p-3">{(p.profiles as { full_name?: string } | null)?.full_name}</td>
-                      <td className="p-3">{TYPE_LABEL[p.type] ?? p.type}</td>
+                      <td className="hidden p-3 sm:table-cell">{TYPE_LABEL[p.type] ?? p.type}</td>
                       <td className="tabular-nums p-3">{formatCurrencyILS(p.amount_total)}</td>
                       <td className="p-3">
                         <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${status.tone}`}>{status.label}</span>
                       </td>
-                      <td className="p-3 text-muted-foreground">{formatDateTimeHe(new Date(p.paid_at ?? p.created_at ?? "1970-01-01T00:00:00Z"))}</td>
+                      <td className="hidden p-3 text-muted-foreground md:table-cell">
+                        {formatDateTimeHe(new Date(p.paid_at ?? p.created_at ?? "1970-01-01T00:00:00Z"))}
+                      </td>
                       <td className="p-3">
                         {isSessionPending && (
                           <form action={markSessionPaymentCashAction}>

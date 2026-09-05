@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireTherapistProfile } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { formatInTimeZone } from "date-fns-tz";
+import { he } from "date-fns/locale";
 import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
 import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES } from "@/lib/calendar";
 import { BookingForm } from "./booking-form";
@@ -185,7 +186,7 @@ async function DayView({
     <>
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium tabular-nums">
-          {formatInTimeZone(zonedDateTimeToUtc(date, "12:00", timezone), timezone, "EEEE, dd/MM/yyyy")}
+          {formatInTimeZone(zonedDateTimeToUtc(date, "12:00", timezone), timezone, "EEEE, dd/MM/yyyy", { locale: he })}
         </span>
         <DayNav view="day" date={date} today={today} />
       </div>
@@ -478,7 +479,7 @@ async function MonthView({
     <>
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">
-          {formatInTimeZone(zonedDateTimeToUtc(`${date.slice(0, 7)}-01`, "12:00", timezone), timezone, "MMMM yyyy")}
+          {formatInTimeZone(zonedDateTimeToUtc(`${date.slice(0, 7)}-01`, "12:00", timezone), timezone, "MMMM yyyy", { locale: he })}
         </span>
         <DayNav view="month" date={date} today={today} />
       </div>

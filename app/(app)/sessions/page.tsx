@@ -41,7 +41,7 @@ export default async function SessionsPage() {
   return (
     <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} isAdmin={isAdmin}>
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">הססיות שלי</h1>
           {clinic?.sessions_enabled && !hasOpenSubscription && (
             <Button asChild>

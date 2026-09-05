@@ -71,7 +71,7 @@ export default async function OnboardingPage() {
                 </li>
               ))}
             </ul>
-            <form action={addBranchAction} className="flex flex-wrap items-end gap-3">
+            <form action={addBranchAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="branch_name">שם הסניף</Label>
                 <Input id="branch_name" name="name" required />
@@ -80,7 +80,7 @@ export default async function OnboardingPage() {
                 <Label htmlFor="branch_address">כתובת</Label>
                 <Input id="branch_address" name="address" required />
               </div>
-              <Button type="submit">הוספת סניף</Button>
+              <Button type="submit" className="w-full sm:w-auto">הוספת סניף</Button>
             </form>
           </CardContent>
         </Card>
@@ -99,14 +99,14 @@ export default async function OnboardingPage() {
               ))}
             </ul>
             {branches && branches.length > 0 ? (
-              <form action={addRoomAction} className="flex flex-wrap items-end gap-3">
+              <form action={addRoomAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="room_branch">סניף</Label>
                   <select
                     id="room_branch"
                     name="branch_id"
                     required
-                    className="h-10 rounded-field border border-input bg-background px-3"
+                    className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
                   >
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -124,7 +124,7 @@ export default async function OnboardingPage() {
                   <select
                     id="room_type"
                     name="room_type"
-                    className="h-10 rounded-field border border-input bg-background px-3"
+                    className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
                   >
                     <option value="talk">שיח</option>
                     <option value="touch">מגע</option>
@@ -132,7 +132,7 @@ export default async function OnboardingPage() {
                     <option value="group">קבוצתי</option>
                   </select>
                 </div>
-                <Button type="submit">הוספת חדר</Button>
+                <Button type="submit" className="w-full sm:w-auto">הוספת חדר</Button>
               </form>
             ) : (
               <p className="text-sm text-muted-foreground">הוסיפו סניף קודם.</p>
@@ -172,7 +172,7 @@ export default async function OnboardingPage() {
             <CardTitle className="text-base font-medium">מודל ססיה (מנוי חודשי קבוע)</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={toggleSessionsAction} className="flex items-center gap-3">
+            <form action={toggleSessionsAction} className="flex flex-wrap items-center gap-3">
               <input
                 type="checkbox"
                 id="sessions_enabled"

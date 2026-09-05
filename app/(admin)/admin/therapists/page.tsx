@@ -52,7 +52,7 @@ export default async function TherapistsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <form action={toggleClinicPublishedAction} className="flex items-center gap-3">
+            <form action={toggleClinicPublishedAction} className="flex flex-wrap items-center gap-3">
               <input type="hidden" name="published" value={clinic?.published ? "off" : "on"} />
               <Button type="submit" variant={clinic?.published ? "outline" : "default"} size="sm">
                 {clinic?.published ? "כיבוי ההרשמה" : "פרסום קליניקה — פתיחת הרשמה"}
@@ -126,12 +126,14 @@ export default async function TherapistsPage() {
             <CardDescription>למקרה שרוצים להזמין אדמין/ית נוסף/ת, או מטפל/ת ספציפי/ת בלי לפרסם קישור כללי.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <form action={createInviteAction} className="flex items-end gap-3">
-              <select name="role" className="h-10 rounded-field border border-input bg-background px-3">
+            <form action={createInviteAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <select name="role" className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto">
                 <option value="therapist">מטפל/ת</option>
                 <option value="admin">אדמין/ית</option>
               </select>
-              <Button type="submit">יצירת קישור הזמנה</Button>
+              <Button type="submit" className="w-full sm:w-auto">
+                יצירת קישור הזמנה
+              </Button>
             </form>
             <ul className="flex flex-col gap-1 text-sm">
               {(invites ?? []).map((inv) => (

@@ -55,11 +55,15 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
             <CardTitle className="text-base font-medium">תפקיד וסטטוס</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={updateRoleStatusAction} className="flex flex-wrap items-end gap-3">
+            <form action={updateRoleStatusAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
               <input type="hidden" name="user_id" value={target.id} />
               <div className="flex flex-col gap-1">
                 <Label className="text-xs">תפקיד</Label>
-                <select name="role" defaultValue={target.role} className="h-10 rounded-field border border-input bg-background px-3">
+                <select
+                  name="role"
+                  defaultValue={target.role}
+                  className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
+                >
                   <option value="therapist">מטפל/ת</option>
                   <option value="admin">אדמין/ית</option>
                   <option value="owner">בעלים</option>
@@ -67,13 +71,17 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
               </div>
               <div className="flex flex-col gap-1">
                 <Label className="text-xs">סטטוס</Label>
-                <select name="status" defaultValue={target.status} className="h-10 rounded-field border border-input bg-background px-3">
+                <select
+                  name="status"
+                  defaultValue={target.status}
+                  className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
+                >
                   <option value="active">פעיל</option>
                   <option value="suspended">מושעה</option>
                   <option value="archived">בארכיון</option>
                 </select>
               </div>
-              <Button type="submit" size="sm" variant="outline">
+              <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
                 שמירה
               </Button>
             </form>
@@ -87,7 +95,7 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
           <CardContent className="flex flex-col gap-4">
             {(cards ?? []).map((c) => (
               <div key={c.id} className="flex flex-col gap-2 border-b border-border pb-3 text-sm last:border-0">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="tabular-nums">
                     {c.hours_remaining} שעות · פיקדון {c.deposit_remaining}/{c.deposit_amount}
                   </span>
@@ -95,13 +103,13 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
                     {c.active ? "פעילה" : "לא פעילה"} · עד {formatDateHe(new Date(c.expires_at))}
                   </span>
                 </div>
-                <div className="flex flex-wrap items-end gap-2">
-                  <form action={adjustPunchCardHoursAction} className="flex items-end gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+                  <form action={adjustPunchCardHoursAction} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
                     <input type="hidden" name="user_id" value={target.id} />
                     <input type="hidden" name="card_id" value={c.id} />
-                    <Input name="delta" type="number" step="0.5" placeholder="+/- שעות" className="w-28" />
-                    <Input name="note" placeholder="הערה" className="w-32" />
-                    <Button type="submit" size="sm" variant="outline">
+                    <Input name="delta" type="number" step="0.5" placeholder="+/- שעות" className="w-full sm:w-28" />
+                    <Input name="note" placeholder="הערה" className="w-full sm:w-32" />
+                    <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
                       עדכון יתרה
                     </Button>
                   </form>
@@ -109,7 +117,7 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
                     <form action={completeDepositAction}>
                       <input type="hidden" name="user_id" value={target.id} />
                       <input type="hidden" name="card_id" value={c.id} />
-                      <Button type="submit" size="sm" variant="outline">
+                      <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
                         השלמת פיקדון
                       </Button>
                     </form>
@@ -119,14 +127,17 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
             ))}
             {(!cards || cards.length === 0) && <p className="text-sm text-muted-foreground">אין כרטיסיות.</p>}
 
-            <form action={grantBonusHoursAction} className="flex flex-wrap items-end gap-2 border-t border-border pt-4">
+            <form
+              action={grantBonusHoursAction}
+              className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:flex-wrap sm:items-end"
+            >
               <input type="hidden" name="user_id" value={target.id} />
               <div className="flex flex-col gap-1">
                 <Label className="text-xs">מתנת שעות</Label>
-                <Input name="hours" type="number" step="0.5" min="0.5" className="w-24" />
+                <Input name="hours" type="number" step="0.5" min="0.5" className="w-full sm:w-24" />
               </div>
-              <Input name="note" placeholder="סיבה" className="w-40" />
-              <Button type="submit" size="sm">
+              <Input name="note" placeholder="סיבה" className="w-full sm:w-40" />
+              <Button type="submit" size="sm" className="w-full sm:w-auto">
                 הענקת שעות
               </Button>
             </form>
@@ -140,7 +151,7 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
             </CardHeader>
             <CardContent className="flex flex-col gap-2 text-sm">
               {subscriptions.map((s) => (
-                <div key={s.id} className="flex items-center justify-between">
+                <div key={s.id} className="flex flex-wrap items-center justify-between gap-2">
                   <span>
                     {s.weekly_hours} שעות · {formatCurrencyILS(s.monthly_price)}/חודש
                   </span>
@@ -157,7 +168,7 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
           </CardHeader>
           <CardContent className="flex flex-col gap-2 text-sm">
             {(bookings ?? []).map((b) => (
-              <div key={b.id} className="flex items-center justify-between">
+              <div key={b.id} className="flex flex-wrap items-center justify-between gap-2">
                 <span>
                   {(b.rooms as { name?: string } | null)?.name} · {formatDateTimeHe(new Date(b.starts_at))}
                 </span>
@@ -174,10 +185,12 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
           </CardHeader>
           <CardContent className="flex flex-col gap-2 text-sm">
             {(payments ?? []).map((p) => (
-              <div key={p.id} className="flex items-center justify-between">
+              <div key={p.id} className="flex flex-wrap items-center justify-between gap-2">
                 <span>{p.type}</span>
-                <span className="tabular-nums">{formatCurrencyILS(p.amount_total)}</span>
-                <span className="text-muted-foreground">{p.status}</span>
+                <span className="flex items-center gap-2">
+                  <span className="tabular-nums">{formatCurrencyILS(p.amount_total)}</span>
+                  <span className="text-muted-foreground">{p.status}</span>
+                </span>
               </div>
             ))}
             {(!payments || payments.length === 0) && <p className="text-muted-foreground">אין תשלומים.</p>}

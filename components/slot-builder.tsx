@@ -74,13 +74,16 @@ export function SlotBuilder({
 
       <div className="flex flex-col gap-3">
         {rows.map((row, i) => (
-          <div key={i} className="flex flex-wrap items-end gap-3 rounded-field border border-border p-3">
+          <div
+            key={i}
+            className="flex flex-col gap-3 rounded-field border border-border p-3 sm:flex-row sm:flex-wrap sm:items-end"
+          >
             <div className="flex flex-col gap-1">
               <Label className="text-xs">חדר</Label>
               <select
                 value={row.room_id}
                 onChange={(e) => updateRow(i, { room_id: e.target.value })}
-                className="h-10 rounded-field border border-input bg-background px-3"
+                className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
               >
                 {rooms.map((r) => (
                   <option key={r.id} value={r.id}>
@@ -94,7 +97,7 @@ export function SlotBuilder({
               <select
                 value={row.weekday}
                 onChange={(e) => updateRow(i, { weekday: Number(e.target.value) })}
-                className="h-10 rounded-field border border-input bg-background px-3"
+                className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
               >
                 {WEEKDAYS.map((d, idx) => (
                   <option key={idx} value={idx}>
@@ -110,7 +113,7 @@ export function SlotBuilder({
                 step={1800}
                 value={row.start_time}
                 onChange={(e) => updateRow(i, { start_time: e.target.value })}
-                className="w-28"
+                className="w-full sm:w-28"
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -121,11 +124,11 @@ export function SlotBuilder({
                 min={0.5}
                 value={row.duration}
                 onChange={(e) => updateRow(i, { duration: Number(e.target.value) })}
-                className="w-24"
+                className="w-full sm:w-24"
               />
             </div>
             {rows.length > 1 && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => removeRow(i)}>
+              <Button type="button" variant="ghost" size="sm" onClick={() => removeRow(i)} className="w-full sm:w-auto">
                 הסרה
               </Button>
             )}
@@ -133,7 +136,7 @@ export function SlotBuilder({
         ))}
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Button type="button" variant="outline" size="sm" onClick={addRow}>
           הוספת משבצת נוספת
         </Button>
@@ -149,7 +152,7 @@ export function SlotBuilder({
       {showStartDate && (
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="start_date">תאריך התחלה מבוקש (אופציונלי)</Label>
-          <Input id="start_date" name="start_date" type="date" className="w-48" />
+          <Input id="start_date" name="start_date" type="date" className="w-full sm:w-48" />
         </div>
       )}
 

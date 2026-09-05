@@ -48,11 +48,11 @@ export default async function SuperadminPage() {
                   <tr>
                     <th className="p-3 font-medium">שם</th>
                     <th className="p-3 font-medium">סטטוס</th>
-                    <th className="p-3 font-medium">תוכנית</th>
-                    <th className="p-3 font-medium">סניפים</th>
-                    <th className="p-3 font-medium">חדרים</th>
-                    <th className="p-3 font-medium">מטפלים</th>
-                    <th className="p-3 font-medium">נרשם</th>
+                    <th className="hidden p-3 font-medium md:table-cell">תוכנית</th>
+                    <th className="hidden p-3 font-medium md:table-cell">סניפים</th>
+                    <th className="hidden p-3 font-medium md:table-cell">חדרים</th>
+                    <th className="hidden p-3 font-medium sm:table-cell">מטפלים</th>
+                    <th className="hidden p-3 font-medium lg:table-cell">נרשם</th>
                     <th className="p-3 font-medium">פעולה</th>
                   </tr>
                 </thead>
@@ -61,11 +61,11 @@ export default async function SuperadminPage() {
                     <tr key={c.clinic_id} className="border-t border-border">
                       <td className="p-3 font-medium">{c.name}</td>
                       <td className="p-3">{c.status}</td>
-                      <td className="p-3">{c.plan ?? "—"}</td>
-                      <td className="tabular-nums p-3">{c.branches_count}</td>
-                      <td className="tabular-nums p-3">{c.rooms_count}</td>
-                      <td className="tabular-nums p-3">{c.therapists_count}</td>
-                      <td className="tabular-nums p-3">{new Date(c.created_at).toLocaleDateString("he-IL")}</td>
+                      <td className="hidden p-3 md:table-cell">{c.plan ?? "—"}</td>
+                      <td className="tabular-nums hidden p-3 md:table-cell">{c.branches_count}</td>
+                      <td className="tabular-nums hidden p-3 md:table-cell">{c.rooms_count}</td>
+                      <td className="tabular-nums hidden p-3 sm:table-cell">{c.therapists_count}</td>
+                      <td className="tabular-nums hidden p-3 lg:table-cell">{new Date(c.created_at).toLocaleDateString("he-IL")}</td>
                       <td className="p-3">
                         <form action={setClinicStatusAction} className="flex gap-2">
                           <input type="hidden" name="clinic_id" value={c.clinic_id} />
