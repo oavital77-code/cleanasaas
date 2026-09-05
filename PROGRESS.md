@@ -416,6 +416,59 @@ trial.
 - **הלוגו הפך לקישור** בשלושת המקומות ב-`AppShell` (סרגל דסקטופ, כותרת
   מובייל, מגירה) — לדף הבית של הצד הנוכחי: `/admin` לאדמין, `/` למטפל/ת.
 
+## 🔄 18. מעבר ל-Clerk — שלבים 1–2 (שכבת ה-DB) הושלמו
+
+**הדגם**: Click-na (`oavital77-code/click-na`) — `@clerk/nextjs` + `heIL`
+מ-`@clerk/localizations`, `<SignIn routing="path">` בנתיב catch-all,
+`clerkMiddleware`, ו-webhook שמסנכרן `user.created`/`user.deleted` לטבלה.
+**אבל** Click-na הוא Clerk + Prisma **בלי RLS** — ההרשאות שם נאכפות בקוד
+האפליקציה (`getCurrentTherapist()` ממפה `clerkUserId` → שורה). ב-cleanasaas
+ההרשאות נאכפות ב-DB: 24 טבלאות עם RLS ו-30 RPC, כולם על `auth.uid()`.
+העתקה ישירה של דגם Click-na הייתה מוחקת את בידוד הדיירים — לכן Clerk נכנס
+כאן כספק זהות ל-Supabase (Third-Party Auth), וה-RLS נשאר.
+
+### 🔴 העובדה שקבעה את כל התכנון
+
+```sql
+-- ההגדרה של Supabase:
+auth.uid() → select coalesce(..., claims ->> 'sub')::uuid
+```
+ה-sub של Clerk הוא `user_2abc...` — לא UUID. אימתתי מול ה-DB החי:
+`auth.uid()` **זורקת** `invalid input syntax for type uuid`, היא לא מחזירה
+NULL. כלומר אי אפשר להדליק את Clerk בדשבורד ולתקן את ה-DB אחר כך — ברגע
+שהטוקן מתחלף, כל מדיניות וכל RPC קורסים יחד. ה-DB חייב לעבור **קודם**,
+ובאופן שממשיך לעבוד עם הסשנים הקיימים.
+
+### מה בוצע (מיגרציות `20260905000003`, `20260905000004`)
+
+- `profiles.clerk_user_id text unique` — המיפוי בין משתמש Clerk לפרופיל.
+- **`app_user_id()`** — פתרון הזהות היחיד, דו-מצבי. בכוונה **לא** קוראת
+  ל-`auth.uid()`: היא קוראת את ה-sub הגולמי ועושה cast ל-uuid רק אחרי
+  בדיקת ביטוי רגולרי, ואחרת ממפה דרך `clerk_user_id`.
+- שלוש פונקציות הזהות (`current_clinic_id`, `is_admin`, `is_superadmin`)
+  עברו אליה — וכל ~20 המדיניות שעוברות דרכן הפכו תואמות-Clerk בלי לגעת בהן.
+- 8 המדיניות שהשתמשו ב-`auth.uid()` ישירות נכתבו מחדש (כולל
+  `session_slots.own_slots` שהתגלתה רק בסריקה ממצה).
+- טריגר ההגנה `enforce_profile_privilege_columns` הומר, ונוסף בו
+  `clerk_user_id` לרשימת העמודות שלקוח לעולם לא יכול לשנות — אחרת אפשר
+  היה "לחטוף" פרופיל של אחר ע"י מיפויו למשתמש Clerk שלי.
+- 27 RPCs הומרו ל-`app_user_id()`. ההמרה נעשתה מתוך `pg_get_functiondef`
+  ולא בהקלדה מחדש — 27 גופי פונקציות של לוגיקת כספים והרשאות זה יותר מדי
+  שטח לשגיאת העתקה.
+
+**אימות מול ה-DB החי**: sub של Supabase → נפתר לאותו פרופיל/קליניקה,
+`is_admin()` עדיין true (אפס רגרסיה); sub של Clerk → מחזיר NULL בלי לזרוק;
+0 מדיניות נותרו על `auth.uid()`; 32 פונקציות על `app_user_id()`.
+
+### מה נשאר (שלב 3 — צד האפליקציה)
+
+חוסם: יצירת אפליקציית Clerk + הפעלת Clerk כ-Third-Party Auth ב-Supabase.
+אחר כך: `ClerkProvider` + `heIL`, `clerkMiddleware`, דפי `<SignIn>/<SignUp>`
+בעברית, החלפת `lib/auth/guards.ts` ומקור הטוקן ב-`lib/supabase/server.ts`,
+ושלוש פונקציות *יצירת* המשתמש (`signup_clinic`, `accept_therapist_invite`,
+`join_clinic_as_therapist`) שהוחרגו במכוון — הן כותבות `id = auth.uid()`,
+כלומר משתמשות בזהות כערך ולא כשאילתה, ומומרות יחד עם זרימת ההרשמה.
+
 ## מה הכי דחוף להמשיך בו
 
 1. Email (Resend) — תזכורות/יתרה-נמוכה/חידוש ססיה מזוהות אבל לא נשלחות.
