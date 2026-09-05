@@ -25,15 +25,21 @@ export default async function AdminSessionsPage() {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
 
-  const [{ data: clinic }, { data: subscriptions }] = await Promise.all([
+  const [{ data: clinic }, { data: subscriptions, error: subscriptionsError }] = await Promise.all([
     supabase.from("clinics").select("name").eq("id", clinicId).single(),
     supabase
       .from("session_subscriptions")
-      .select("*, profiles(full_name), session_slots(weekday, start_time, end_time, rooms(name))")
+      // profiles!session_subscriptions_user_id_fkey — לטבלה יש גם reviewed_by
+      // שמצביע ל-profiles, אז embed לא-מפורש דו-משמעי (ר' אותה בעיה ב-
+      // admin/board עם bookings.user_id/cancelled_by).
+      .select(
+        "*, profiles!session_subscriptions_user_id_fkey(full_name), session_slots(weekday, start_time, end_time, rooms(name))",
+      )
       .eq("clinic_id", clinicId)
       .order("created_at", { ascending: false })
       .limit(40),
   ]);
+  if (subscriptionsError) console.error("admin/sessions subscriptions query failed:", subscriptionsError);
 
   const queue = (subscriptions ?? []).filter((s) => s.status === "requested");
   const rest = (subscriptions ?? []).filter((s) => s.status !== "requested");

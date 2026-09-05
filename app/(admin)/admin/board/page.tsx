@@ -8,9 +8,9 @@ import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, 
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft, X } from "lucide-react";
-import { adminCancelBookingAction } from "./actions";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import { AssignForm } from "./assign-form";
+import { AdminSlotGrid, type AdminCellState, type GridColumn } from "./admin-slot-grid";
 
 type View = "day" | "week" | "month";
 const HEB_WEEKDAYS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
@@ -67,9 +67,17 @@ export default async function AdminBoardPage({
         ) : view === "month" ? (
           <MonthView date={date} today={today} timezone={timezone} clinicId={clinicId} />
         ) : view === "week" ? (
-          <WeekView date={date} today={today} timezone={timezone} rooms={rooms} selectedRoomId={selectedRoomId!} clinicId={clinicId} />
+          <WeekView
+            date={date}
+            today={today}
+            timezone={timezone}
+            rooms={rooms}
+            selectedRoomId={selectedRoomId!}
+            clinicId={clinicId}
+            users={users ?? []}
+          />
         ) : (
-          <DayView date={date} today={today} timezone={timezone} rooms={rooms} clinicId={clinicId} />
+          <DayView date={date} today={today} timezone={timezone} rooms={rooms} clinicId={clinicId} users={users ?? []} />
         )}
 
         <Card id="assign" className="shadow-e1 scroll-mt-6">
@@ -138,57 +146,32 @@ type BookingRow = {
 };
 type BlockRow = { id: string; room_id: string; starts_at: string; ends_at: string; reason: string };
 
-function BoardCell({
-  roomId,
-  date,
-  slot,
-  slotStart,
-  slotEnd,
-  bookings,
-  blocks,
-}: {
-  roomId: string;
-  date: string;
-  slot: string;
-  slotStart: Date;
-  slotEnd: Date;
-  bookings: BookingRow[];
-  blocks: BlockRow[];
-}) {
-  const booking = bookings.find((b) => b.room_id === roomId && new Date(b.starts_at) < slotEnd && new Date(b.ends_at) > slotStart);
-  const block = blocks.find((b) => b.room_id === roomId && new Date(b.starts_at) < slotEnd && new Date(b.ends_at) > slotStart);
+// מקביל ל-buildCellStates ב-/schedule, בשביל AdminSlotGrid — עמודה = חדר
+// (DayView) או יום (WeekView), בדיוק כמו בצד המטפל/ת.
+function buildAdminCellStates(
+  columns: { roomId: string; date: string }[],
+  slots: string[],
+  timezone: string,
+  bookings: BookingRow[],
+  blocks: BlockRow[],
+): AdminCellState[][] {
+  return columns.map((col) =>
+    slots.map((slot) => {
+      const slotStart = zonedDateTimeToUtc(col.date, slot, timezone);
+      const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60_000);
 
-  if (booking) {
-    return (
-      <td className="p-1">
-        <div className="flex h-11 items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700 md:h-8">
-          <span className="min-w-0 truncate">{booking.profiles?.full_name}</span>
-          <form action={adminCancelBookingAction}>
-            <input type="hidden" name="booking_id" value={booking.id} />
-            <button type="submit" className="-me-1 flex size-8 shrink-0 items-center justify-center rounded-button text-violet-500 hover:text-danger md:size-5" title="ביטול">
-              <X className="size-3.5" />
-            </button>
-          </form>
-        </div>
-      </td>
-    );
-  }
-  if (block) {
-    return (
-      <td className="p-1" title={block.reason}>
-        <div className="flex h-11 items-center justify-center rounded-field bg-subtle text-xs text-muted-foreground md:h-8">חסום</div>
-      </td>
-    );
-  }
-  return (
-    <td className="p-1">
-      <Link
-        href={`/admin/board?date=${date}&room=${roomId}&time=${slot}#assign`}
-        className="flex h-11 items-center justify-center rounded-field border border-success-border bg-success-bg text-xs text-success-fg hover:bg-success/20 md:h-8"
-      >
-        פנוי
-      </Link>
-    </td>
+      const booking = bookings.find(
+        (b) => b.room_id === col.roomId && new Date(b.starts_at) < slotEnd && new Date(b.ends_at) > slotStart,
+      );
+      if (booking) return { status: "booked", bookingId: booking.id, label: booking.profiles?.full_name ?? "" };
+
+      const block = blocks.find(
+        (b) => b.room_id === col.roomId && new Date(b.starts_at) < slotEnd && new Date(b.ends_at) > slotStart,
+      );
+      if (block) return { status: "blocked", reason: block.reason };
+
+      return { status: "available" };
+    }),
   );
 }
 
@@ -198,21 +181,29 @@ async function DayView({
   timezone,
   rooms,
   clinicId,
+  users,
 }: {
   date: string;
   today: string;
   timezone: string;
   rooms: { id: string; name: string }[];
   clinicId: string;
+  users: { id: string; full_name: string }[];
 }) {
   const supabase = await createClient();
   const dayStart = zonedDateTimeToUtc(date, "00:00", timezone);
   const dayEnd = zonedDateTimeToUtc(addDays(date, 1), "00:00", timezone);
 
-  const [{ data: bookings }, { data: blocks }] = await Promise.all([
+  // 🔴 profiles!bookings_user_id_fkey ולא profiles() סתם: ל-bookings יש שתי
+  // foreign keys ל-profiles (user_id ו-cancelled_by). embed לא-מפורש כזה
+  // גורם ל-PostgREST להחזיר שגיאת "more than one relationship was found"
+  // — וזו בדיוק הסיבה שהלוח הראה "פנוי" בכל מקום למרות הזמנות קיימות
+  // בפועל: ה-error הוחזר אבל לא נבדק, data היה null, ותאי ה-UI קראו את
+  // זה כ"אין הזמנות" בלי לזרוק שגיאה גלויה.
+  const [{ data: bookings, error: bookingsError }, { data: blocks }] = await Promise.all([
     supabase
       .from("bookings")
-      .select("id, room_id, starts_at, ends_at, profiles(full_name)")
+      .select("id, room_id, starts_at, ends_at, profiles!bookings_user_id_fkey(full_name)")
       .eq("clinic_id", clinicId)
       .eq("status", "confirmed")
       .lt("starts_at", dayEnd.toISOString())
@@ -224,6 +215,7 @@ async function DayView({
       .lt("starts_at", dayEnd.toISOString())
       .gt("ends_at", dayStart.toISOString()),
   ]);
+  if (bookingsError) console.error("admin/board DayView bookings query failed:", bookingsError);
 
   const slots = buildDaySlots();
 
@@ -238,43 +230,18 @@ async function DayView({
 
       <Card className="shadow-e1 overflow-hidden p-0">
         <CardContent className="overflow-x-auto p-0">
-          {/* minWidth דינמי לפי מספר החדרים: במסך צר הלוח גולל אופקית במקום
-              לרסק את העמודות לרוחב לא קריא. בדסקטופ w-full גובר ממילא. */}
-          <table className="w-full border-collapse text-sm" style={{ minWidth: `${64 + rooms.length * 92}px` }}>
-            <thead>
-              <tr className="border-b border-border bg-muted">
-                <th className="w-16 p-2 text-xs font-normal text-muted-foreground">שעה</th>
-                {rooms.map((r) => (
-                  <th key={r.id} className="p-2 text-center font-medium">
-                    {r.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {slots.map((slot) => {
-                const slotStart = zonedDateTimeToUtc(date, slot, timezone);
-                const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60_000);
-                return (
-                  <tr key={slot} className="border-b border-border last:border-0">
-                    <td className="tabular-nums p-2 text-xs text-muted-foreground">{slot}</td>
-                    {rooms.map((r) => (
-                      <BoardCell
-                        key={r.id}
-                        roomId={r.id}
-                        date={date}
-                        slot={slot}
-                        slotStart={slotStart}
-                        slotEnd={slotEnd}
-                        bookings={(bookings ?? []) as BookingRow[]}
-                        blocks={(blocks ?? []) as BlockRow[]}
-                      />
-                    ))}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <AdminSlotGrid
+            slots={slots}
+            columns={rooms.map((r): GridColumn => ({ key: r.id, roomId: r.id, date, header: r.name }))}
+            cells={buildAdminCellStates(
+              rooms.map((r) => ({ roomId: r.id, date })),
+              slots,
+              timezone,
+              (bookings ?? []) as BookingRow[],
+              (blocks ?? []) as BlockRow[],
+            )}
+            users={users}
+          />
         </CardContent>
       </Card>
     </>
@@ -288,6 +255,7 @@ async function WeekView({
   rooms,
   selectedRoomId,
   clinicId,
+  users,
 }: {
   date: string;
   today: string;
@@ -295,16 +263,20 @@ async function WeekView({
   rooms: { id: string; name: string }[];
   selectedRoomId: string;
   clinicId: string;
+  users: { id: string; full_name: string }[];
 }) {
   const supabase = await createClient();
   const days = weekDays(date);
   const rangeStart = zonedDateTimeToUtc(days[0], "00:00", timezone);
   const rangeEnd = zonedDateTimeToUtc(addDays(days[6], 1), "00:00", timezone);
 
-  const [{ data: bookings }, { data: blocks }] = await Promise.all([
+  const [{ data: bookings, error: bookingsError }, { data: blocks }] = await Promise.all([
     supabase
       .from("bookings")
-      .select("id, room_id, starts_at, ends_at, profiles(full_name)")
+      // profiles!bookings_user_id_fkey — ר' הערה ב-DayView: embed לא-מפורש
+      // ל-profiles מ-bookings דו-משמעי (יש גם cancelled_by), וה-error שחוזר
+      // ממנו לא נבדק בעבר.
+      .select("id, room_id, starts_at, ends_at, profiles!bookings_user_id_fkey(full_name)")
       .eq("clinic_id", clinicId)
       .eq("room_id", selectedRoomId)
       .eq("status", "confirmed")
@@ -318,6 +290,7 @@ async function WeekView({
       .lt("starts_at", rangeEnd.toISOString())
       .gt("ends_at", rangeStart.toISOString()),
   ]);
+  if (bookingsError) console.error("admin/board WeekView bookings query failed:", bookingsError);
 
   const slots = buildDaySlots();
 
@@ -349,43 +322,27 @@ async function WeekView({
         <CardContent className="overflow-x-auto p-0">
           {/* 7 ימים + עמודת שעה לא נכנסים ברוחב מובייל — גלילה אופקית
               במקום עמודות מרוסקות. */}
-          <table className="w-full min-w-[680px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted">
-                <th className="w-16 p-2 text-xs font-normal text-muted-foreground">שעה</th>
-                {days.map((d, i) => (
-                  <th key={d} className="p-2 text-center font-medium">
-                    <Link href={viewHref("day", d)} className="hover:underline">
-                      {HEB_WEEKDAYS[i]} · {d.slice(8, 10)}/{d.slice(5, 7)}
-                    </Link>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {slots.map((slot) => (
-                <tr key={slot} className="border-b border-border last:border-0">
-                  <td className="tabular-nums p-2 text-xs text-muted-foreground">{slot}</td>
-                  {days.map((d) => {
-                    const slotStart = zonedDateTimeToUtc(d, slot, timezone);
-                    const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60_000);
-                    return (
-                      <BoardCell
-                        key={d}
-                        roomId={selectedRoomId}
-                        date={d}
-                        slot={slot}
-                        slotStart={slotStart}
-                        slotEnd={slotEnd}
-                        bookings={(bookings ?? []) as BookingRow[]}
-                        blocks={(blocks ?? []) as BlockRow[]}
-                      />
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="min-w-[680px]">
+            <AdminSlotGrid
+              slots={slots}
+              columns={days.map(
+                (d, i): GridColumn => ({
+                  key: d,
+                  roomId: selectedRoomId,
+                  date: d,
+                  header: `${HEB_WEEKDAYS[i]} · ${d.slice(8, 10)}/${d.slice(5, 7)}`,
+                }),
+              )}
+              cells={buildAdminCellStates(
+                days.map((d) => ({ roomId: selectedRoomId, date: d })),
+                slots,
+                timezone,
+                (bookings ?? []) as BookingRow[],
+                (blocks ?? []) as BlockRow[],
+              )}
+              users={users}
+            />
+          </div>
         </CardContent>
       </Card>
     </>

@@ -302,6 +302,34 @@ trial.
   `hidden` היה הופך את body ל-scroll container חדש ומבטל sticky של
   צאצא, בדיוק כמו שקרה לסרגל הזה לפני כן.
 
+## ✅ 15. באג אמיתי: לוח האדמין לא הראה אף הזמנה קיימת + שיבוץ מהלוח + סרגל sticky
+
+- **הבאג האמיתי (לא cache, לא תאריך לא נכון)**: `/admin/board` הראה "פנוי"
+  בכל תא, כולל משבצות עם הזמנה מאושרת שנוצרה דקות קודם לכן. אימתתי ישירות
+  ב-DB (Supabase MCP): `bookings` יש לה **שתי** foreign keys ל-`profiles`
+  (`user_id` ו-`cancelled_by`). embed לא-מפורש כמו `profiles(full_name)`
+  דו-משמעי מבחינת PostgREST — הוא מחזיר שגיאת "more than one relationship
+  was found", אבל הקוד קרא רק את `{ data }` מה-Promise.all ומעולם לא בדק
+  `error`. אז `data` היה `null`, הפך ל-`[]`, וכל תא נראה "פנוי" בלי שום
+  שגיאה גלויה — לוח שנה שמשקר שקט על תפוסה בפועל. תוקן בשלושה מקומות:
+  `admin/board` (DayView+WeekView, `profiles!bookings_user_id_fkey`) ו-
+  `admin/sessions` (`session_subscriptions` יש לה גם `reviewed_by` →
+  `profiles!session_subscriptions_user_id_fkey`). נוסף גם `console.error`
+  על כל שאילתה קריטית כזו, כדי שבאג דומה לא יישאר שקט שוב. **בדקתי את כל
+  שאר ה-embeds של `profiles` בקוד** (`payments`, `audit_log`) — לשתיהן FK
+  יחיד ל-profiles, לא דו-משמעיות, לא נגעתי.
+- **שיבוץ ישיר מהלוח לאדמין**: `admin/board/admin-slot-grid.tsx` — אותו
+  מנגנון בחירת טווח בשתי לחיצות כמו ב-`/schedule`, אבל עם `<Select>` לבחירת
+  "עבור מי" קובעים את התור (עצמי או כל מטפל/ת אחר/ת ברשימת המשתמשים
+  הפעילים) ושדה הערה, בפס האישור הצף. קורא ל-`adminAssignBookingAction`
+  הקיים ישירות (Server Action כפונקציה, לא רק `<form>`). "שיבוץ ידני"
+  (טופס מדויק) נשאר כאפשרות משלימה מתחת ללוח.
+- **סרגל הניווט הצדדי בדסקטופ הפך ל-`sticky top-0 self-start h-screen`** —
+  בלי `self-start` הוא נמתח לגובה כל השורה (כולל תוכן העמוד הארוך) בגלל
+  `align-items: stretch` המובנה של flex, ואז `sticky` לא עוזר כי האלמנט
+  כבר "ארוך" כמו כל הדף. `self-start` משחרר אותו לגובה הטבעי, ורק אז
+  ה-sticky שומר אותו צמוד לראש המסך תוך גלילת התוכן שלצידו.
+
 ## מה הכי דחוף להמשיך בו
 
 1. Email (Resend) — תזכורות/יתרה-נמוכה/חידוש ססיה מזוהות אבל לא נשלחות.

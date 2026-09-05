@@ -174,8 +174,13 @@ export function AppShell({
 
   return (
     <div className="flex min-h-full flex-1">
-      {/* דסקטופ — סרגל צד קבוע */}
-      <aside className="hidden w-[var(--sidebar-w)] shrink-0 flex-col border-e border-border bg-surface md:flex">
+      {/* דסקטופ — סרגל צד קבוע. sticky top-0 self-start h-screen: בלי
+          self-start הוא נמתח (align-items:stretch כברירת מחדל של flex)
+          לגובה כל השורה הכוללת את תוכן העמוד, ואז "sticky" לא עוזר —
+          האלמנט כבר תופס את כל הגובה וגולל יחד איתו. self-start משחרר
+          אותו לגובה הטבעי שלו (h-screen), ורק אז sticky שומר אותו צמוד
+          לראש המסך תוך כדי גלילת התוכן שלצידו. */}
+      <aside className="sticky top-0 hidden h-screen w-[var(--sidebar-w)] shrink-0 flex-col self-start border-e border-border bg-surface md:flex">
         {sidebarBody}
       </aside>
 
