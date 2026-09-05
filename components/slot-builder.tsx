@@ -4,6 +4,7 @@ import { useActionState, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 
 const WEEKDAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
@@ -80,31 +81,31 @@ export function SlotBuilder({
           >
             <div className="flex flex-col gap-1">
               <Label className="text-xs">חדר</Label>
-              <select
+              <Select
                 value={row.room_id}
                 onChange={(e) => updateRow(i, { room_id: e.target.value })}
-                className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
+                className="sm:w-auto"
               >
                 {rooms.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="flex flex-col gap-1">
               <Label className="text-xs">יום</Label>
-              <select
+              <Select
                 value={row.weekday}
                 onChange={(e) => updateRow(i, { weekday: Number(e.target.value) })}
-                className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
+                className="sm:w-auto"
               >
                 {WEEKDAYS.map((d, idx) => (
                   <option key={idx} value={idx}>
                     {d}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="flex flex-col gap-1">
               <Label className="text-xs">שעת התחלה</Label>

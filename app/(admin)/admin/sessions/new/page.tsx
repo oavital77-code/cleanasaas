@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SlotBuilder } from "@/components/slot-builder";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { adminCreateSessionAction } from "./actions";
 
 export default async function AdminNewSessionPage() {
@@ -40,30 +41,23 @@ export default async function AdminNewSessionPage() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
                     <div className="flex flex-col gap-1.5">
                       <Label>מטפל/ת</Label>
-                      <select
-                        name="user_id"
-                        required
-                        className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
-                      >
+                      <Select name="user_id" required className="sm:w-auto">
                         {users.map((u) => (
                           <option key={u.id} value={u.id}>
                             {u.full_name}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <Label>התחייבות</Label>
-                      <select
-                        name="term_months"
-                        className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
-                      >
+                      <Select name="term_months" className="sm:w-auto">
                         <option value="">ללא</option>
                         <option value="1">חודש</option>
                         <option value="3">3 חודשים</option>
                         <option value="6">6 חודשים</option>
                         <option value="12">שנה</option>
-                      </select>
+                      </Select>
                     </div>
                   </div>
                 }

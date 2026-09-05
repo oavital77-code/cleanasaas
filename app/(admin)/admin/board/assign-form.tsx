@@ -5,6 +5,7 @@ import { adminAssignBookingAction, type AssignState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 
 const initialState: AssignState = {};
 
@@ -27,28 +28,23 @@ export function AssignForm({
     <form action={formAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       <div className="flex flex-col gap-1.5">
         <Label>מטפל/ת</Label>
-        <select name="user_id" required className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto">
+        <Select name="user_id" required className="sm:w-auto">
           {users.map((u) => (
             <option key={u.id} value={u.id}>
               {u.full_name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
       <div className="flex flex-col gap-1.5">
         <Label>חדר</Label>
-        <select
-          name="room_id"
-          required
-          defaultValue={initialRoomId}
-          className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
-        >
+        <Select name="room_id" required defaultValue={initialRoomId} className="sm:w-auto">
           {rooms.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
       <div className="flex flex-col gap-1.5">
         <Label>תאריך</Label>

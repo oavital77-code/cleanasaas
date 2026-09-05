@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import {
   completeSignupClinicFromMetadata,
   addBranchAction,
@@ -102,18 +103,13 @@ export default async function OnboardingPage() {
               <form action={addRoomAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="room_branch">סניף</Label>
-                  <select
-                    id="room_branch"
-                    name="branch_id"
-                    required
-                    className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
-                  >
+                  <Select id="room_branch" name="branch_id" required className="sm:w-auto">
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="room_name">שם החדר</Label>
@@ -121,16 +117,12 @@ export default async function OnboardingPage() {
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="room_type">סוג</Label>
-                  <select
-                    id="room_type"
-                    name="room_type"
-                    className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
-                  >
+                  <Select id="room_type" name="room_type" className="sm:w-auto">
                     <option value="talk">שיח</option>
                     <option value="touch">מגע</option>
                     <option value="podcast">פודקאסט</option>
                     <option value="group">קבוצתי</option>
-                  </select>
+                  </Select>
                 </div>
                 <Button type="submit" className="w-full sm:w-auto">הוספת חדר</Button>
               </form>

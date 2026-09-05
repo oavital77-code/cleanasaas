@@ -161,11 +161,11 @@ function BoardCell({
   if (booking) {
     return (
       <td className="p-1">
-        <div className="flex h-8 items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700">
+        <div className="flex h-11 items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700 md:h-8">
           <span className="min-w-0 truncate">{booking.profiles?.full_name}</span>
           <form action={adminCancelBookingAction}>
             <input type="hidden" name="booking_id" value={booking.id} />
-            <button type="submit" className="shrink-0 text-violet-500 hover:text-danger" title="ביטול">
+            <button type="submit" className="-me-1 flex size-8 shrink-0 items-center justify-center rounded-button text-violet-500 hover:text-danger md:size-5" title="ביטול">
               <X className="size-3.5" />
             </button>
           </form>
@@ -176,7 +176,7 @@ function BoardCell({
   if (block) {
     return (
       <td className="p-1" title={block.reason}>
-        <div className="flex h-8 items-center justify-center rounded-field bg-subtle text-xs text-muted-foreground">חסום</div>
+        <div className="flex h-11 items-center justify-center rounded-field bg-subtle text-xs text-muted-foreground md:h-8">חסום</div>
       </td>
     );
   }
@@ -184,7 +184,7 @@ function BoardCell({
     <td className="p-1">
       <Link
         href={`/admin/board?date=${date}&room=${roomId}&time=${slot}#assign`}
-        className="flex h-8 items-center justify-center rounded-field border border-success-border bg-success-bg text-xs text-success-fg hover:bg-success/20"
+        className="flex h-11 items-center justify-center rounded-field border border-success-border bg-success-bg text-xs text-success-fg hover:bg-success/20 md:h-8"
       >
         פנוי
       </Link>
@@ -238,7 +238,9 @@ async function DayView({
 
       <Card className="shadow-e1 overflow-hidden p-0">
         <CardContent className="overflow-x-auto p-0">
-          <table className="w-full border-collapse text-sm">
+          {/* minWidth דינמי לפי מספר החדרים: במסך צר הלוח גולל אופקית במקום
+              לרסק את העמודות לרוחב לא קריא. בדסקטופ w-full גובר ממילא. */}
+          <table className="w-full border-collapse text-sm" style={{ minWidth: `${64 + rooms.length * 92}px` }}>
             <thead>
               <tr className="border-b border-border bg-muted">
                 <th className="w-16 p-2 text-xs font-normal text-muted-foreground">שעה</th>
@@ -345,7 +347,9 @@ async function WeekView({
 
       <Card className="shadow-e1 overflow-hidden p-0">
         <CardContent className="overflow-x-auto p-0">
-          <table className="w-full border-collapse text-sm">
+          {/* 7 ימים + עמודת שעה לא נכנסים ברוחב מובייל — גלילה אופקית
+              במקום עמודות מרוסקות. */}
+          <table className="w-full min-w-[680px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-border bg-muted">
                 <th className="w-16 p-2 text-xs font-normal text-muted-foreground">שעה</th>

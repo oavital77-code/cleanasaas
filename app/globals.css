@@ -213,13 +213,33 @@
 /* אתר עברי, RTL בלבד. בלי רקע מצויר — נשאר רק במסך הכניסה (/login), ר'
    login-backdrop.tsx. משטח נקי (--canvas) הוא ברירת המחדל לכל האזורים
    הפנימיים, לפי מסמך השפה העיצובית. */
+html {
+  /* iOS מגדיל טקסט מעצמו בסיבוב מסך לרוחב אם לא אומרים לו אחרת. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-heebo), Arial, Helvetica, sans-serif;
-  /* רשת יחיד ללא min-w-0 יכול לדחוף את כל העמוד לרוחב — זה חוסם את זה
-     כרשת אחרונה, בנוסף לתיקון האמיתי (min-w-0) בכל רכיב שנתגלה. */
+  /* רשת/אלמנט יחיד ללא min-w-0 יכול לדחוף את כל העמוד לרוחב — חוסם את זה
+     כרשת אחרונה, בנוסף לתיקון האמיתי (min-w-0) בכל רכיב שנתגלה.
+     🔴 clip ולא hidden: overflow-x:hidden הופך את body ל-scroll container
+     ובכך שובר position:sticky של צאצאים (הסרגל העליון ב-AppHeader).
+     hidden נשאר כ-fallback לדפדפנים בלי תמיכה ב-clip (iOS < 16). */
   overflow-x: hidden;
+  overflow-x: clip;
+}
+
+/* אזור מגע מינימלי לפי --tap-min בשפה העיצובית: כפתורי אייקון קטנים
+   (X בתא בלוח, המבורגר) נשארים ויזואלית קטנים אבל מקבלים שטח לחיצה מלא. */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a[href] {
+    touch-action: manipulation;
+  }
 }
 
 /* מספרים, שעות וסכומים — תמיד ברוחב אחיד כדי שעמודות ולוחות יתיישרו */

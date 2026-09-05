@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import {
   updateRoleStatusAction,
   updateAdminNoteAction,
@@ -59,27 +60,19 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
               <input type="hidden" name="user_id" value={target.id} />
               <div className="flex flex-col gap-1">
                 <Label className="text-xs">תפקיד</Label>
-                <select
-                  name="role"
-                  defaultValue={target.role}
-                  className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
-                >
+                <Select name="role" defaultValue={target.role} className="sm:w-auto">
                   <option value="therapist">מטפל/ת</option>
                   <option value="admin">אדמין/ית</option>
                   <option value="owner">בעלים</option>
-                </select>
+                </Select>
               </div>
               <div className="flex flex-col gap-1">
                 <Label className="text-xs">סטטוס</Label>
-                <select
-                  name="status"
-                  defaultValue={target.status}
-                  className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto"
-                >
+                <Select name="status" defaultValue={target.status} className="sm:w-auto">
                   <option value="active">פעיל</option>
                   <option value="suspended">מושעה</option>
                   <option value="archived">בארכיון</option>
-                </select>
+                </Select>
               </div>
               <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
                 שמירה
@@ -208,7 +201,8 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
                 name="note"
                 defaultValue={note?.note ?? ""}
                 rows={3}
-                className="rounded-field border border-input bg-background p-3 text-sm"
+                // text-base עד md — אותו כלל של iOS כמו ב-Input/Select.
+                className="rounded-field border border-border-strong bg-surface p-3 text-base focus-visible:border-violet-500 focus-visible:outline-none focus-visible:[box-shadow:var(--focus-ring)] md:text-sm"
               />
               <Button type="submit" size="sm" variant="outline" className="w-fit">
                 שמירת הערה

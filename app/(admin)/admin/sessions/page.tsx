@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { approveSessionAction, rejectSessionAction } from "./actions";
 
 const WEEKDAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
@@ -78,20 +79,20 @@ export default async function AdminSessionsPage() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                   <form action={approveSessionAction} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="subscription_id" value={s.id} />
-                    <select name="term_months" className="h-9 flex-1 rounded-field border border-input bg-background px-2 text-sm sm:flex-none">
+                    <Select name="term_months" className="flex-1 md:h-9 sm:flex-none">
                       <option value="">ללא התחייבות</option>
                       <option value="1">חודש</option>
                       <option value="3">3 חודשים</option>
                       <option value="6">6 חודשים</option>
                       <option value="12">שנה</option>
-                    </select>
+                    </Select>
                     <Button type="submit" size="sm">
                       אישור
                     </Button>
                   </form>
                   <form action={rejectSessionAction} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="subscription_id" value={s.id} />
-                    <Input name="reason" placeholder="סיבת דחייה" className="h-9 w-full sm:w-40" />
+                    <Input name="reason" placeholder="סיבת דחייה" className="w-full sm:h-9 sm:w-40" />
                     <Button type="submit" size="sm" variant="destructive">
                       דחייה
                     </Button>

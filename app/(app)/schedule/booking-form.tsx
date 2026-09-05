@@ -5,6 +5,7 @@ import { createBookingAction, type BookingState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 
 const initialState: BookingState = {};
 
@@ -15,18 +16,13 @@ export function BookingForm({ rooms }: { rooms: { id: string; name: string }[] }
     <form action={formAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="room_id">חדר</Label>
-        <select
-          id="room_id"
-          name="room_id"
-          required
-          className="h-10 w-full rounded-md border border-input bg-background px-3 sm:w-auto"
-        >
+        <Select id="room_id" name="room_id" required className="sm:w-auto">
           {rooms.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="date">תאריך</Label>

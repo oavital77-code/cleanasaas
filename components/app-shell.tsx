@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -63,7 +63,8 @@ function isActive(pathname: string, href: string) {
 
 function NavList({ items, pathname, onNavigate }: { items: NavItem[]; pathname: string; onNavigate?: () => void }) {
   return (
-    <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
+    // overscroll-contain: גלילה עד סוף התפריט לא "בורחת" לגלילת הדף שמאחוריו.
+    <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain p-3">
       {items.map((item) => {
         const active = isActive(pathname, item.href);
         const Icon = item.icon;
@@ -101,6 +102,33 @@ export function AppShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const items = side === "app" ? APP_NAV : ADMIN_NAV;
+
+  // כשהמגירה פתוחה — נעילת גלילת הדף שמאחוריה, וסגירה ב-Escape.
+  // בלי זה במובייל גוללים את התוכן "מתחת" למגירה וזה מרגיש שבור.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
+
+  // סגירה אוטומטית במעבר לדסקטופ, כדי שהמגירה לא תישאר "תקועה" פתוחה
+  // אחרי סיבוב מסך או שינוי גודל חלון.
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onChange = () => {
+      if (mq.matches) setMobileOpen(false);
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
   const crossLink =
     side === "app" && isAdmin
       ? { href: "/admin", label: "ניהול המערכת" }
@@ -152,7 +180,9 @@ export function AppShell({
       </aside>
 
       {/* מובייל — top bar + סרגל נשלף */}
-      <div className="flex flex-1 flex-col">
+      {/* min-w-0 חובה: פריט flex מקבל min-width:auto כברירת מחדל, ואז טבלה
+          או קוד ארוך בתוכן דוחפים את כל העמודה מעבר לרוחב המסך. */}
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-[var(--page-header-h)] shrink-0 items-center justify-between border-b border-border bg-surface px-4 md:hidden">
           <button
             type="button"

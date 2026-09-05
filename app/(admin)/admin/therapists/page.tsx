@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { createInviteAction, adminResetPasswordAction, toggleClinicPublishedAction } from "./actions";
 
 const ROLE_LABEL: Record<string, string> = { owner: "בעלים", admin: "אדמין/ית", therapist: "מטפל/ת" };
@@ -127,10 +128,10 @@ export default async function TherapistsPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <form action={createInviteAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <select name="role" className="h-10 w-full rounded-field border border-input bg-background px-3 sm:w-auto">
+              <Select name="role" className="sm:w-auto">
                 <option value="therapist">מטפל/ת</option>
                 <option value="admin">אדמין/ית</option>
-              </select>
+              </Select>
               <Button type="submit" className="w-full sm:w-auto">
                 יצירת קישור הזמנה
               </Button>
