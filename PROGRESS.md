@@ -330,6 +330,73 @@ trial.
   כבר "ארוך" כמו כל הדף. `self-start` משחרר אותו לגובה הטבעי, ורק אז
   ה-sticky שומר אותו צמוד לראש המסך תוך גלילת התוכן שלצידו.
 
+## ✅ 16. סקירת אבטחה — ממצאים ותיקונים
+
+### תוקן
+
+- **🔴 גבוה — 4 endpoints של cron היו פתוחים לחלוטין לאינטרנט.**
+  `vercel.json` מגדיר 4 crons, ואף אחד מה-routes לא אימת דבר (`CRON_SECRET`
+  לא הופיע בקוד בכלל). כולם רצים עם `createAdminClient()` — service role,
+  עוקף RLS, כותב על פני **כל** הקליניקות. ניצול אפשרי: קריאה חוזרת
+  ל-`send-reminders` מסמנת את כל התזכורות כ"נשלחו" (`reminder_sent_at`)
+  ואז אף מטפל/ת לא מקבל/ת תזכורת 24 שעות; `materialize-sessions` מבצע
+  כתיבה כבדה חוצת-קליניקות בכל קריאה (DoS/עלות); `poll-woo-orders` שורף
+  את מכסת ה-API של WooCommerce של כל קליניקה. תוקן ב-`lib/cron/guard.ts`:
+  אימות `Authorization: Bearer $CRON_SECRET` בהשוואת זמן-קבוע (דרך SHA-256
+  כדי שגם אורך הסוד לא ידלוף), **fail closed** — בלי `CRON_SECRET` מוגדר
+  ה-routes מחזירים 503 ולא רצים. 8 בדיקות יחידה נועלות את ההתנהגות
+  (`lib/cron/guard.test.ts`).
+- **🟠 בינוני — אין כותרות אבטחה.** נוספו ב-`next.config.ts`:
+  `X-Frame-Options: DENY` + `CSP: frame-ancestors 'none'` (clickjacking),
+  `nosniff`, `HSTS`, `Permissions-Policy`, ו-`Referrer-Policy:
+  strict-origin-when-cross-origin` — האחרון קריטי דווקא בגלל
+  `/api/ics/[token]`, שבו הטוקן יושב ב-URL עצמו והיה דולף בכותרת `Referer`
+  לכל דומיין חיצוני שנלחץ מהדף.
+- **🟡 נמוך — הרשאות עודפות על `public_availability`.** ל-`anon` היו
+  SELECT+INSERT+UPDATE+DELETE על ה-view שמממש את חוק #3 (בפועל anon קיבל 0
+  שורות, כי ה-view מסנן `current_clinic_id()` שמחזירה NULL בלי auth).
+  מיגרציה `20260905000002`: `anon` ללא הרשאות כלל, `authenticated` עם
+  SELECT בלבד. אומת אחרי ההחלה.
+
+### נבדק ונמצא תקין (לא שונה)
+
+- **בידוד רב-דיירי**: כל 24 הטבלאות עם RLS מופעל ומדיניות אחת לפחות. כל
+  מדיניות מסננת `clinic_id = current_clinic_id()`. `profiles` SELECT מחזיר
+  רק את עצמך (או אדמין בקליניקה שלך) — חוק #3 נאכף ברמת ה-DB, לא רק ב-UI.
+- **הסלמת הרשאות**: למדיניות UPDATE על `profiles` אין `WITH CHECK` — אבל
+  הטריגר `enforce_profile_privilege_columns` מחזיר `clinic_id`/`phone`/
+  `email` תמיד לערך הישן, ו-`role`/`status`/`door_code`/פרטי כרטיס לערך
+  הישן כשמדובר בעריכה עצמית או בלא-אדמין. כלומר מטפל/ת **לא** יכול/ה
+  לקדם את עצמו/ה לאדמין או לעבור קליניקה דרך PostgREST. (הגנה בשכבה
+  אחת — שווה להוסיף `WITH CHECK` כחגורה נוספת בעתיד.)
+- **IDOR ב-RPCs**: כל 15 ה-RPCs שנבדקו מאמתים `auth.uid()` (או
+  `is_superadmin()` שמאמת דרכו), וכולם עם `SET search_path` — אין חטיפת
+  search_path. `cancel_booking` מסנן `user_id = v_uid`;
+  `superadmin_list_clinics` זורק `FORBIDDEN` ללא superadmin.
+- **Webhook של Woo**: HMAC-SHA256 על הגוף הגולמי, `timingSafeEqual`, בדיקת
+  אורך, והאימות קורה **לפני** `JSON.parse` — לא מפרסרים קלט לא מאומת. סוד
+  פר-קליניקה, ה-`clinicId` שבנתיב משמש רק לאיתור הסוד. Replay אפשרי
+  תיאורטית אך אידמפוטנטי (`payplus_transaction_uid` UNIQUE).
+- **`/api/ics/[token]`**: הטוקן הוא `gen_random_uuid()` (122 ביט) — לא
+  ניתן לניחוש. מחזיר רק הזמנות של אותו פרופיל, בלי PII מעבר לשם החדר.
+- **סודות**: רק `.env.example` ב-git, `.env*` ב-`.gitignore`,
+  `lib/supabase/admin.ts` עם `import "server-only"` — ה-service role לא
+  יכול להגיע ל-bundle של הדפדפן.
+- **XSS**: אין `dangerouslySetInnerHTML`, `eval` או `new Function` בקוד.
+
+### נותר פתוח (מתועד, לא תוקן)
+
+- `clinic_payment_settings` שומר `woo_consumer_secret`/`woo_webhook_secret`
+  כטקסט רגיל (מוגן ב-RLS בלבד) — הצפנה אמיתית לפני קליניקה אמיתית ראשונה.
+- אין rate limiting על ה-endpoints הציבוריים (`/join/[slug]`, `/api/ics`).
+- אין מסך לסיבוב (rotate) של `ics_token` אם הוא דלף.
+- מדיניות `no_direct_insert`/`no_direct_update` על `bookings` מתירה
+  בפועל כתיבה ישירה **לאדמין** דרך PostgREST — עוקפת את הלוגיקה של
+  ה-RPC (חיוב שעות, audit). מוגבל לאדמין של אותה קליניקה, אבל מנוגד לרוח
+  חוק #1.
+- `auth_leaked_password_protection` כבוי ב-Supabase Auth (בדיקת סיסמאות
+  מול HaveIBeenPwned) — הפעלה בלחיצה בדשבורד.
+
 ## מה הכי דחוף להמשיך בו
 
 1. Email (Resend) — תזכורות/יתרה-נמוכה/חידוש ססיה מזוהות אבל לא נשלחות.
