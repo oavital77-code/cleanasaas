@@ -111,20 +111,6 @@ export default async function HomePage() {
             </CardContent>
           </Card>
         </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Button asChild>
-            <Link href="/schedule">הזמנת חדר</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/purchase">רכישת כרטיסייה</Link>
-          </Button>
-          {isAdmin && (
-            <Button asChild variant="outline">
-              <Link href="/admin">ניהול הקליניקה</Link>
-            </Button>
-          )}
-        </div>
       </div>
     </AppShell>
   );
