@@ -248,6 +248,16 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* תווית קטנה מעל כותרת עמוד שיווקי (דף הבית) — נשארת עדינה כדי שתיקרא
+   כתווית ולא ככותרת משנה. tracking נמוך יחסית לגרסה הלטינית המקורית:
+   אותיות עבריות לא מעוצבות למרווח אותיות רחב. */
+.kicker {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--violet-600);
+}
+
 /* כתמי רקע רכים ומטושטשים — שמורים למסך הכניסה/שיווק בלבד (login-backdrop.tsx).
    הצבע חייב להיות מוטבע ישירות ב-SVG (לא currentColor/CSS var): כש-SVG
    נטען כ-background-image הוא מטופל כמסמך עצמאי בלי גישה לצבעי הדף
