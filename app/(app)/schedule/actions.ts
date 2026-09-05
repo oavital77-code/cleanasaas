@@ -2,16 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthState } from "@/lib/auth/guards";
 import { zonedDateTimeToUtc, DEFAULT_TIMEZONE } from "@/lib/time";
 
 export type BookingState = { error?: string; success?: boolean };
 
+// 🔴 לא supabase.auth.getUser() ישירות: ב-client של מצב Clerk (accessToken)
+// כל גישה ל-supabase.auth.* זורקת — ר' lib/auth/guards.ts.
 async function getClinicTimezone(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return DEFAULT_TIMEZONE;
-  const { data: profile } = await supabase.from("profiles").select("clinic_id").eq("id", user.id).maybeSingle();
+  const { profile } = await getAuthState();
   if (!profile) return DEFAULT_TIMEZONE;
   const { data: clinic } = await supabase.from("clinics").select("timezone").eq("id", profile.clinic_id).maybeSingle();
   return clinic?.timezone ?? DEFAULT_TIMEZONE;

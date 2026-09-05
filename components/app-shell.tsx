@@ -26,7 +26,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "./logo";
-import { signOutAction } from "@/lib/auth/actions";
+import { SignOutButton } from "./sign-out-button";
 
 // שלד משותף לשני "הצדדים" (מטפל/ת ⇄ אדמין), לפי CLEANASITEMAPANDDESIGN §1:
 // סרגל צד קבוע 220px בדסקטופ (inset-inline-start, אז ב-RTL הוא מימין
@@ -164,15 +164,15 @@ export function AppShell({
             {fullName && <p className="truncate text-sm font-medium">{fullName}</p>}
             {clinicName && <p className="truncate text-xs text-muted-foreground">{clinicName}</p>}
           </div>
-          <form action={signOutAction}>
+          <SignOutButton>
             <button
-              type="submit"
+              type="button"
               title="יציאה"
               className="flex size-9 shrink-0 items-center justify-center rounded-button text-muted-foreground hover:bg-subtle hover:text-foreground"
             >
               <LogOut className="size-[18px]" />
             </button>
-          </form>
+          </SignOutButton>
         </div>
       </div>
     </>
@@ -240,15 +240,15 @@ export function AppShell({
                     {crossLink.label}
                   </Link>
                 )}
-                <form action={signOutAction}>
+                <SignOutButton>
                   <button
-                    type="submit"
+                    type="button"
                     className="flex w-full items-center gap-3 rounded-button px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-subtle"
                   >
                     <LogOut className="size-[18px]" />
                     יציאה
                   </button>
-                </form>
+                </SignOutButton>
               </div>
             </div>
           </div>

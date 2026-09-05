@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./logo";
 import { Button } from "./ui/button";
-import { signOutAction } from "@/lib/auth/actions";
+import { SignOutButton } from "./sign-out-button";
 
 // סרגל עליון למסכים מחוברים (בית/schedule/admin/superadmin). לא בשימוש
 // במסכי אימות (ר' AuthShell) — שם אין עדיין ניווט פנימי.
@@ -35,11 +35,11 @@ export function AppHeader({
             {clinicName}
           </span>
         )}
-        <form action={signOutAction}>
-          <Button type="submit" variant="ghost" size="sm">
+        <SignOutButton>
+          <Button type="button" variant="ghost" size="sm">
             יציאה
           </Button>
-        </form>
+        </SignOutButton>
       </div>
     </header>
   );

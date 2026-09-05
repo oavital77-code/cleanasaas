@@ -3,14 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthState } from "@/lib/auth/guards";
 
+// 🔴 לא supabase.auth.getUser() ישירות: ב-client של מצב Clerk (accessToken)
+// כל גישה ל-supabase.auth.* זורקת — ר' lib/auth/guards.ts.
 async function requireSuperadmin() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-  const { data } = await supabase.from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  const { userId } = await getAuthState();
+  if (!userId) redirect("/login");
+  const { data } = await supabase.from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle();
   if (!data) redirect("/");
   return supabase;
 }

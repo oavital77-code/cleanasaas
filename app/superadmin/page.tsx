@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthState } from "@/lib/auth/guards";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,12 +23,12 @@ type ClinicRow = {
 // ר' הערה ב-migration ה-superadmin על למה זו החלטה מכוונת.
 export default async function SuperadminPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  // 🔴 לא supabase.auth.getUser() ישירות: ב-client של מצב Clerk
+  // (accessToken) כל גישה ל-supabase.auth.* זורקת — ר' lib/auth/guards.ts.
+  const { userId } = await getAuthState();
+  if (!userId) redirect("/login");
 
-  const { data: isSuperadminRow } = await supabase.from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  const { data: isSuperadminRow } = await supabase.from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle();
   if (!isSuperadminRow) redirect("/");
 
   const { data: clinics, error } = await supabase.rpc("superadmin_list_clinics");
