@@ -192,7 +192,8 @@ async function DayView({
       </div>
 
       <Card className="shadow-e1 overflow-hidden p-0">
-        <CardContent className="overflow-x-auto p-0">
+        {/* בלי overflow כאן — ר' הערה ב-WeekView: תיבת הגלילה שייכת ל-SlotGrid. */}
+        <CardContent className="p-0">
           <SlotGrid
             slots={slots}
             columns={rooms.map((r): GridColumn => ({ key: r.id, roomId: r.id, date, header: r.name }))}
@@ -316,30 +317,29 @@ async function WeekView({
       </div>
 
       <Card className="shadow-e1 overflow-hidden p-0">
-        <CardContent className="overflow-x-auto p-0">
-          {/* 7 ימים + עמודת שעה לא נכנסים ברוחב מובייל — גלילה אופקית
-              במקום עמודות מרוסקות. */}
-          <div className="min-w-[680px]">
-            <SlotGrid
-              slots={slots}
-              columns={days.map(
-                (d, i): GridColumn => ({
-                  key: d,
-                  roomId: selectedRoomId,
-                  date: d,
-                  header: `${HEB_WEEKDAYS[i]} · ${d.slice(8, 10)}/${d.slice(5, 7)}`,
-                }),
-              )}
-              cells={buildCellStates(
-                days.map((d) => ({ roomId: selectedRoomId, date: d })),
-                slots,
-                timezone,
-                now,
-                availability ?? [],
-                myBookings ?? [],
-              )}
-            />
-          </div>
+        {/* בלי overflow כאן: SlotGrid מנהל תיבת גלילה משלו לשני הצירים,
+            וזה מה שמאפשר לשורת הכותרת ולעמודת השעה להיות sticky. עוד
+            scroll container עוטף היה שובר את זה. */}
+        <CardContent className="p-0">
+          <SlotGrid
+            slots={slots}
+            columns={days.map(
+              (d, i): GridColumn => ({
+                key: d,
+                roomId: selectedRoomId,
+                date: d,
+                header: `${HEB_WEEKDAYS[i]} · ${d.slice(8, 10)}/${d.slice(5, 7)}`,
+              }),
+            )}
+            cells={buildCellStates(
+              days.map((d) => ({ roomId: selectedRoomId, date: d })),
+              slots,
+              timezone,
+              now,
+              availability ?? [],
+              myBookings ?? [],
+            )}
+          />
         </CardContent>
       </Card>
     </>

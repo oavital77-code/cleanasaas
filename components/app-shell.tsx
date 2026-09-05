@@ -136,10 +136,16 @@ export function AppShell({
         ? { href: "/", label: "חזרה לאפליקציה" }
         : null;
 
+  // הלוגו הוא קישור לדף הבית של הצד שבו נמצאים (מסך הבית של האדמין, או
+  // הבית של המטפל/ת) — התנהגות מצופה בכל דשבורד.
+  const homeHref = side === "admin" ? "/admin" : "/";
+
   const sidebarBody = (
     <>
       <div className="flex h-[var(--page-header-h)] shrink-0 items-center gap-2 border-b border-border px-4">
-        <Logo size="sm" />
+        <Link href={homeHref} onClick={() => setMobileOpen(false)} aria-label="דף הבית">
+          <Logo size="sm" />
+        </Link>
       </div>
       <NavList items={items} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
       <div className="flex flex-col gap-2 border-t border-border p-3">
@@ -200,7 +206,9 @@ export function AppShell({
           >
             <Menu className="size-5" />
           </button>
-          <Logo size="sm" />
+          <Link href={homeHref} aria-label="דף הבית">
+            <Logo size="sm" />
+          </Link>
         </header>
 
         {mobileOpen && (
@@ -208,7 +216,9 @@ export function AppShell({
             <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
             <div className="relative flex h-full w-[min(var(--drawer-w),85vw)] flex-col bg-surface shadow-e3">
               <div className="flex h-[var(--page-header-h)] shrink-0 items-center justify-between border-b border-border px-4">
-                <Logo size="sm" />
+                <Link href={homeHref} onClick={() => setMobileOpen(false)} aria-label="דף הבית">
+                  <Logo size="sm" />
+                </Link>
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}

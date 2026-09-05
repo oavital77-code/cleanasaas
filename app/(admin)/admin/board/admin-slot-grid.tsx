@@ -4,12 +4,22 @@ import { useState, useTransition } from "react";
 import { X } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import {
+  SCROLLBOX,
+  HOUR_COL_PX,
+  MIN_COL_PX,
+  CELL_TD,
+  CELL_HEIGHT,
+  STICKY_HEAD,
+  STICKY_HOUR,
+  STICKY_CORNER,
+} from "@/components/calendar-grid-styles";
 import { adminCancelBookingAction, adminAssignBookingAction } from "./actions";
 
 // גרסת אדמין ל-SlotGrid: אותו מנגנון בחירת טווח בשתי לחיצות, אבל התא
 // ה"תפוס" נושא שם מטפל/ת ולא "שלך" (אדמין רואה הכל, לא רק את עצמו/ה —
-// חוק #3 חל רק על מטפל/ת), ופס האישור כולל בחירת עבור מי קובעים את התור
-// (חוק CLEANASITEMAPANDDESIGN: אדמין יכול לשבץ את עצמו/ה או כל מטפל/ת אחר/ת).
+// חוק #3 חל רק על מטפל/ת), ופס האישור כולל בחירת עבור מי קובעים את התור.
+//
 // אין מצב "past" בכוונה — אדמין (בניגוד למטפל/ת) יכול/ה לשבץ גם משבצת
 // שכבר עברה (למשל לתעד ידנית מפגש שהתקיים בלי הזמנה), בדיוק כמו שהיה
 // בהתנהגות המקורית של BoardCell.
@@ -19,10 +29,6 @@ export type AdminCellState =
   | { status: "available" };
 
 export type GridColumn = { key: string; roomId: string; date: string; header: string };
-
-function cellHeightClass() {
-  return "h-11 md:h-8";
-}
 
 export function AdminSlotGrid({
   slots,
@@ -105,80 +111,82 @@ export function AdminSlotGrid({
 
   return (
     <div className="relative">
-      <table
-        className="w-full border-collapse text-sm"
-        style={{ minWidth: columns.length > 4 ? `${64 + columns.length * 92}px` : undefined }}
-      >
-        <thead>
-          <tr className="border-b border-border bg-muted">
-            <th className="w-16 p-2 text-xs font-normal text-muted-foreground">שעה</th>
-            {columns.map((c) => (
-              <th key={c.key} className="p-2 text-center font-medium">
-                {c.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {slots.map((slot, rowIdx) => (
-            <tr key={slot} className="border-b border-border last:border-0">
-              <td className="tabular-nums p-2 text-xs text-muted-foreground">{slot}</td>
-              {columns.map((col, colIdx) => {
-                const cell = cells[colIdx][rowIdx];
-                const isSelected = selection?.colIdx === colIdx && rowIdx >= selLo && rowIdx <= selHi;
-
-                if (cell.status === "booked") {
-                  return (
-                    <td key={col.key} className="p-1">
-                      <div
-                        className={`flex ${cellHeightClass()} items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700`}
-                      >
-                        <span className="min-w-0 truncate">{cell.label}</span>
-                        <form action={adminCancelBookingAction}>
-                          <input type="hidden" name="booking_id" value={cell.bookingId} />
-                          <button
-                            type="submit"
-                            className="-me-1 flex size-8 shrink-0 items-center justify-center rounded-button text-violet-500 hover:text-danger md:size-5"
-                            title="ביטול"
-                          >
-                            <X className="size-3.5" />
-                          </button>
-                        </form>
-                      </div>
-                    </td>
-                  );
-                }
-                if (cell.status === "blocked") {
-                  return (
-                    <td key={col.key} className="p-1" title={cell.reason}>
-                      <div
-                        className={`flex ${cellHeightClass()} items-center justify-center rounded-field bg-subtle text-xs text-muted-foreground`}
-                      >
-                        חסום
-                      </div>
-                    </td>
-                  );
-                }
-                return (
-                  <td key={col.key} className="p-1">
-                    <button
-                      type="button"
-                      onClick={() => handleSlotClick(colIdx, rowIdx)}
-                      className={`flex w-full ${cellHeightClass()} items-center justify-center rounded-field border text-xs transition-colors ${
-                        isSelected
-                          ? "border-violet-500 bg-violet-500 text-white"
-                          : "border-success-border bg-success-bg text-success-fg hover:bg-success/20"
-                      }`}
-                    >
-                      {isSelected ? "נבחר" : "פנוי"}
-                    </button>
-                  </td>
-                );
-              })}
+      <div className={SCROLLBOX}>
+        <table
+          className="w-full border-separate border-spacing-0 text-sm"
+          style={{ minWidth: `${HOUR_COL_PX + columns.length * MIN_COL_PX}px` }}
+        >
+          <thead>
+            <tr>
+              <th className={`${STICKY_CORNER} w-16 p-2 text-xs font-normal text-muted-foreground`}>שעה</th>
+              {columns.map((c) => (
+                <th key={c.key} className={`${STICKY_HEAD} p-2 text-center font-medium`}>
+                  {c.header}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {slots.map((slot, rowIdx) => (
+              <tr key={slot} className="[&:last-child>*]:border-b-0">
+                <td className={`${STICKY_HOUR} tabular-nums p-2 text-xs text-muted-foreground`}>{slot}</td>
+                {columns.map((col, colIdx) => {
+                  const cell = cells[colIdx][rowIdx];
+                  const isSelected = selection?.colIdx === colIdx && rowIdx >= selLo && rowIdx <= selHi;
+
+                  if (cell.status === "booked") {
+                    return (
+                      <td key={col.key} className={CELL_TD}>
+                        <div
+                          className={`flex ${CELL_HEIGHT} items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700`}
+                        >
+                          <span className="min-w-0 truncate">{cell.label}</span>
+                          <form action={adminCancelBookingAction}>
+                            <input type="hidden" name="booking_id" value={cell.bookingId} />
+                            <button
+                              type="submit"
+                              className="-me-1 flex size-8 shrink-0 items-center justify-center rounded-button text-violet-500 hover:text-danger md:size-5"
+                              title="ביטול"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    );
+                  }
+                  if (cell.status === "blocked") {
+                    return (
+                      <td key={col.key} className={CELL_TD} title={cell.reason}>
+                        <div
+                          className={`flex ${CELL_HEIGHT} items-center justify-center rounded-field bg-subtle text-xs text-muted-foreground`}
+                        >
+                          חסום
+                        </div>
+                      </td>
+                    );
+                  }
+                  return (
+                    <td key={col.key} className={CELL_TD}>
+                      <button
+                        type="button"
+                        onClick={() => handleSlotClick(colIdx, rowIdx)}
+                        className={`flex w-full ${CELL_HEIGHT} items-center justify-center rounded-field border text-xs transition-colors ${
+                          isSelected
+                            ? "border-violet-500 bg-violet-500 text-white"
+                            : "border-success-border bg-success-bg text-success-fg hover:bg-success/20"
+                        }`}
+                      >
+                        {isSelected ? "נבחר" : "פנוי"}
+                      </button>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {selection && <div className="h-40 sm:h-16" aria-hidden />}
 
