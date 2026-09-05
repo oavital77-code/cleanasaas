@@ -161,7 +161,7 @@ function BoardCell({
     return (
       <td className="p-1">
         <div className="flex h-8 items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700">
-          <span className="truncate">{booking.profiles?.full_name}</span>
+          <span className="min-w-0 truncate">{booking.profiles?.full_name}</span>
           <form action={adminCancelBookingAction}>
             <input type="hidden" name="booking_id" value={booking.id} />
             <button type="submit" className="shrink-0 text-violet-500 hover:text-danger" title="ביטול">

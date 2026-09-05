@@ -217,6 +217,9 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-heebo), Arial, Helvetica, sans-serif;
+  /* רשת יחיד ללא min-w-0 יכול לדחוף את כל העמוד לרוחב — זה חוסם את זה
+     כרשת אחרונה, בנוסף לתיקון האמיתי (min-w-0) בכל רכיב שנתגלה. */
+  overflow-x: hidden;
 }
 
 /* מספרים, שעות וסכומים — תמיד ברוחב אחיד כדי שעמודות ולוחות יתיישרו */

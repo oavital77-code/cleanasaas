@@ -273,7 +273,7 @@ function SlotCell({
     return (
       <td className="p-1">
         <div className="flex h-8 items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700">
-          <span className="truncate">שלך</span>
+          <span className="min-w-0 truncate">שלך</span>
           {cancellable && (
             <form action={cancelBookingAction}>
               <input type="hidden" name="booking_id" value={mine.id} />

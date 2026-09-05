@@ -136,10 +136,10 @@ export default async function TherapistsPage() {
             <ul className="flex flex-col gap-1 text-sm">
               {(invites ?? []).map((inv) => (
                 <li key={inv.token} className="flex items-center justify-between gap-3 text-muted-foreground">
-                  <code dir="ltr" className="truncate text-xs">
+                  <code dir="ltr" className="min-w-0 truncate text-xs">
                     {appUrl}/invite/{inv.token}
                   </code>
-                  <span>{inv.used_at ? "נוצל" : new Date(inv.expires_at) < new Date() ? "פג תוקף" : "פעיל"}</span>
+                  <span className="shrink-0">{inv.used_at ? "נוצל" : new Date(inv.expires_at) < new Date() ? "פג תוקף" : "פעיל"}</span>
                 </li>
               ))}
             </ul>
