@@ -1,0 +1,17 @@
+-- ביקורת אבטחה (Supabase advisor: anon_security_definer_function_executable).
+--
+-- admin_set_clinic_woo_secrets היא SECURITY DEFINER ומקבלת סודות של WooCommerce.
+-- המיגרציה 20260906000002 עשתה `revoke ... from public`, אבל Supabase מעניקה
+-- EXECUTE ל-anon ול-authenticated *ישירות* דרך default privileges — ולכן
+-- ה-revoke מ-public לא הסיר את ההרשאה של anon, והפונקציה עדיין נחשפת
+-- ב-/rest/v1/rpc/admin_set_clinic_woo_secrets למי שאין לו session בכלל.
+--
+-- הפונקציה עצמה בודקת is_admin() ולכן anon נופל על FORBIDDEN — אין כאן פרצה
+-- פתוחה, אבל אין שום סיבה שנקודת קצה שמקבלת סודות תהיה ניתנת לקריאה בלי
+-- התחברות. authenticated נשאר (אדמיני קליניקה קוראים לה מהאפליקציה).
+--
+-- לא נוגעים כאן ב-app_user_id / current_clinic_id / is_admin / is_superadmin
+-- שגם הן מסומנות: הן משמשות בתוך policies של RLS, וביטול EXECUTE ל-anon היה
+-- הופך "0 שורות" ל-"permission denied" בכל שאילתה אנונימית שנוגעת בטבלה
+-- כזו. ל-anon הן מחזירות null/false בכל מקרה.
+revoke execute on function admin_set_clinic_woo_secrets(text, text, text, text, integer) from anon;
