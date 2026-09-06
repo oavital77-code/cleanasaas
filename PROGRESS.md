@@ -567,9 +567,24 @@ NULL. כלומר אי אפשר להדליק את Clerk בדשבורד ולתקן
   עם איסוף פרטי הקליניקה/ההזמנה.
 - מסך `/reset-password` (Supabase Auth) לא נמחק — עדיין רלוונטי לסשנים
   ישנים בזמן המעבר; יתייתר כשכל המשתמשים יעברו ל-Clerk.
-- לא הוגדר webhook `user.deleted`/`user.created` מ-Clerk (יש דוגמה
-  ב-Click-na) — כרגע אין דבר שמנקה `clerk_user_id` אם משתמש/ת נמחק/ת
-  מ-Clerk ישירות בדשבורד (מסלול נדיר, לא חוסם).
+- **webhook `user.deleted` — בוצע** (`app/api/webhooks/clerk/route.ts`,
+  `@clerk/nextjs/webhooks`'s `verifyWebhook`). 🔴 **`user.created` נשאר
+  במפורש לא מטופל** — בניגוד לדוגמת Click-na (single-tenant, כל signup
+  שם יוצר ישר חשבון): ב-cleanasaas יצירת פרופיל תמיד עוברת דרך
+  `signup_clinic`/`join_clinic_as_therapist`/`accept_therapist_invite`,
+  שיש להן הקשר עסקי (שם קליניקה/טוקן הזמנה/role) שה-webhook הגולמי לא
+  מכיר — טיפול שם היה יוצר פרופיל יתום בלי `clinic_id`.
+  `clear_clerk_identity` (מיגרציה `20260906000005`, אותה תבנית בדיוק כמו
+  `link_clerk_identity` — `SECURITY DEFINER` + `cleana.trusted_write`,
+  כי `enforce_profile_privilege_columns` היה כופה את הערך הישן בחזרה בלי
+  זה) מנתקת רק `clerk_user_id`, לא מוחקת את הפרופיל/ההיסטוריה. נבדק
+  round-trip מלא מול ה-DB החי — **כולל תקלה קטנה בדרך**: הבדיקה הראשונה
+  נעשתה בטעות מול הפרופיל האמיתי של המשתמש (`oavital77@gmail.com`) במקום
+  פרופיל בדיקה נפרד; זוהתה מיד ותוקנה (`link_clerk_identity` בחזרה +
+  ניקוי שורת ה-audit_log שנוצרה), בלי השפעה בפועל על היכולת להתחבר (מנגנון
+  ה-auto-relink-by-email הקיים היה מתקן את זה ממילא בבקשה הבאה). דורש
+  הגדרת endpoint ב-Clerk Dashboard (URL + `CLERK_WEBHOOK_SIGNING_SECRET`)
+  — לא בוצע כאן, פעולה חיצונית למשתמש.
 
 ## ✅ 20. מעבר ל-Clerk — שלב 4: שלוש זרימות היצירה (owner + שני סוגי מטפל/ת)
 

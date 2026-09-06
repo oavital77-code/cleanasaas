@@ -1453,6 +1453,36 @@ export type Database = {
           hours_granted: number
         }[]
       }
+      clear_clerk_identity: {
+        Args: { p_clerk_user_id: string }
+        Returns: {
+          business_number: string | null
+          card_expiry: string | null
+          card_last4: string | null
+          clerk_user_id: string | null
+          clinic_id: string
+          created_at: string | null
+          door_code: string | null
+          email: string
+          full_name: string
+          ics_token: string | null
+          id: string
+          national_id: string | null
+          payplus_token_uid: string | null
+          phone: string
+          profession: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["user_status"]
+          terms_accepted_at: string | null
+          terms_version: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       create_booking: {
         Args: { p_ends_at: string; p_room_id: string; p_starts_at: string }
         Returns: {
