@@ -265,9 +265,19 @@ trial, והצלחה אחרי דגל זמני ל-`plan='basic'` — עם ניקו
   ב-`lib/email/recipients.ts` — clinic_id חובה בראשון, קריטי ל-חוק #3.
   🔴 בלי `RESEND_API_KEY`/`RESEND_FROM_EMAIL` אמיתיים ב-Vercel, `sendEmail`
   מתעד ל-console ומחזיר כישלון "רך" בלי לזרוק — האפליקציה ממשיכה לעבוד,
-  פשוט בלי מיילים בפועל. אין PWA (manifest/service worker/icons), אין
-  Sentry עם tag `clinic_id` (המפרט §15 מבקש את זה — עוד לא חובר כי אין
-  עדיין DSN אמיתי).
+  פשוט בלי מיילים בפועל. אין Sentry עם tag `clinic_id` (המפרט §15 מבקש
+  את זה — עוד לא חובר כי אין עדיין DSN אמיתי).
+
+**PWA** — `app/manifest.ts` (Next.js file convention, `/manifest.webmanifest`
+אוטומטי), `app/icon.tsx`/`app/apple-icon.tsx` (נוצרים דרך `ImageResponse`,
+לא PNG סטטיים — אותו מוטיב בדיוק כמו `components/logo.tsx`), `public/sw.js`
++ `components/register-service-worker.tsx`. `middleware.ts` כבר החריג את
+כל הנתיבים האלה מראש (ה-matcher היה מוכן לזה, לא נגעתי בו). 🔴 ה-service
+worker במכוון **לא** offline-first — network-first בלבד, בלי caching של
+תוכן דינמי (הזמנות/זמינות אסור שיוצגו מ-cache מיושן, ר' חוקי הברזל #2/#7)
+— קיים רק כדי לספק את תנאי הסף ל"הוספה למסך הבית". נבדק סמוק-טסט מקומי
+מול production build אמיתי (`npm run start`): שלושת ה-endpoints מחזירים
+200 עם תוכן תקין, האייקון נבדק ויזואלית.
 - **`clinic_payment_settings`**: הסודות (`woo_consumer_secret`,
   `woo_webhook_secret`) **מוצפנים** (מיגרציה `20260906000002`) —
   `bytea` + `pgcrypto` (`pgp_sym_encrypt`/`pgp_sym_decrypt`), מפתח ב-Supabase

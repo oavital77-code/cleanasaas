@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Heebo, IBM_Plex_Mono, Outfit } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { heIL } from "@clerk/localizations";
+import { RegisterServiceWorker } from "@/components/register-service-worker";
 import "./globals.css";
 
 const heebo = Heebo({
@@ -27,6 +28,11 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Cleana",
   description: "פלטפורמת ניהול השכרת קליניקות רב-דיירית",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Cleana",
+  },
 };
 
 export const viewport: Viewport = {
@@ -55,7 +61,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         dir="rtl"
         className={`${heebo.variable} ${outfit.variable} ${ibmPlexMono.variable} h-full antialiased`}
       >
-        <body className="min-h-full flex flex-col">{children}</body>
+        <body className="min-h-full flex flex-col">
+          <RegisterServiceWorker />
+          {children}
+        </body>
       </html>
     </ClerkProvider>
   );
