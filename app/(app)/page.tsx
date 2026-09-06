@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Building2, CalendarCheck2, ShieldCheck, TicketCheck, Users } from "lucide-react";
@@ -7,55 +8,67 @@ import { Logo } from "@/components/logo";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 
+// אנגלית/LTR — חריג מכוון, בדיוק כמו דף הבית של click-na (ר' ההערה שם:
+// "the app is Hebrew and right-to-left; this one page is not"). שאר
+// האפליקציה (dashboard/schedule/admin) נשארת עברית/RTL לגמרי.
+//
+// המוצר נקרא כאן "Cleana" בלבד — "SaaS" הוא שם פנימי, לא user-facing
+// (ר' PROGRESS.md / דרישת המשתמש).
+export const metadata: Metadata = {
+  title: "Cleana — Clinic & Room Management",
+  description:
+    "A schedule that never double-books, punch cards and sessions that run themselves, and every therapist books their own slot — for clinics with multiple branches, rooms, and therapists.",
+};
+
 // שלוש התשובות בסדר שבו מנהל/ת קליניקה נתקל/ת בהן, לא רשימת פיצ'רים —
 // בהשראת מבנה דף הבית של click-na (src/app/page.tsx, ANSWERS).
 const ANSWERS = [
   {
-    title: "כל מטפל/ת קובע/ת תור לבד",
-    body: "לוח זמינות בלי לחייג ובלי לתאם בוואטסאפ. כל מטפל/ת רואה רק את החדרים והשעות הפנויים לו/ה — לא את היומן של מטפל/ת אחר/ת.",
+    title: "Every therapist books their own slot",
+    body: "No phone calls, no WhatsApp back-and-forth. Each therapist sees only the rooms and hours open to them — never someone else's calendar.",
   },
   {
-    title: "אין כפל הזמנות. אף פעם.",
-    body: "מניעת החפיפה קבועה במסד הנתונים עצמו, לא רק בממשק — שני מטפלים לעולם לא יתפסו אותו חדר באותה שעה, גם אם שניהם לוחצים באותו רגע.",
+    title: "No double-booking. Ever.",
+    body: "Overlap prevention lives in the database itself, not just the interface — two therapists can never take the same room at the same time, even down to the same click.",
   },
   {
-    title: "כרטיסיות וססיות מתנהלות לבד",
-    body: "יתרת שעות, פיקדון וחידוש חודשי נרשמים אוטומטית מול התשלום בפועל. בלי טבלת אקסל שאף אחד לא מעדכן.",
+    title: "Punch cards and sessions run themselves",
+    body: "Remaining hours, deposits, and monthly renewals are tracked automatically against real payments. No spreadsheet nobody updates.",
   },
 ];
 
 const CAPACITY = [
-  { icon: Building2, label: "כמה סניפים" },
-  { icon: CalendarCheck2, label: "לוח חדרים משותף" },
-  { icon: Users, label: "עשרות עד מאות מטפלים" },
-  { icon: TicketCheck, label: "כרטיסיות וססיות יחד" },
-  { icon: ShieldCheck, label: "בידוד מלא בין קליניקות" },
+  { icon: Building2, label: "Multiple branches" },
+  { icon: CalendarCheck2, label: "One shared room calendar" },
+  { icon: Users, label: "Dozens to hundreds of therapists" },
+  { icon: TicketCheck, label: "Punch cards and sessions together" },
+  { icon: ShieldCheck, label: "Full isolation between clinics" },
 ];
 
 // כמו OMISSIONS ב-click-na: התועלת מנוסחת כמה שנעלם, לא כרשימת יכולות.
 const OMISSIONS = [
-  "בלי אקסל למעקב יתרות שעות ופיקדון.",
-  "בלי קבוצת וואטסאפ לתיאום מי תופס/ת איזה חדר.",
-  "בלי חשש מהזמנה כפולה על אותו חדר, אותה שעה.",
-  "בלי לחשוף למטפל/ת אחד/ת מי קבע/ה לפניו/ה — רק תפוס או פנוי.",
+  "No spreadsheet to track hours and deposits.",
+  "No group chat to coordinate who gets which room.",
+  "No risk of double-booking the same room, same hour.",
+  "No therapist ever sees who booked before them — just taken or open.",
 ];
 
 const FAQ = [
   {
-    q: "איך מונעים כפל הזמנות?",
-    a: "מניעת החפיפה נאכפת ברמת מסד הנתונים עצמו, לא רק בממשק — שני מטפלים לעולם לא יתפסו אותו חדר באותה שעה, גם אם שניהם לוחצים באותו רגע בדיוק.",
+    q: "How do you prevent double-booking?",
+    a: "Overlap prevention is enforced at the database level, not just the UI — two therapists can never take the same room at the same time, even down to the same click.",
   },
   {
-    q: "מטפל/ת רואה הזמנות של מטפל/ת אחר/ת?",
-    a: "לא. זמינות נחשפת רק כתפוס או פנוי — בלי שם, בלי סוג הזמנה. שום מטפל/ת לא רואה פרטים של מטפל/ת אחר/ת בקליניקה.",
+    q: "Can one therapist see another's bookings?",
+    a: "No. Availability is exposed only as taken or open — no name, no booking type. No therapist ever sees another's details.",
   },
   {
-    q: "איך עובד התשלום?",
-    a: "כל תשלום — כרטיסייה או ססיה — מתבצע בחנות שלכם, ומתעדכן במערכת אוטומטית ברגע שהוא מאושר.",
+    q: "How does payment work?",
+    a: "Every payment — punch card or session — happens in your own store, and updates automatically the moment it's confirmed.",
   },
   {
-    q: "כמה זמן לוקח להקים קליניקה?",
-    a: "כמה דקות. פותחים חשבון, מגדירים סניפים וחדרים, ומזמינים את המטפלים בקישור אחד.",
+    q: "How long does setup take?",
+    a: "Minutes. Create an account, set up branches and rooms, and invite your therapists with one link.",
   },
 ];
 
@@ -69,7 +82,7 @@ export default async function HomePage() {
   if (userId && profile) redirect("/dashboard");
 
   return (
-    <div className="relative flex flex-1 flex-col">
+    <div dir="ltr" className="relative flex flex-1 flex-col">
       <BrandBackdrop />
 
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-sm">
@@ -79,10 +92,10 @@ export default async function HomePage() {
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <Link href="/login" className="inline-flex min-h-11 items-center text-muted-foreground hover:text-foreground">
-              כניסה
+              Log in
             </Link>
             <Button asChild>
-              <Link href="/signup">פתיחת קליניקה חדשה</Link>
+              <Link href="/signup">Open a new clinic</Link>
             </Button>
           </div>
         </div>
@@ -91,23 +104,24 @@ export default async function HomePage() {
       <main className="flex flex-1 flex-col">
         <section className="relative overflow-hidden">
           <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-6 px-5 py-16 text-center md:px-8 md:py-24 lg:py-32">
-            <span className="kicker">פלטפורמת ניהול קליניקות</span>
+            <span className="kicker">Clinic management platform</span>
             <h1 className="text-4xl font-semibold text-balance sm:text-5xl lg:text-6xl">
-              הקליניקה מתנהלת לבד.
+              The clinic runs itself.
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-              לוח זמנים שלא מתבלבל, כרטיסיות שמתנהלות מעצמן, וכל מטפל/ת
-              קובע/ת תור בלי לערב אתכם. זו כל התוכנית — והיא מספיקה.
+              A schedule that never gets confused, punch cards that manage
+              themselves, and every therapist books their own slot without
+              looping you in. That&rsquo;s the whole plan — and it&rsquo;s enough.
             </p>
             <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row">
               <Button asChild size="lg">
-                <Link href="/signup">פתיחת קליניקה חדשה</Link>
+                <Link href="/signup">Open a new clinic</Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href="/login">כניסה</Link>
+                <Link href="/login">Log in</Link>
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">הקמה תוך דקות, בלי התקנה.</p>
+            <p className="text-xs text-muted-foreground">Live in minutes. No installation.</p>
           </div>
         </section>
 
@@ -126,7 +140,7 @@ export default async function HomePage() {
         <section className="border-t border-border/60">
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-10 px-5 py-16 text-center md:px-8 md:py-24 lg:py-32">
             <h2 className="text-3xl font-semibold sm:text-4xl">
-              בנוי לניהול קליניקה שלמה, לא למטפל/ת בודד/ת
+              Built for running a whole clinic, not a single practitioner
             </h2>
             <div className="flex flex-wrap justify-center gap-x-10 gap-y-8">
               {CAPACITY.map(({ icon: Icon, label }) => (
@@ -144,10 +158,10 @@ export default async function HomePage() {
         <section className="border-t border-border/60">
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-5 py-16 md:px-8 md:py-24 lg:py-32">
             <div className="flex flex-col items-center gap-4 text-center">
-              <h2 className="text-3xl font-semibold sm:text-4xl">מנוהל, לא מנוהל ידנית.</h2>
+              <h2 className="text-3xl font-semibold sm:text-4xl">Managed, not manually managed.</h2>
               <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
-                כל קליניקה מקבלת את כל היכולות מהיום הראשון — לא גרסה
-                חלקית שמחכה לשדרוג.
+                Every clinic gets the full platform from day one — not a
+                partial version waiting on an upgrade.
               </p>
             </div>
 
@@ -166,7 +180,7 @@ export default async function HomePage() {
 
         <section className="border-t border-border/60">
           <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-16 md:px-8 md:py-24 lg:py-32">
-            <h2 className="text-center text-3xl font-semibold sm:text-4xl">שאלות נפוצות</h2>
+            <h2 className="text-center text-3xl font-semibold sm:text-4xl">Questions</h2>
             <div className="flex flex-col gap-6">
               {FAQ.map((item) => (
                 <div key={item.q} className="border-t border-border/60 pt-6 first:border-t-0 first:pt-0">
@@ -180,18 +194,18 @@ export default async function HomePage() {
 
         <section className="border-t border-border/60">
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-5 px-5 py-16 text-center md:px-8 md:py-24 lg:py-32">
-            <h2 className="text-3xl font-semibold sm:text-4xl">מוכנים להפסיק לתאם ידנית?</h2>
+            <h2 className="text-3xl font-semibold sm:text-4xl">Ready to stop coordinating by hand?</h2>
             <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
-              פתחו את הקליניקה שלכם עכשיו — הגדרה ראשונית תוך דקות.
+              Open your clinic now — initial setup takes minutes.
             </p>
             <Button asChild size="lg">
-              <Link href="/signup">פתיחת קליניקה חדשה</Link>
+              <Link href="/signup">Open a new clinic</Link>
             </Button>
           </div>
         </section>
       </main>
 
-      <SiteFooter />
+      <SiteFooter english />
     </div>
   );
 }

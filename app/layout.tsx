@@ -25,7 +25,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cleana SaaS",
+  title: "Cleana",
   description: "פלטפורמת ניהול השכרת קליניקות רב-דיירית",
 };
 
