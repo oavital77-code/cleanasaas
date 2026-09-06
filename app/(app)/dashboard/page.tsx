@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDateTimeHe } from "@/lib/time";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
+import { dirFor, getDashboardDict, normalizeLocale } from "@/lib/i18n";
 
 // "הבית" של מטפל/ת מחובר/ת — הועבר מ-"/" (ר' app/(app)/page.tsx) כי אותה
 // כתובת שימשה גם לדף הנחיתה הציבורי וגם למסך הזה, מה שהקשה על אבחון
@@ -28,29 +29,31 @@ export default async function DashboardPage() {
 
   const totalHours = (cards ?? []).reduce((sum, c) => sum + Number(c.hours_remaining), 0);
   const isAdmin = profile.role === "owner" || profile.role === "admin";
+  const locale = normalizeLocale(profile.locale);
+  const t = getDashboardDict(locale);
 
   return (
     <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale} isAdmin={isAdmin}>
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      <div dir={dirFor(locale)} lang={locale} className="mx-auto flex w-full max-w-2xl flex-col gap-6">
         <div>
-          <h1 className="text-2xl font-semibold">שלום, {profile.full_name}</h1>
+          <h1 className="text-2xl font-semibold">{t.greeting(profile.full_name)}</h1>
           <p className="text-muted-foreground">{clinic?.name}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Card className="shadow-e1">
             <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">יתרת שעות</p>
+              <p className="text-sm text-muted-foreground">{t.hoursRemaining}</p>
               <p className="tabular-nums text-2xl font-semibold">{totalHours}</p>
             </CardContent>
           </Card>
           <Card className="shadow-e1">
             <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">ההזמנה הבאה</p>
+              <p className="text-sm text-muted-foreground">{t.nextBooking}</p>
               <p className="text-lg">
                 {nextBooking
                   ? `${(nextBooking.rooms as { name?: string } | null)?.name} · ${formatDateTimeHe(new Date(nextBooking.starts_at))}`
-                  : "אין הזמנות קרובות"}
+                  : t.noUpcomingBookings}
               </p>
             </CardContent>
           </Card>

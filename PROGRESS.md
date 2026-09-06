@@ -716,16 +716,38 @@ CAPTCHA/bot-protection של Clerk, שרק דפדפן אמיתי יכול לעו�
 
 ### מה נותר (לא כלול כאן, בכוונה)
 
-- תרגום מלא של תוכן הדפים עצמם (h1, טפסים, הודעות) — מתחיל ב-Dashboard
-  ו-`/profile` (המסך שהמתג עצמו יושב בו), ואז שאר 19 המסכים בהדרגה.
-  עד אז: משתמש/ת עם `locale=en` רואה ניווט אנגלי + תוכן דף עברי — מצב
-  ביניים מכוון ותקין, לא "שבור".
-- פורמט תאריך/מטבע locale-aware (`date-fns` יודע `en-US`/`he`, כרגע
-  קשיח `he` בכל מקום).
+- פורמט תאריך/מטבע locale-aware (`date-fns` יודע `en-US`/`he`) — **לא
+  נדרש בפועל**: הפורמט הקיים (`dd/MM/yyyy HH:mm`, ₪ ב-`Intl` `he-IL`)
+  הוא מוסכמת אפליקציה קבועה (CLAUDE.md), לא עניין שפת ממשק, ומספרי
+  לגמרי — אין הבדל ויזואלי בין locale he/en בפורמט הזה. לא שונה.
+- שאר 19 המסכים (schedule, bookings, purchase, sessions, payments, וכל
+  admin/*) — עדיין עברית תמיד, בכוונה, עד שיתורגמו בהדרגה כל אחד בנפרד.
+
+## ✅ 22. תרגום `/dashboard` ו-`/profile` לאנגלית מלא
+
+המשך ישיר לסעיף 21. שני הדפים שנבחרו במפורש (Dashboard = מסך הבית של
+מטפל/ת, `/profile` = המסך שבו יושב מתג השפה עצמו) עברו מ-`<h1>`/תוויות
+קשיחות בעברית ל-dictionaries חדשים ב-`lib/i18n.ts`: `getDashboardDict`
+ו-`getProfileDict`, לצד `getAppShellDict` הקיים.
+
+- שני הדפים עוטפים את ה-`children` שלהם (לא רק ה-`<AppShell>`) ב-
+  `dir={dirFor(locale)} lang={locale}` — עכשיו שהתוכן עצמו מתורגם, זו
+  הנקודה שבה דף "עובר" בפועל ל-RTL/LTR לפי locale, בהתאם לארכיטקטורה
+  שתוארה בסעיף 21 ("דפים לא-מתורגמים נשארים RTL; מתורגמים הופכים
+  בהדרגה").
+- `formatCurrencyILS`/`formatDateTimeHe` לא שונו (ר' "מה נותר" למעלה —
+  אלה מוסכמות פורמט, לא locale).
+- `ROLE_LABEL` הישן (`profiles/page.tsx`) הוחלף ב-`t.roleValues` מה-
+  dictionary.
+
+**אימות**: `tsc --noEmit`, `npm run build`, `eslint` ו-`vitest` (46
+טסטים) נקיים. לא בוצעה בדיקת דפדפן אמיתי (ר' מגבלת גישת רשת בסעיף 20).
 
 ## מה הכי דחוף להמשיך בו
 
-1. תרגום `/dashboard` ו-`/profile` לאנגלית מלא (סעיף 21 למעלה) — המשך ישיר.
+1. תרגום שאר המסכים בהדרגה (schedule → bookings → purchase → sessions
+   → payments, ואז 9 מסכי אדמין) — אין רשימת סדר קבועה, ממשיכים לפי
+   מה שהכי בשימוש.
 2. וידוא בפועל שמיילי Resend נשלחים (התשתית קיימת, לא נבדק end-to-end).
 3. Sentry DSN — לא הוגדר בפרודקשן (`NEXT_PUBLIC_SENTRY_DSN` ריק).
 4. חיבור endpoint ה-webhook (`user.deleted`) בדשבורד של Clerk —
