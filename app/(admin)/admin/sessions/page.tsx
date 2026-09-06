@@ -59,7 +59,7 @@ export default async function AdminSessionsPage() {
   }
 
   return (
-    <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name}>
+    <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">בקשות ססיה</h1>

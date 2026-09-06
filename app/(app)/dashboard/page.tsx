@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   const isAdmin = profile.role === "owner" || profile.role === "admin";
 
   return (
-    <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} isAdmin={isAdmin}>
+    <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale} isAdmin={isAdmin}>
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
         <div>
           <h1 className="text-2xl font-semibold">שלום, {profile.full_name}</h1>

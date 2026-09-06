@@ -660,9 +660,74 @@ CASCADE` — הנחה סמויה שהחזיקה תמיד עד עכשיו כי `i
 המלאה בדפדפן אמיתי (אין גישת רשת מהסביבה הזו ל-URL הפרוס) — כולל
 CAPTCHA/bot-protection של Clerk, שרק דפדפן אמיתי יכול לעורר.
 
+## ✅ 21. תשתית i18n: שפת ממשק אישית (`profiles.locale`) + מתג ב-`/profile`
+
+בקשת המשתמש: מתג שפה (עברית/אנגלית) בהגדרות, דיפולט אנגלית. זה מתנגש
+בפועל עם הכלל הנוקשה ב-`CLAUDE.md` ("עברית ו-RTL בכל ה-UI") — נבדק מול
+המשתמש לפני כתיבת קוד: **תחולה** — כל האפליקציה הפנימית (מאחורי login),
+לא רק דפי השיווק. **מיקום** — אישי (לא ברמת קליניקה), ב-`/profile`.
+
+### למה זה לא "תרגם הכל בבת אחת"
+
+תרגום מלא של כל מסכי האפליקציה (Dashboard + 9 מסכי מטפל/ת + 9 מסכי אדמין)
+הוא עבודה גדולה בהרבה מ"מתג בהגדרות" ולא ריאלי במעבר אחד. הפתרון:
+ארכיטקטורה הדרגתית שלא שוברת שום דבר באמצע הדרך —
+
+- ה-`<html dir="rtl">` הגלובלי (`app/layout.tsx`) **לא זז בכלל**. דף
+  שעדיין לא תורגם ממשיך תמיד עברית/RTL תקין, בלי תלות ב-locale של
+  המשתמש/ת.
+- `AppShell` (העטיפה המשותפת לכל מסך מחובר — צד מטפל/ת וצד אדמין כאחד)
+  מקבל `locale` ומתרגם **רק את ה-chrome של עצמו**: תוויות ניווט, קישור
+  מעבר בין הצדדים, כפתור/aria-label של יציאה, aria-labels של תפריט
+  מובייל. `dir`/`lang` מוגדרים מקומית על ה-`<aside>`/`<header>`/מגירת
+  המובייל, לא על ה-`<html>`.
+- תוכן הדף עצמו (children) נשאר עברית עד שהוא עובר תרגום מפורש דף-דף —
+  ראו סעיף "מה נותר" למטה.
+
+### שינויי DB (מיגרציה `20260906000006`)
+
+`profiles.locale text not null default 'en' check (locale in ('he','en'))`.
+🔴 **לא** נעול ע"י `enforce_profile_privilege_columns` — אומת ע"י קריאת
+`pg_get_functiondef` של הפונקציה החי (לא רק code review): הטריגר בכלל
+לא נוגע ב-`locale`. משמעות: אין צורך ב-RPC ייעודי — `updateLocaleAction`
+עושה `supabase.from("profiles").update({ locale })` ישיר על השורה של
+עצמך, אותו דפוס בדיוק כמו `updateProfileAction` הקיים.
+
+### שינויי אפליקציה
+
+- **`lib/i18n.ts`** (חדש): `type Locale = "he" | "en"`, `dirFor()`,
+  `normalizeLocale()` (מנרמל את ה-`string` הגולמי שחוזר מהטיפוסים
+  שנוצרו — ה-check constraint לא משתקף בטיפוסי TS), ומילון תרגומים
+  ל-chrome של `AppShell` בלבד (`getAppShellDict`).
+- **`components/app-shell.tsx`**: `APP_NAV`/`ADMIN_NAV` עברו מ-`label`
+  קבוע ל-`navKey` שנפתר מול המילון לפי `locale`; `dir`/`lang` על שלושת
+  מכולות ה-chrome (סרגל דסקטופ, top bar מובייל, מגירת מובייל).
+- **21 call sites של `<AppShell>`** (כל דף מחובר) — `locale={profile.locale}`
+  נוסף לצד `fullName`. זמין בכולם בלי query נוסף: `requireTherapistProfile`/
+  `requireClinicAdmin` כבר עושים `select("*")` על `profiles`.
+- **`/profile`**: כרטיס חדש "שפת ממשק / Interface language" — `<select>`
+  (עברית/English) + `updateLocaleAction` (`app/(app)/profile/actions.ts`).
+
+**אימות**: `tsc --noEmit` ו-`npm run build` נקיים. `enforce_profile_privilege_columns`
+נקרא ישירות מה-DB החי (read-only) לאימות שה-trigger לא נוגע ב-`locale` —
+לא בוצעה כתיבת בדיקה על אחד משלושת הפרופילים האמיתיים הקיימים (למדנו
+מהתקלה בסעיף 20: אין פרופילי בדיקה חד-פעמיים ב-DB הזה, אז שינוי ישיר
+דרש להימנע ממנו).
+
+### מה נותר (לא כלול כאן, בכוונה)
+
+- תרגום מלא של תוכן הדפים עצמם (h1, טפסים, הודעות) — מתחיל ב-Dashboard
+  ו-`/profile` (המסך שהמתג עצמו יושב בו), ואז שאר 19 המסכים בהדרגה.
+  עד אז: משתמש/ת עם `locale=en` רואה ניווט אנגלי + תוכן דף עברי — מצב
+  ביניים מכוון ותקין, לא "שבור".
+- פורמט תאריך/מטבע locale-aware (`date-fns` יודע `en-US`/`he`, כרגע
+  קשיח `he` בכל מקום).
+
 ## מה הכי דחוף להמשיך בו
 
-1. Email (Resend) — תזכורות/יתרה-נמוכה/חידוש ססיה מזוהות אבל לא נשלחות.
-2. הצפנת `clinic_payment_settings` לפני חיבור קליניקה אמיתית ראשונה.
-3. ToS/DPA + החלטה על `grant_bonus_hours` בהרשמה עצמאית — לפני פתיחה לציבור.
-4. שעות פעילות per-clinic (כרגע קבוע 08:00–22:00) + PWA (manifest/SW).
+1. תרגום `/dashboard` ו-`/profile` לאנגלית מלא (סעיף 21 למעלה) — המשך ישיר.
+2. וידוא בפועל שמיילי Resend נשלחים (התשתית קיימת, לא נבדק end-to-end).
+3. Sentry DSN — לא הוגדר בפרודקשן (`NEXT_PUBLIC_SENTRY_DSN` ריק).
+4. חיבור endpoint ה-webhook (`user.deleted`) בדשבורד של Clerk —
+   `app/api/webhooks/clerk/route.ts` קיים וב-build, אבל Clerk לא שולח
+   אליו כלום עד שמגדירים Endpoint + `CLERK_WEBHOOK_SIGNING_SECRET`.

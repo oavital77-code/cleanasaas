@@ -52,7 +52,7 @@ export default async function SchedulePage({
   const selectedRoomId = roomParam && (rooms ?? []).some((r) => r.id === roomParam) ? roomParam : rooms?.[0]?.id;
 
   return (
-    <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} isAdmin={isAdmin}>
+    <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale} isAdmin={isAdmin}>
       <RealtimeAvailabilityRefresh clinicId={profile.clinic_id} />
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

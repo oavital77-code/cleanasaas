@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateProfileAction } from "./actions";
+import { updateProfileAction, updateLocaleAction } from "./actions";
 
 const ROLE_LABEL: Record<string, string> = { owner: "בעלים", admin: "אדמין/ית", therapist: "מטפל/ת" };
 
@@ -23,7 +23,7 @@ export default async function ProfilePage() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
   return (
-    <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} isAdmin={isAdmin}>
+    <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale} isAdmin={isAdmin}>
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
         <h1 className="text-2xl font-semibold">הכרטיס שלי</h1>
 
@@ -59,6 +59,28 @@ export default async function ProfilePage() {
                 טלפון ואימייל ניתנים לעדכון רק ע&quot;י אדמין/ית הקליניקה.
               </p>
               <Button type="submit" className="w-fit">
+                שמירה
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-e1">
+          <CardHeader>
+            <CardTitle className="text-base font-medium">שפת ממשק / Interface language</CardTitle>
+            <CardDescription>משפיעה על תפריט הניווט; תוכן הדפים עצמם עדיין בעברית</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={updateLocaleAction} className="flex items-center gap-3">
+              <select
+                name="locale"
+                defaultValue={profile.locale}
+                className="flex h-10 rounded-field border border-border-strong bg-surface px-3 text-[14.5px] transition-colors focus-visible:outline-none focus-visible:border-violet-500 focus-visible:[box-shadow:var(--focus-ring)]"
+              >
+                <option value="he">עברית</option>
+                <option value="en">English</option>
+              </select>
+              <Button type="submit" variant="outline">
                 שמירה
               </Button>
             </form>

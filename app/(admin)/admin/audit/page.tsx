@@ -64,7 +64,7 @@ export default async function AdminAuditPage() {
   ]);
 
   return (
-    <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name}>
+    <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         <h1 className="text-2xl font-semibold">יומן פעולות</h1>
 

@@ -20,3 +20,17 @@ export async function updateProfileAction(formData: FormData) {
   await supabase.from("profiles").update({ full_name: fullName, profession: profession || null }).eq("id", userId);
   revalidatePath("/profile");
 }
+
+// 🔴 locale (ר' migration 20260906000006) הוא לא-privileged, ולכן — בניגוד
+// ל-clerk_user_id/phone/email/role וכו' — עדכון עצמי ישיר עליו לא נבלם ע"י
+// enforce_profile_privilege_columns ולא צריך RPC ייעודי.
+export async function updateLocaleAction(formData: FormData) {
+  const { userId } = await requireTherapistProfile();
+  const supabase = await createClient();
+
+  const locale = formData.get("locale");
+  if (locale !== "he" && locale !== "en") return;
+
+  await supabase.from("profiles").update({ locale }).eq("id", userId);
+  revalidatePath("/", "layout");
+}

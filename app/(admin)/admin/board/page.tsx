@@ -46,7 +46,7 @@ export default async function AdminBoardPage({
   const selectedRoomId = roomParam && (rooms ?? []).some((r) => r.id === roomParam) ? roomParam : rooms?.[0]?.id;
 
   return (
-    <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name}>
+    <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <RealtimeAvailabilityRefresh clinicId={clinicId} />
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

@@ -13,7 +13,7 @@ export default async function PurchaseFailurePage() {
   const isAdmin = profile.role === "owner" || profile.role === "admin";
 
   return (
-    <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} isAdmin={isAdmin}>
+    <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale} isAdmin={isAdmin}>
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 text-center">
         <Card className="w-full shadow-e2 border-danger-border">
           <CardHeader className="items-center">

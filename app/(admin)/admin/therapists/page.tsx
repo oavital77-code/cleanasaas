@@ -46,7 +46,7 @@ export default async function TherapistsPage() {
   const joinUrl = clinic?.slug ? `${appUrl}/join/${clinic.slug}` : "";
 
   return (
-    <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name}>
+    <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
         <h1 className="text-2xl font-semibold">מטפלים</h1>
 

@@ -739,6 +739,7 @@ export type Database = {
           full_name: string
           ics_token: string | null
           id: string
+          locale: string
           national_id: string | null
           payplus_token_uid: string | null
           phone: string
@@ -760,6 +761,7 @@ export type Database = {
           full_name: string
           ics_token?: string | null
           id: string
+          locale?: string
           national_id?: string | null
           payplus_token_uid?: string | null
           phone: string
@@ -781,6 +783,7 @@ export type Database = {
           full_name?: string
           ics_token?: string | null
           id?: string
+          locale?: string
           national_id?: string | null
           payplus_token_uid?: string | null
           phone?: string
@@ -1467,6 +1470,7 @@ export type Database = {
           full_name: string
           ics_token: string | null
           id: string
+          locale: string
           national_id: string | null
           payplus_token_uid: string | null
           phone: string
@@ -1604,6 +1608,7 @@ export type Database = {
           full_name: string
           ics_token: string | null
           id: string
+          locale: string
           national_id: string | null
           payplus_token_uid: string | null
           phone: string
