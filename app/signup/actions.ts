@@ -2,6 +2,8 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/email/resend";
+import { clinicWelcomeEmail } from "@/lib/email/templates";
 
 export type SignupResult = { error?: string };
 
@@ -37,6 +39,10 @@ export async function completeSignupClinicAction(formData: FormData): Promise<Si
   });
 
   if (error) return { error: translateSignupError(error.message) };
+
+  const { subject, html } = clinicWelcomeEmail({ clinicName, ownerName: ownerFullName });
+  sendEmail({ to: email, subject, html }).catch(() => {});
+
   return {};
 }
 

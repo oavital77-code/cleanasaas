@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinicAdmin } from "@/lib/auth/guards";
+import { sendEmail } from "@/lib/email/resend";
+import { sessionApprovedEmail, sessionRejectedEmail } from "@/lib/email/templates";
 
 export async function approveSessionAction(formData: FormData) {
-  await requireClinicAdmin();
+  const { clinicId } = await requireClinicAdmin();
   const subscriptionId = String(formData.get("subscription_id") ?? "");
   const termRaw = formData.get("term_months");
   const termMonths = termRaw ? Number(termRaw) : undefined;
@@ -14,6 +16,8 @@ export async function approveSessionAction(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("approve_session", { p_subscription_id: subscriptionId, p_term_months: termMonths });
   if (error) throw new Error(error.message);
+
+  notifyTherapistOfApproval(supabase, clinicId, subscriptionId).catch(() => {});
   revalidatePath("/admin/sessions");
 }
 
@@ -25,5 +29,43 @@ export async function rejectSessionAction(formData: FormData) {
 
   const supabase = await createClient();
   await supabase.rpc("reject_session", { p_subscription_id: subscriptionId, p_reason: reason });
+
+  notifyTherapistOfRejection(supabase, subscriptionId, reason).catch(() => {});
   revalidatePath("/admin/sessions");
+}
+
+// 🔴 CLAUDE.md #6: אין דף תשלום שנוצר דינמית — התשלום מתבצע בחנות ה-Woo של
+// הקליניקה עצמה (clinic_payment_settings.woo_store_url), אותו קישור בדיוק
+// שמוצג ב-UI (/sessions). לא בונים כאן payment link חדש.
+export async function notifyTherapistOfApproval(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  clinicId: string,
+  subscriptionId: string,
+) {
+  const [{ data: sub }, { data: paymentSettings }] = await Promise.all([
+    supabase.from("session_subscriptions").select("user_id").eq("id", subscriptionId).maybeSingle(),
+    supabase.from("clinic_payment_settings").select("woo_store_url").eq("clinic_id", clinicId).maybeSingle(),
+  ]);
+  if (!sub || !paymentSettings?.woo_store_url) return;
+
+  const { data: profile } = await supabase.from("profiles").select("email").eq("id", sub.user_id).maybeSingle();
+  if (!profile) return;
+
+  const { subject, html } = sessionApprovedEmail(paymentSettings.woo_store_url);
+  await sendEmail({ to: profile.email, subject, html });
+}
+
+async function notifyTherapistOfRejection(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  subscriptionId: string,
+  reason: string,
+) {
+  const { data: sub } = await supabase.from("session_subscriptions").select("user_id").eq("id", subscriptionId).maybeSingle();
+  if (!sub) return;
+
+  const { data: profile } = await supabase.from("profiles").select("email").eq("id", sub.user_id).maybeSingle();
+  if (!profile) return;
+
+  const { subject, html } = sessionRejectedEmail(reason);
+  await sendEmail({ to: profile.email, subject, html });
 }

@@ -1,6 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toE164Israel } from "@/lib/phone";
+import { sendEmail } from "@/lib/email/resend";
+import { wooPurchaseReceivedEmail, sessionRenewedEmail } from "@/lib/email/templates";
 import type { Database } from "@/lib/supabase/types";
 
 // לוגיקת עיבוד הזמנת Woo של קליניקה בודדת — משותפת בין ה-webhook (push) ובין
@@ -142,13 +144,28 @@ export async function processWooOrder(
   }
 
   // אידמפוטנטי מול אותה הזמנה שמתגלה כמה פעמים (webhook כפול, פוליים חופפים).
-  const { error } = await supabase
+  // ה-.select() אחרי ה-upsert חיוני: שורה שהתנגשה (כבר קיימת) לא חוזרת
+  // ב-RETURNING, אז insertedRows מכיל רק שורות שבאמת נכתבו עכשיו בפעם
+  // הראשונה — המייל צריך להישלח פעם אחת בלבד לכל (clinic_id, woo_order_id,
+  // tier_id), לא בכל פולינג.
+  const { data: insertedRows, error } = await supabase
     .from("woo_pending_purchases")
     .upsert(rowsToInsert, { onConflict: "clinic_id,woo_order_id,tier_id", ignoreDuplicates: true })
     .select("tier_id, quantity");
 
   if (error) {
     return { ok: false, skipped: "SAVE_FAILED" };
+  }
+
+  const newHours = (insertedRows ?? []).reduce((sum, row) => {
+    const tier = tiers?.find((t) => t.id === row.tier_id);
+    return sum + (tier ? tier.hours * row.quantity : 0);
+  }, 0);
+
+  if (email && newHours > 0) {
+    const registerUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/login`;
+    const { subject, html } = wooPurchaseReceivedEmail({ hours: newHours, registerUrl });
+    sendEmail({ to: email, subject, html }).catch(() => {});
   }
 
   return { ok: true };
@@ -225,4 +242,7 @@ async function activateSessionFromWooOrder(
     p_success: true,
     p_transaction_uid: transactionUid,
   });
+
+  const { subject, html } = sessionRenewedEmail(params.amountTotal, null);
+  sendEmail({ to: profile.email, subject, html }).catch(() => {});
 }

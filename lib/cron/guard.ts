@@ -1,6 +1,10 @@
 import "server-only";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { sendEmail } from "@/lib/email/resend";
+import { cronFailedAdminEmail } from "@/lib/email/templates";
+import { getSuperadminEmails } from "@/lib/email/recipients";
 
 /**
  * עוטף route handler של cron ועושה שני דברים:
@@ -16,8 +20,10 @@ import { NextResponse } from "next/server";
  *    ⚠️ בלי `CRON_SECRET` ב-env ה-routes מחזירים 503 ולא רצים (fail closed
  *    במכוון — עדיף cron שלא רץ ומתריע, מאשר endpoint פתוח לעולם).
  *
- * 2. **התראה על כישלון**: חריגה או תגובת שגיאה נרשמות ל-console.error.
- *    TODO: לחבר להתראת מייל לאדמיני-פלטפורמה כש-lib/email יועבר (ר' PROGRESS.md).
+ * 2. **התראה על כישלון**: חריגה או תגובת שגיאה נרשמות ל-console.error וגם
+ *    נשלחות במייל לסופר-אדמיני הפלטפורמה (לא לאדמיני קליניקה — כישלון cron
+ *    הוא תקלה חוצת-קליניקות, לא של קליניקה ספציפית). אם אין עדיין אף
+ *    סופר-אדמין רשום, הרשימה ריקה וההתראה פשוט לא נשלחת (לא זורק).
  */
 export function withCronAlert(jobName: string, handler: () => Promise<NextResponse>) {
   return async function GET(request: Request) {
@@ -34,15 +40,31 @@ export function withCronAlert(jobName: string, handler: () => Promise<NextRespon
       const response = await handler();
       if (response.status >= 400) {
         const body = await response.clone().text();
-        console.error(`[cron:${jobName}] נכשל: ${body || `HTTP ${response.status}`}`);
+        const detail = body || `HTTP ${response.status}`;
+        console.error(`[cron:${jobName}] נכשל: ${detail}`);
+        await alertSuperadmins(jobName, detail);
       }
       return response;
     } catch (err) {
       const message = err instanceof Error ? err.message : "UNKNOWN";
       console.error(`[cron:${jobName}] נכשל: ${message}`);
+      await alertSuperadmins(jobName, message);
       return NextResponse.json({ error: "CRON_FAILED" }, { status: 500 });
     }
   };
+}
+
+async function alertSuperadmins(jobName: string, detail: string) {
+  try {
+    const supabase = createAdminClient();
+    const emails = await getSuperadminEmails(supabase);
+    if (emails.length === 0) return;
+    const { subject, html } = cronFailedAdminEmail({ jobName, detail });
+    await sendEmail({ to: emails, subject, html });
+  } catch (err) {
+    // התראה על כישלון לא אמורה בעצמה לגרום לכישלון נוסף — נרשם ללוג ותו לא.
+    console.error(`[cron:${jobName}] שליחת התראת כישלון נכשלה`, err);
+  }
 }
 
 /**

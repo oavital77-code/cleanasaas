@@ -2,6 +2,9 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/email/resend";
+import { therapistJoinedAdminEmail } from "@/lib/email/templates";
+import { getAdminEmails } from "@/lib/email/recipients";
 
 export type JoinResult = { error?: string };
 
@@ -25,14 +28,28 @@ export async function completeJoinAction(slug: string, formData: FormData): Prom
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("join_clinic_as_therapist", {
-    p_slug: slug,
-    p_full_name: fullName,
-    p_phone: phone,
-    p_email: email,
-  });
+  const { data, error } = await supabase
+    .rpc("join_clinic_as_therapist", {
+      p_slug: slug,
+      p_full_name: fullName,
+      p_phone: phone,
+      p_email: email,
+    })
+    .single();
   if (error) return { error: translateJoinError(error.message) };
+
+  if (data) {
+    notifyAdminsOfNewTherapist(supabase, data.clinic_id, fullName).catch(() => {});
+  }
+
   return {};
+}
+
+async function notifyAdminsOfNewTherapist(supabase: Awaited<ReturnType<typeof createClient>>, clinicId: string, therapistName: string) {
+  const adminEmails = await getAdminEmails(supabase, clinicId);
+  if (adminEmails.length === 0) return;
+  const { subject, html } = therapistJoinedAdminEmail({ therapistName, role: "therapist" });
+  await sendEmail({ to: adminEmails, subject, html });
 }
 
 function translateJoinError(code: string): string {

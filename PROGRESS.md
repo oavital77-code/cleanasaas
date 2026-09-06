@@ -246,10 +246,18 @@ trial.
 
 ## מגבלות/פשרות ידועות (לא כיסוי מלא של הספק המקורי)
 
-- **אין עדיין**: מיילים (Resend) — `lib/email/*` מהמקור לא הועבר. ה-cron
-  של תזכורות מזהה ומסמן (`*_notified_at`) אבל לא שולח בפועל. אין PWA
-  (manifest/service worker/icons), אין Sentry עם tag `clinic_id` (המפרט
-  §15 מבקש את זה — עוד לא חובר כי אין עדיין DSN אמיתי).
+- **מיילים (Resend)**: `lib/email/*` הועבר מהמקור ומחובר בפועל — אישור/ביטול
+  הזמנה (עם ICS מצורף), תזכורת 24 שעות, יתרה נמוכה, כרטיסייה פגה, בקשת/
+  אישור/דחיית ססיה, חידוש ססיה מ-Woo, רכישת כרטיסייה ממתינה, קבלת פנים
+  לקליניקה חדשה ב-signup, הודעה לאדמיני קליניקה על מטפל/ת חדש/ה (join/
+  invite), והתראת cron שנכשל (לסופר-אדמינים, לא לאדמיני קליניקה — תקלת
+  cron היא חוצת-קליניקות). `getAdminEmails`/`getSuperadminEmails`
+  ב-`lib/email/recipients.ts` — clinic_id חובה בראשון, קריטי ל-חוק #3.
+  🔴 בלי `RESEND_API_KEY`/`RESEND_FROM_EMAIL` אמיתיים ב-Vercel, `sendEmail`
+  מתעד ל-console ומחזיר כישלון "רך" בלי לזרוק — האפליקציה ממשיכה לעבוד,
+  פשוט בלי מיילים בפועל. אין PWA (manifest/service worker/icons), אין
+  Sentry עם tag `clinic_id` (המפרט §15 מבקש את זה — עוד לא חובר כי אין
+  עדיין DSN אמיתי).
 - **`clinic_payment_settings`**: הסודות (`woo_consumer_secret`,
   `woo_webhook_secret`) מאוחסנים כטקסט רגיל, מוגנים רק ב-RLS (admin +
   clinic_id שלו). לפני production: הצפנה אמיתית (pgsodium/Supabase Vault).
