@@ -126,8 +126,12 @@ placeholder).
 מפעיל דיפלוי אוטומטי). זרימת signup→email confirm→onboarding נבדקה ידנית
 ועובדת מול הפרויקט האמיתי (קליניקת בדיקה נוצרה בפועל: `orc`/"אור קליניקה").
 
-**עדיין לא בוצע**: יצירת superadmin ראשון (`insert into platform_admins
-...` עם ה-service role), בדיקת Woo webhook מקצה לקצה מול חנות אמיתית.
+**בוצע מאז**: superadmin ראשון נוצר (oavital77@gmail.com) — קדם לו תיקון
+אותו FK בדיוק כמו `profiles_id_fkey` (מיגרציה `20260906000001`,
+`platform_admins.user_id → auth.users` היה חוסם insert לכל superadmin
+עם זהות Clerk, בדיוק כמו שתועד למעלה שיקרה).
+
+**עדיין לא בוצע**: בדיקת Woo webhook מקצה לקצה מול חנות אמיתית.
 
 ## ⚠️ 9. מסמכי ToS/DPA + admin actions מסוכנות ל-self-serve
 
