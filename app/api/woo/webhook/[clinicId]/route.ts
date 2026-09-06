@@ -13,11 +13,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ cli
   const rawBody = await request.text();
 
   const supabase = createAdminClient();
-  const { data: settings } = await supabase
-    .from("clinic_payment_settings")
-    .select("woo_webhook_secret")
-    .eq("clinic_id", clinicId)
-    .maybeSingle();
+  // 🔴 לא select ישיר: woo_webhook_secret מוצפן (bytea) — ר' lib/woo/rest-client.ts.
+  const { data: settings } = await supabase.rpc("get_clinic_woo_credentials", { p_clinic_id: clinicId }).maybeSingle();
 
   if (!settings?.woo_webhook_secret) {
     return NextResponse.json({ error: "WEBHOOK_NOT_CONFIGURED" }, { status: 500 });

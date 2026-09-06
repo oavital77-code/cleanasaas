@@ -1414,6 +1414,16 @@ export type Database = {
         Args: { p_subscription_id: string; p_term_months: number }
         Returns: undefined
       }
+      admin_set_clinic_woo_secrets: {
+        Args: {
+          p_woo_consumer_key?: string
+          p_woo_consumer_secret?: string
+          p_woo_session_product_id?: number
+          p_woo_store_url?: string
+          p_woo_webhook_secret?: string
+        }
+        Returns: undefined
+      }
       app_user_id: { Args: never; Returns: string }
       approve_session: {
         Args: { p_subscription_id: string; p_term_months?: number }
@@ -1508,6 +1518,15 @@ export type Database = {
           p_transaction_uid?: string
         }
         Returns: undefined
+      }
+      get_clinic_woo_credentials: {
+        Args: { p_clinic_id: string }
+        Returns: {
+          woo_consumer_key: string
+          woo_consumer_secret: string
+          woo_store_url: string
+          woo_webhook_secret: string
+        }[]
       }
       grant_bonus_hours: {
         Args: { p_hours: number; p_note: string; p_user_id: string }

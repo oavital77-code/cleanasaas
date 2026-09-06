@@ -46,8 +46,13 @@ export async function updateSessionPricingAction(formData: FormData) {
   revalidatePath("/admin/settings");
 }
 
+// 🔴 לא upsert ישיר: woo_consumer_secret/woo_webhook_secret מוצפנים
+// (bytea, pgcrypto) — ההצפנה עצמה חייבת לקרות בתוך admin_set_clinic_woo_secrets
+// (יש לה גישה למפתח ב-vault.decrypted_secrets, שהאפליקציה לעולם לא רואה).
+// שדה ריק (לא הוזן מחדש) → null → הפונקציה שומרת על הערך הקיים, בדיוק
+// כמו הסמנטיקה הקודמת (`if (consumerSecret) update....`).
 export async function updatePaymentSettingsAction(formData: FormData) {
-  const { clinicId, userId } = await requireClinicAdmin();
+  await requireClinicAdmin();
   const supabase = await createClient();
 
   const storeUrl = String(formData.get("woo_store_url") ?? "").trim();
@@ -56,25 +61,14 @@ export async function updatePaymentSettingsAction(formData: FormData) {
   const webhookSecret = String(formData.get("woo_webhook_secret") ?? "").trim();
   const sessionProductId = Number(formData.get("woo_session_product_id"));
 
-  const update: Record<string, string | null> = {};
-  if (storeUrl) update.woo_store_url = storeUrl;
-  if (consumerKey) update.woo_consumer_key = consumerKey;
-  if (consumerSecret) update.woo_consumer_secret = consumerSecret;
-  if (webhookSecret) update.woo_webhook_secret = webhookSecret;
-
-  await supabase.from("clinic_payment_settings").upsert(
-    { clinic_id: clinicId, ...update, updated_by: userId },
-    { onConflict: "clinic_id" },
-  );
-
-  if (Number.isFinite(sessionProductId)) {
-    await supabase
-      .from("app_settings")
-      .upsert(
-        { clinic_id: clinicId, key: "woo_session_product_id", value: sessionProductId },
-        { onConflict: "clinic_id,key" },
-      );
-  }
+  const { error } = await supabase.rpc("admin_set_clinic_woo_secrets", {
+    p_woo_store_url: storeUrl || undefined,
+    p_woo_consumer_key: consumerKey || undefined,
+    p_woo_consumer_secret: consumerSecret || undefined,
+    p_woo_webhook_secret: webhookSecret || undefined,
+    p_woo_session_product_id: Number.isFinite(sessionProductId) ? sessionProductId : undefined,
+  });
+  if (error) throw new Error(error.message);
 
   revalidatePath("/admin/settings");
 }

@@ -12,15 +12,15 @@ export interface ClinicWooCredentials {
   secret: string;
 }
 
+// 🔴 לא select ישיר: woo_consumer_secret מוצפן (bytea, pgcrypto) בטבלה.
+// get_clinic_woo_credentials (SECURITY DEFINER, service_role בלבד — ר'
+// migration 20260906000002) מפענחת ומחזירה טקסט רגיל. supabase כאן חייב
+// להיות admin client (service role) — כל קוראי הפונקציה הזו כבר משתמשים בו.
 export async function getClinicWooCredentials(
   supabase: SupabaseClient<Database>,
   clinicId: string,
 ): Promise<ClinicWooCredentials | null> {
-  const { data } = await supabase
-    .from("clinic_payment_settings")
-    .select("woo_store_url, woo_consumer_key, woo_consumer_secret")
-    .eq("clinic_id", clinicId)
-    .maybeSingle();
+  const { data } = await supabase.rpc("get_clinic_woo_credentials", { p_clinic_id: clinicId }).maybeSingle();
 
   if (!data?.woo_store_url || !data.woo_consumer_key || !data.woo_consumer_secret) return null;
   return { baseUrl: data.woo_store_url, key: data.woo_consumer_key, secret: data.woo_consumer_secret };

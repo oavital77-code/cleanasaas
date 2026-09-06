@@ -263,8 +263,14 @@ trial.
   Sentry עם tag `clinic_id` (המפרט §15 מבקש את זה — עוד לא חובר כי אין
   עדיין DSN אמיתי).
 - **`clinic_payment_settings`**: הסודות (`woo_consumer_secret`,
-  `woo_webhook_secret`) מאוחסנים כטקסט רגיל, מוגנים רק ב-RLS (admin +
-  clinic_id שלו). לפני production: הצפנה אמיתית (pgsodium/Supabase Vault).
+  `woo_webhook_secret`) **מוצפנים** (מיגרציה `20260906000002`) —
+  `bytea` + `pgcrypto` (`pgp_sym_encrypt`/`pgp_sym_decrypt`), מפתח ב-Supabase
+  Vault (`vault.decrypted_secrets`, לא ב-env/קוד). כתיבה: `admin_set_clinic_woo_secrets`
+  (SECURITY DEFINER, `is_admin()` + `current_clinic_id()` — לא מקבל clinic_id
+  כפרמטר, אין וקטור הזרקה לקליניקה אחרת). קריאה מפוענחת: `get_clinic_woo_credentials`,
+  `service_role` בלבד — נבדק ישירות (`auth.role()`) שקריאה עם JWT `authenticated`
+  נדחית ב-FORBIDDEN. `lib/woo/rest-client.ts`/webhook route עודכנו לקרוא ל-RPC
+  במקום `select` ישיר. נבדק round-trip מלא מול ה-DB החי (הצפנה→פענוח→ניקוי).
 - **שעות פעילות**: `/schedule` ו-`/admin/board` משתמשים ב-08:00–22:00
   קבוע בקוד — אין עדיין שדה "שעות פעילות" per-clinic/per-branch (מסומן
   [לאפיון] ב-CLEANASITEMAPANDDESIGN.md, סעיף א').
