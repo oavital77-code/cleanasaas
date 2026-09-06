@@ -743,6 +743,20 @@ CAPTCHA/bot-protection של Clerk, שרק דפדפן אמיתי יכול לעו�
 **אימות**: `tsc --noEmit`, `npm run build`, `eslint` ו-`vitest` (46
 טסטים) נקיים. לא בוצעה בדיקת דפדפן אמיתי (ר' מגבלת גישת רשת בסעיף 20).
 
+### תיקון: מתג שפה חד-לחיצתי (בעקבות משוב המשתמש)
+
+הגרסה הראשונה של כרטיס השפה הייתה `<select>` + כפתור "שמירה" נפרד —
+שתי פעולות. המשתמש ציין שהציפייה הייתה לכפתור טוגל בלחיצה אחת; תוקן:
+
+- `lib/i18n.ts`: `otherLocale(locale)` (מחזיר את השפה השנייה) ו-
+  `LOCALE_NATIVE_NAME` (endonym קבוע — "עברית"/"English", לא תלוי
+  ב-locale הנוכחי, כמו במתגי שפה סטנדרטיים כגון Wikipedia).
+  `localeOptionHe`/`localeOptionEn` הוסרו מה-dictionary (לא נחוצים יותר).
+- `/profile`: הכרטיס עכשיו `<form>` עם `<input type="hidden"
+  name="locale" value={otherLocale(locale)}>` וכפתור submit יחיד ששמו
+  הוא שם השפה שעוברים **אליה** (כפתור בעברית מציג "English" ולהפך) —
+  לחיצה אחת, בלי שלב "שמירה" נפרד.
+
 ## מה הכי דחוף להמשיך בו
 
 1. תרגום שאר המסכים בהדרגה (schedule → bookings → purchase → sessions

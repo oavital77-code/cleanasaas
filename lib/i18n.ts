@@ -23,6 +23,19 @@ export function normalizeLocale(value: string | null | undefined): Locale {
   return value === "en" ? "en" : "he";
 }
 
+export function otherLocale(locale: Locale): Locale {
+  return locale === "he" ? "en" : "he";
+}
+
+// שם השפה כפי שדוברים אותה קוראים לה בעצמם (endonym) — תמיד באותה שפה,
+// בלי קשר ל-locale הנוכחי של הממשק. מוסכמה סטנדרטית למתגי שפה (למשל
+// Wikipedia): "עברית"/"English" נשארים קריאים למי שמחפש/ת אותם, גם
+// כשהערכית הנוכחית היא השפה השנייה.
+export const LOCALE_NATIVE_NAME: Record<Locale, string> = {
+  he: "עברית",
+  en: "English",
+};
+
 type AppShellDict = {
   nav: {
     dashboard: string;
@@ -150,8 +163,6 @@ type ProfileDict = {
   save: string;
   localeCardTitle: string;
   localeCardDescription: string;
-  localeOptionHe: string;
-  localeOptionEn: string;
   statusCardTitle: string;
   roleLabel: string;
   roleValues: { owner: string; admin: string; therapist: string };
@@ -173,8 +184,6 @@ const PROFILE_DICT: Record<Locale, ProfileDict> = {
     save: "שמירה",
     localeCardTitle: "שפת ממשק / Interface language",
     localeCardDescription: "משפיעה על תפריט הניווט ותוכן העמוד; שאר האפליקציה עדיין בעברית",
-    localeOptionHe: "עברית",
-    localeOptionEn: "English",
     statusCardTitle: "סטטוס בקליניקה",
     roleLabel: "תפקיד",
     roleValues: { owner: "בעלים", admin: "אדמין/ית", therapist: "מטפל/ת" },
@@ -194,8 +203,6 @@ const PROFILE_DICT: Record<Locale, ProfileDict> = {
     save: "Save",
     localeCardTitle: "Interface language / שפת ממשק",
     localeCardDescription: "Affects the nav menu and this page's content; the rest of the app is still in Hebrew",
-    localeOptionHe: "עברית",
-    localeOptionEn: "English",
     statusCardTitle: "Clinic status",
     roleLabel: "Role",
     roleValues: { owner: "Owner", admin: "Admin", therapist: "Therapist" },

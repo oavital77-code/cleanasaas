@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateProfileAction, updateLocaleAction } from "./actions";
-import { dirFor, getProfileDict, normalizeLocale } from "@/lib/i18n";
+import { LOCALE_NATIVE_NAME, dirFor, getProfileDict, normalizeLocale, otherLocale } from "@/lib/i18n";
 
 export default async function ProfilePage() {
   const { userId, profile } = await requireTherapistProfile();
@@ -71,17 +71,10 @@ export default async function ProfilePage() {
             <CardDescription>{t.localeCardDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={updateLocaleAction} className="flex items-center gap-3">
-              <select
-                name="locale"
-                defaultValue={profile.locale}
-                className="flex h-10 rounded-field border border-border-strong bg-surface px-3 text-[14.5px] transition-colors focus-visible:outline-none focus-visible:border-violet-500 focus-visible:[box-shadow:var(--focus-ring)]"
-              >
-                <option value="he">{t.localeOptionHe}</option>
-                <option value="en">{t.localeOptionEn}</option>
-              </select>
+            <form action={updateLocaleAction}>
+              <input type="hidden" name="locale" value={otherLocale(locale)} />
               <Button type="submit" variant="outline">
-                {t.save}
+                {LOCALE_NATIVE_NAME[otherLocale(locale)]}
               </Button>
             </form>
           </CardContent>
