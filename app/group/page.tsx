@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Check } from "lucide-react";
+import { CLEANA_PLUS_URL, CLEANA_URL } from "@/lib/hosts";
 
 // אנגלית/LTR — כמו דף הבית הציבורי (ר' app/(app)/page.tsx) וכמו החריג
 // המקורי ב-click-na. עמוד-hub נייטרלי שמציג את שני המוצרים בפועל
@@ -87,12 +88,14 @@ export default function GroupPage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/"
+              {/* מוחלט, לא "/": על cleanagroup.app השורש הוא הדף הזה עצמו
+                  (rewrite ב-middleware), וקישור יחסי היה מוביל לעצמו. */}
+              <a
+                href={CLEANA_URL}
                 className="mt-auto inline-flex h-11 items-center justify-center rounded-lg bg-violet-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-violet-600"
               >
                 Visit Cleana
-              </Link>
+              </a>
             </div>
 
             {/* Cleana+ — טרקוטה/זהב, hex מחושב מ-HSL האמיתי ב-click-na
@@ -127,9 +130,7 @@ export default function GroupPage() {
                 ))}
               </ul>
               <a
-                href="https://click-na.vercel.app/"
-                target="_blank"
-                rel="noopener noreferrer"
+                href={CLEANA_PLUS_URL}
                 className="mt-auto inline-flex h-11 items-center justify-center rounded-lg px-5 text-sm font-semibold text-white transition-colors"
                 style={{ backgroundColor: "#C6723A" }}
               >

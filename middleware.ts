@@ -1,6 +1,7 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { routeForHost } from "@/lib/hosts";
 
 // SAASMIGRATIONSPEC §11: MVP מתחיל עם דומיין אחד + בחירת קליניקה אחרי login
 // (הקליניקה נגזרת מ-profiles.clinic_id, לא מה-URL) — לא subdomains עדיין.
@@ -13,6 +14,22 @@ import { NextRequest, NextResponse } from "next/server";
 // הישן של Supabase Auth — dual-mode (ר' lib/supabase/server.ts): כל עוד יש
 // משתמשים שלא עברו ל-Clerk, ה-session הישן שלהם חייב להמשיך להתרענן.
 export default clerkMiddleware(async (_auth, request: NextRequest) => {
+  // cleanagroup.app — דף-הנחיתה המשותף של הקבוצה — מוגש מהפרויקט הזה דרך
+  // rewrite ל-/group (ר' lib/hosts.ts). הדף ציבורי ולא צריך session, ולכן
+  // יוצאים לפני רענון ה-cookie של Supabase.
+  const route = routeForHost(
+    request.headers.get("host"),
+    request.nextUrl.pathname,
+    request.nextUrl.search,
+    { production: process.env.VERCEL_ENV === "production" },
+  );
+  if (route.kind === "redirect") return NextResponse.redirect(route.url, 307);
+  if (route.kind === "rewrite") {
+    const url = request.nextUrl.clone();
+    url.pathname = route.pathname;
+    return NextResponse.rewrite(url);
+  }
+
   let response = NextResponse.next();
 
   const supabase = createServerClient(
