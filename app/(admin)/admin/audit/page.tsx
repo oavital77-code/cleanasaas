@@ -43,6 +43,12 @@ const ACTION_LABEL: Record<string, string> = {
   woo_purchase_claimed: "רכישה מהחנות שויכה לפרופיל",
 };
 
+// פעולות "חריגות" שראוי שאדמין ישים לב אליהן ביתר תשומת לב — לא רק
+// עוד שורה ביומן. ר' CLAUDE.md (הזמנה רטרואקטיבית) ו-migration
+// 20260906000003 (cap על שעות מתנה) — שתיהן עוברות דרך RPC תקין, לא
+// שגיאה, אז רק הדגשה ויזואלית מבדילה אותן משאר היומן.
+const ALERT_ACTIONS = new Set(["booking_created_retroactively", "bonus_hours_granted"]);
+
 export default async function AdminAuditPage() {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
@@ -63,11 +69,16 @@ export default async function AdminAuditPage() {
         <h1 className="text-2xl font-semibold">יומן פעולות</h1>
 
         <div className="flex flex-col gap-2">
-          {(logs ?? []).map((log) => (
-            <Card key={log.id} className="shadow-e1">
+          {(logs ?? []).map((log) => {
+            const isAlert = ALERT_ACTIONS.has(log.action);
+            return (
+            <Card key={log.id} className={`shadow-e1 ${isAlert ? "border-warning-border bg-warning-bg" : ""}`}>
               <CardContent className="p-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">{ACTION_LABEL[log.action] ?? log.action}</span>
+                  <span className="flex items-center gap-1.5 font-medium">
+                    {isAlert && <span aria-hidden="true">⚠️</span>}
+                    {ACTION_LABEL[log.action] ?? log.action}
+                  </span>
                   <span className="text-xs text-muted-foreground">{formatDateTimeHe(new Date(log.created_at ?? "1970-01-01T00:00:00Z"))}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -83,7 +94,8 @@ export default async function AdminAuditPage() {
                 )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
           {(!logs || logs.length === 0) && <p className="text-sm text-muted-foreground">אין עדיין רשומות.</p>}
         </div>
       </div>

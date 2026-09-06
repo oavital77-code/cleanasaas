@@ -133,13 +133,19 @@ placeholder).
 
 **עדיין לא בוצע**: בדיקת Woo webhook מקצה לקצה מול חנות אמיתית.
 
-## ⚠️ 9. מסמכי ToS/DPA + admin actions מסוכנות ל-self-serve
+## ✅ 9. תנאי שימוש/מדיניות פרטיות + הגבלת grant_bonus_hours
 
-**לא בוצע כלל** — טקסט משפטי (ToS/DPA) לא נכתב, ו-`grant_bonus_hours` נשאר
-זמין ל-owner על הקליניקה שלו/ה בלי cap/הגבלת trial (ר' הערה ב-migration
-`rpc_booking_and_punch_cards`). לפני פתיחה לציבור: צריך להחליט בין (א) הסרת
-"שעות מתנה" ל-MVP הרב-דיירי, או (ב) cap קשיח + audit בולט + חסימה בזמן
-trial.
+תנאי שימוש (`app/terms`) ומדיניות פרטיות (`app/privacy`) נכתבו במלואם —
+לא placeholder יותר.
+
+`grant_bonus_hours` (מיגרציה `20260906000003`) — נבחרה אופציה (ב) מהחלטה
+הפתוחה שהייתה כאן: cap קשיח (20 שעות לפעולה בודדת, `BONUS_HOURS_CAP_EXCEEDED`)
++ חסימה בזמן trial (`platform_subscriptions.plan = 'trial'` →
+`BONUS_HOURS_BLOCKED_DURING_TRIAL`) + הדגשה ויזואלית ב-`/admin/audit`
+(`ALERT_ACTIONS`, יחד עם `booking_created_retroactively` שכבר היה "alert"
+רק בתיעוד ולא ב-UI בפועל). נבדק round-trip מלא מול ה-DB החי: cap, חסימת
+trial, והצלחה אחרי דגל זמני ל-`plan='basic'` — עם ניקוי מלא וכולל
+שחזור `plan` המקורי בסוף.
 
 ---
 

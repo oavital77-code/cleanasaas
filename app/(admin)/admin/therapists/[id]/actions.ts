@@ -45,7 +45,11 @@ export async function grantBonusHoursAction(formData: FormData) {
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("grant_bonus_hours", { p_user_id: userId, p_hours: hours, p_note: note });
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes("BONUS_HOURS_CAP_EXCEEDED")) throw new Error("אין אפשרות להעניק יותר מ-20 שעות בפעולה אחת");
+    if (error.message.includes("BONUS_HOURS_BLOCKED_DURING_TRIAL")) throw new Error("לא ניתן להעניק שעות מתנה בזמן תקופת ניסיון");
+    throw new Error(error.message);
+  }
 
   revalidatePath(`/admin/therapists/${userId}`);
 }
