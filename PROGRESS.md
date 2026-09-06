@@ -277,9 +277,13 @@ trial, והצלחה אחרי דגל זמני ל-`plan='basic'` — עם ניקו
   `service_role` בלבד — נבדק ישירות (`auth.role()`) שקריאה עם JWT `authenticated`
   נדחית ב-FORBIDDEN. `lib/woo/rest-client.ts`/webhook route עודכנו לקרוא ל-RPC
   במקום `select` ישיר. נבדק round-trip מלא מול ה-DB החי (הצפנה→פענוח→ניקוי).
-- **שעות פעילות**: `/schedule` ו-`/admin/board` משתמשים ב-08:00–22:00
-  קבוע בקוד — אין עדיין שדה "שעות פעילות" per-clinic/per-branch (מסומן
-  [לאפיון] ב-CLEANASITEMAPANDDESIGN.md, סעיף א').
+- **שעות פעילות**: `clinics.open_hour`/`close_hour` (מיגרציה `20260906000004`,
+  ברירת מחדל 8/22 — התנהגות זהה לקודם למי שלא שינה). ברמת **קליניקה בלבד**,
+  לא per-branch (כמו `timezone` שכבר קיים ברמה הזו) — פיצול ל-branch נשאר
+  להרחבה עתידית אם תידרש בפועל. `lib/calendar.ts`'s `buildDaySlots` מקבל
+  אותם כפרמטרים (ברירת מחדל 8/22 נשארת רק כ-fallback). UI לעריכה תחת
+  `/admin/settings` (`updateClinicHoursAction` — update ישיר על `clinics`,
+  אותה תבנית כמו `toggleClinicPublishedAction` הקיים).
 - **Realtime**: הטבלה/triggers (`availability_events`) קיימים ב-DB אבל
   אין subscription בצד ה-UI — לוח הזמנים מתעדכן ב-revalidatePath (רענון
   בקשה), לא בזמן אמת בין משתמשים.

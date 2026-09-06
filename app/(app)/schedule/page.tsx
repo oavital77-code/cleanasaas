@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatInTimeZone } from "date-fns-tz";
 import { he } from "date-fns/locale";
 import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
-import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES } from "@/lib/calendar";
+import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES, DAY_START_HOUR, DAY_END_HOUR } from "@/lib/calendar";
 import { BookingForm } from "./booking-form";
 import { SlotGrid, type CellState, type GridColumn } from "./slot-grid";
 import { AppShell } from "@/components/app-shell";
@@ -15,8 +15,7 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 // לוח זמנים — CLEANASITEMAPANDDESIGN §2 מסך 2: תצוגת יום/שבוע/חודש של
 // זמינות חדרים לפי public_availability (בלי לחשוף מי תפס משבצת — חוק #3
 // ב-CLAUDE.md), לחיצה על משבצת פתוחה יוצרת הזמנה ישירות. שעות הפעילות
-// (08:00–22:00) הן ברירת מחדל קבועה בקוד כרגע — אין עדיין שדה "שעות
-// פעילות" ב-clinics/branches (מסומן [לאפיון] במסמך התכולה, לא נבנה עדיין).
+// מגיעות מ-clinics.open_hour/close_hour (per-clinic, לא קבוע בקוד).
 type View = "day" | "week" | "month";
 const HEB_WEEKDAYS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
@@ -37,10 +36,12 @@ export default async function SchedulePage({
 
   const [{ data: rooms }, { data: clinic }] = await Promise.all([
     supabase.from("rooms").select("id, name").eq("active", true).order("sort_order"),
-    supabase.from("clinics").select("name, timezone").eq("id", profile.clinic_id).single(),
+    supabase.from("clinics").select("name, timezone, open_hour, close_hour").eq("id", profile.clinic_id).single(),
   ]);
 
   const timezone = clinic?.timezone ?? DEFAULT_TIMEZONE;
+  const openHour = clinic?.open_hour ?? DAY_START_HOUR;
+  const closeHour = clinic?.close_hour ?? DAY_END_HOUR;
   const today = formatInTimeZone(new Date(), timezone, "yyyy-MM-dd");
   const date = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : today;
   const view: View = viewParam === "week" || viewParam === "month" ? viewParam : "day";
@@ -82,9 +83,20 @@ export default async function SchedulePage({
             selectedRoomId={selectedRoomId!}
             userId={userId}
             now={now}
+            openHour={openHour}
+            closeHour={closeHour}
           />
         ) : (
-          <DayView date={date} today={today} timezone={timezone} rooms={rooms} userId={userId} now={now} />
+          <DayView
+            date={date}
+            today={today}
+            timezone={timezone}
+            rooms={rooms}
+            userId={userId}
+            now={now}
+            openHour={openHour}
+            closeHour={closeHour}
+          />
         )}
 
         {view === "day" && (
@@ -153,6 +165,8 @@ async function DayView({
   rooms,
   userId,
   now,
+  openHour,
+  closeHour,
 }: {
   date: string;
   today: string;
@@ -160,6 +174,8 @@ async function DayView({
   rooms: { id: string; name: string }[];
   userId: string;
   now: Date;
+  openHour: number;
+  closeHour: number;
 }) {
   const supabase = await createClient();
   const dayStart = zonedDateTimeToUtc(date, "00:00", timezone);
@@ -180,7 +196,7 @@ async function DayView({
       .gt("ends_at", dayStart.toISOString()),
   ]);
 
-  const slots = buildDaySlots();
+  const slots = buildDaySlots(openHour, closeHour);
 
   return (
     <>
@@ -256,6 +272,8 @@ async function WeekView({
   selectedRoomId,
   userId,
   now,
+  openHour,
+  closeHour,
 }: {
   date: string;
   today: string;
@@ -264,6 +282,8 @@ async function WeekView({
   selectedRoomId: string;
   userId: string;
   now: Date;
+  openHour: number;
+  closeHour: number;
 }) {
   const supabase = await createClient();
   const days = weekDays(date);
@@ -288,7 +308,7 @@ async function WeekView({
       .gt("ends_at", rangeStart.toISOString()),
   ]);
 
-  const slots = buildDaySlots();
+  const slots = buildDaySlots(openHour, closeHour);
 
   return (
     <>

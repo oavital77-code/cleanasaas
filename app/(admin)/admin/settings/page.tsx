@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updatePunchCardTierAction, updateSessionPricingAction, updatePaymentSettingsAction } from "./actions";
+import { updatePunchCardTierAction, updateSessionPricingAction, updatePaymentSettingsAction, updateClinicHoursAction } from "./actions";
 
 export default async function AdminSettingsPage() {
   const { profile, clinicId } = await requireClinicAdmin();
@@ -15,7 +15,7 @@ export default async function AdminSettingsPage() {
     supabase.from("punch_card_tiers").select("*").eq("clinic_id", clinicId).order("sort_order"),
     supabase.from("app_settings").select("key, value").eq("clinic_id", clinicId),
     supabase.from("clinic_payment_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
-    supabase.from("clinics").select("name").eq("id", clinicId).single(),
+    supabase.from("clinics").select("name, open_hour, close_hour").eq("id", clinicId).single(),
   ]);
 
   const settings = Object.fromEntries((settingsRows ?? []).map((r) => [r.key, r.value]));
@@ -71,6 +71,48 @@ export default async function AdminSettingsPage() {
                 </Button>
               </form>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-e1">
+          <CardHeader>
+            <CardTitle className="text-base font-medium">שעות פעילות</CardTitle>
+            <CardDescription>הטווח שמוצג בלוח הזמנים (/schedule) וב-לוח המלא (/admin/board).</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={updateClinicHoursAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="open_hour" className="text-xs">
+                  שעת פתיחה
+                </Label>
+                <Input
+                  id="open_hour"
+                  name="open_hour"
+                  type="number"
+                  min={0}
+                  max={23}
+                  defaultValue={clinic?.open_hour ?? 8}
+                  className="w-full sm:w-24"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="close_hour" className="text-xs">
+                  שעת סגירה
+                </Label>
+                <Input
+                  id="close_hour"
+                  name="close_hour"
+                  type="number"
+                  min={1}
+                  max={24}
+                  defaultValue={clinic?.close_hour ?? 22}
+                  className="w-full sm:w-24"
+                />
+              </div>
+              <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
+                שמירה
+              </Button>
+            </form>
           </CardContent>
         </Card>
 

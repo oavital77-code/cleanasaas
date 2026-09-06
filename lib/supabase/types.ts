@@ -394,9 +394,11 @@ export type Database = {
       }
       clinics: {
         Row: {
+          close_hour: number
           created_at: string | null
           id: string
           name: string
+          open_hour: number
           published: boolean
           sessions_enabled: boolean
           slug: string
@@ -404,9 +406,11 @@ export type Database = {
           timezone: string
         }
         Insert: {
+          close_hour?: number
           created_at?: string | null
           id?: string
           name: string
+          open_hour?: number
           published?: boolean
           sessions_enabled?: boolean
           slug: string
@@ -414,9 +418,11 @@ export type Database = {
           timezone?: string
         }
         Update: {
+          close_hour?: number
           created_at?: string | null
           id?: string
           name?: string
+          open_hour?: number
           published?: boolean
           sessions_enabled?: boolean
           slug?: string

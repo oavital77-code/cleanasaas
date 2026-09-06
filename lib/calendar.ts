@@ -1,13 +1,17 @@
 // עזרי תאריכים טהורים (בלי timezone/DB) לתצוגות יום/שבוע/חודש ב-/schedule
 // וב-/admin/board. כל תאריך הוא מחרוזת "YYYY-MM-DD" ביומן האזרחי — ההמרה
 // לשעון הקליניקה בפועל (zonedDateTimeToUtc) קורית בקוד הקורא, לא כאן.
+//
+// ברירות המחדל (8/22) משמשות רק כ-fallback — הערך האמיתי מגיע תמיד
+// מ-clinics.open_hour/close_hour (ר' migration 20260906000004), לא קבוע
+// בקוד יותר.
 export const DAY_START_HOUR = 8;
 export const DAY_END_HOUR = 22;
 export const SLOT_MINUTES = 30;
 
-export function buildDaySlots(): string[] {
+export function buildDaySlots(startHour: number = DAY_START_HOUR, endHour: number = DAY_END_HOUR): string[] {
   const slots: string[] = [];
-  for (let m = DAY_START_HOUR * 60; m < DAY_END_HOUR * 60; m += SLOT_MINUTES) {
+  for (let m = startHour * 60; m < endHour * 60; m += SLOT_MINUTES) {
     const h = Math.floor(m / 60)
       .toString()
       .padStart(2, "0");

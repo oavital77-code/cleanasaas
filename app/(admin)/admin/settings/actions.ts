@@ -46,6 +46,25 @@ export async function updateSessionPricingAction(formData: FormData) {
   revalidatePath("/admin/settings");
 }
 
+// clinics.open_hour/close_hour — לא ברשימת הכתיבה-הישירה-האסורה של
+// CLAUDE.md (רק bookings/punch_cards/session_subscriptions), ואותה תבנית
+// בדיוק כמו toggleClinicPublishedAction הקיים (admin/therapists/actions.ts):
+// update ישיר, scoped ב-.eq("id", clinicId) מ-requireClinicAdmin.
+export async function updateClinicHoursAction(formData: FormData) {
+  const { clinicId } = await requireClinicAdmin();
+  const supabase = await createClient();
+
+  const openHour = Number(formData.get("open_hour"));
+  const closeHour = Number(formData.get("close_hour"));
+  if (!Number.isInteger(openHour) || !Number.isInteger(closeHour)) return;
+  if (openHour < 0 || openHour >= 24 || closeHour <= openHour || closeHour > 24) return;
+
+  await supabase.from("clinics").update({ open_hour: openHour, close_hour: closeHour }).eq("id", clinicId);
+  revalidatePath("/admin/settings");
+  revalidatePath("/schedule");
+  revalidatePath("/admin/board");
+}
+
 // 🔴 לא upsert ישיר: woo_consumer_secret/woo_webhook_secret מוצפנים
 // (bytea, pgcrypto) — ההצפנה עצמה חייבת לקרות בתוך admin_set_clinic_woo_secrets
 // (יש לה גישה למפתח ב-vault.decrypted_secrets, שהאפליקציה לעולם לא רואה).

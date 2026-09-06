@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatInTimeZone } from "date-fns-tz";
 import { he } from "date-fns/locale";
 import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
-import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES } from "@/lib/calendar";
+import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES, DAY_START_HOUR, DAY_END_HOUR } from "@/lib/calendar";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,12 +31,14 @@ export default async function AdminBoardPage({
   const { date: dateParam, room: roomParam, time: timeParam, view: viewParam } = await searchParams;
 
   const [{ data: clinic }, { data: rooms }, { data: users }] = await Promise.all([
-    supabase.from("clinics").select("name, timezone").eq("id", clinicId).single(),
+    supabase.from("clinics").select("name, timezone, open_hour, close_hour").eq("id", clinicId).single(),
     supabase.from("rooms").select("id, name").eq("clinic_id", clinicId).eq("active", true).order("sort_order"),
     supabase.from("profiles").select("id, full_name").eq("clinic_id", clinicId).eq("status", "active").order("full_name"),
   ]);
 
   const timezone = clinic?.timezone ?? DEFAULT_TIMEZONE;
+  const openHour = clinic?.open_hour ?? DAY_START_HOUR;
+  const closeHour = clinic?.close_hour ?? DAY_END_HOUR;
   const today = formatInTimeZone(new Date(), timezone, "yyyy-MM-dd");
   const date = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : today;
   const view: View = viewParam === "week" || viewParam === "month" ? viewParam : "day";
@@ -75,9 +77,20 @@ export default async function AdminBoardPage({
             selectedRoomId={selectedRoomId!}
             clinicId={clinicId}
             users={users ?? []}
+            openHour={openHour}
+            closeHour={closeHour}
           />
         ) : (
-          <DayView date={date} today={today} timezone={timezone} rooms={rooms} clinicId={clinicId} users={users ?? []} />
+          <DayView
+            date={date}
+            today={today}
+            timezone={timezone}
+            rooms={rooms}
+            clinicId={clinicId}
+            users={users ?? []}
+            openHour={openHour}
+            closeHour={closeHour}
+          />
         )}
 
         <Card id="assign" className="shadow-e1 scroll-mt-6">
@@ -182,6 +195,8 @@ async function DayView({
   rooms,
   clinicId,
   users,
+  openHour,
+  closeHour,
 }: {
   date: string;
   today: string;
@@ -189,6 +204,8 @@ async function DayView({
   rooms: { id: string; name: string }[];
   clinicId: string;
   users: { id: string; full_name: string }[];
+  openHour: number;
+  closeHour: number;
 }) {
   const supabase = await createClient();
   const dayStart = zonedDateTimeToUtc(date, "00:00", timezone);
@@ -217,7 +234,7 @@ async function DayView({
   ]);
   if (bookingsError) console.error("admin/board DayView bookings query failed:", bookingsError);
 
-  const slots = buildDaySlots();
+  const slots = buildDaySlots(openHour, closeHour);
 
   return (
     <>
@@ -259,6 +276,8 @@ async function WeekView({
   selectedRoomId,
   clinicId,
   users,
+  openHour,
+  closeHour,
 }: {
   date: string;
   today: string;
@@ -267,6 +286,8 @@ async function WeekView({
   selectedRoomId: string;
   clinicId: string;
   users: { id: string; full_name: string }[];
+  openHour: number;
+  closeHour: number;
 }) {
   const supabase = await createClient();
   const days = weekDays(date);
@@ -295,7 +316,7 @@ async function WeekView({
   ]);
   if (bookingsError) console.error("admin/board WeekView bookings query failed:", bookingsError);
 
-  const slots = buildDaySlots();
+  const slots = buildDaySlots(openHour, closeHour);
 
   return (
     <>
