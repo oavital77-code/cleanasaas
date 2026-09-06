@@ -294,14 +294,22 @@ worker במכוון **לא** offline-first — network-first בלבד, בלי ca
   אותם כפרמטרים (ברירת מחדל 8/22 נשארת רק כ-fallback). UI לעריכה תחת
   `/admin/settings` (`updateClinicHoursAction` — update ישיר על `clinics`,
   אותה תבנית כמו `toggleClinicPublishedAction` הקיים).
-- **Realtime**: הטבלה/triggers (`availability_events`) קיימים ב-DB אבל
-  אין subscription בצד ה-UI — לוח הזמנים מתעדכן ב-revalidatePath (רענון
-  בקשה), לא בזמן אמת בין משתמשים.
+- **Realtime — מחובר**: `availability_events` כבר היה ב-Realtime
+  publication + RLS (`clinic_id = current_clinic_id()`, לא PII — אותה
+  מדיניות כמו `public_availability`), רק חסר subscription בצד הלקוח.
+  נוסף `components/realtime-availability-refresh.tsx` — `postgres_changes`
+  על INSERT ל-`availability_events`, מסונן `clinic_id`, קורא ל-
+  `router.refresh()` (לא state כפול בצד לקוח — אותה שאילתת Server Component
+  ממשיכה לרוץ). מחובר גם ל-`/schedule` וגם ל-`/admin/board`. משתמש ב-
+  `useSupabaseClient()` (`lib/supabase/client.ts`) שכבר היה קיים ומוכן,
+  בלי קוד בפועל שמשתמש בו — עד עכשיו. 🔴 מוגבל למשתמשי Clerk (הטוקן מגיע
+  מ-`useSession()` של Clerk) — משתמש/ת legacy לא מקבל/ת עדכון חי, רק את
+  ההתנהגות הקודמת (בלי רגרסיה, פשוט בלי השיפור עד שיעבור/תעבור ל-Clerk).
 - **טלפון**: `toE164Israel` הוא ישראל-בלבד — קליניקה עתידית מחוץ לישראל
   (spec §1) תצטרך ולידציה בין-לאומית.
-- **superadmin ראשון**: אין מסך הרשמה ל-superadmin (במתכוון — זה לא flow
-  self-serve). יש להכניס ידנית: `insert into platform_admins (user_id,
-  full_name) values ('<auth-user-id>', '<name>');` עם ה-service role.
+- **superadmin ראשון — בוצע**: `oavital77@gmail.com` (ר' סעיף 8 למעלה,
+  מיגרציה `20260906000001`). אין מסך הרשמה ל-superadmin נוסף (במתכוון —
+  לא flow self-serve); הוספת superadmin נוסף עדיין ידנית עם service role.
 
 ## ✅ 13. ניקוי קישורי הזמנה, קריאות הזמנות מבוטלות, בחירת משבצות ויזואלית
 

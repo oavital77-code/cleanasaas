@@ -6,6 +6,7 @@ import { he } from "date-fns/locale";
 import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
 import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES, DAY_START_HOUR, DAY_END_HOUR } from "@/lib/calendar";
 import { AppShell } from "@/components/app-shell";
+import { RealtimeAvailabilityRefresh } from "@/components/realtime-availability-refresh";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft } from "lucide-react";
@@ -46,6 +47,7 @@ export default async function AdminBoardPage({
 
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name}>
+      <RealtimeAvailabilityRefresh clinicId={clinicId} />
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">לוח מלא</h1>

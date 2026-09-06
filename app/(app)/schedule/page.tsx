@@ -8,6 +8,7 @@ import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, 
 import { BookingForm } from "./booking-form";
 import { SlotGrid, type CellState, type GridColumn } from "./slot-grid";
 import { AppShell } from "@/components/app-shell";
+import { RealtimeAvailabilityRefresh } from "@/components/realtime-availability-refresh";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft } from "lucide-react";
@@ -52,6 +53,7 @@ export default async function SchedulePage({
 
   return (
     <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} isAdmin={isAdmin}>
+      <RealtimeAvailabilityRefresh clinicId={profile.clinic_id} />
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">לוח זמנים</h1>
