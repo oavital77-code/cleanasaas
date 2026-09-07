@@ -1443,6 +1443,17 @@ export type Database = {
           booking_id: string
         }[]
       }
+      admin_create_room_block: {
+        Args: {
+          p_ends_at: string
+          p_reason: string
+          p_room_id: string
+          p_starts_at: string
+        }
+        Returns: {
+          block_id: string
+        }[]
+      }
       admin_create_session: {
         Args: {
           p_slots: Json
@@ -1467,9 +1478,29 @@ export type Database = {
           subscription_id: string
         }[]
       }
+      admin_delete_room_block: {
+        Args: { p_block_id: string }
+        Returns: undefined
+      }
       admin_end_session_term: {
         Args: { p_subscription_id: string }
         Returns: undefined
+      }
+      admin_issue_punch_card: {
+        Args: {
+          p_amount_total?: number
+          p_hours?: number
+          p_method?: Database["public"]["Enums"]["payment_method"]
+          p_note?: string
+          p_tier_id?: string
+          p_user_id: string
+        }
+        Returns: {
+          amount_total: number
+          hours: number
+          payment_id: string
+          punch_card_id: string
+        }[]
       }
       admin_mark_session_recurring_paid_cash: {
         Args: {
@@ -1481,6 +1512,13 @@ export type Database = {
       }
       admin_renew_session_term: {
         Args: { p_subscription_id: string; p_term_months: number }
+        Returns: undefined
+      }
+      admin_set_booking_status: {
+        Args: {
+          p_booking_id: string
+          p_status: Database["public"]["Enums"]["booking_status"]
+        }
         Returns: undefined
       }
       admin_set_clinic_whatsapp_settings: {

@@ -6,10 +6,11 @@ import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
 import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES, DAY_START_HOUR, DAY_END_HOUR } from "@/lib/calendar";
 import { AppShell } from "@/components/app-shell";
 import { RealtimeAvailabilityRefresh } from "@/components/realtime-availability-refresh";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { AssignForm } from "./assign-form";
+import { RoomBlocks } from "./room-blocks";
 import { AdminSlotGrid, type AdminCellState, type GridColumn } from "./admin-slot-grid";
 import { type Locale, dateFnsLocale, getAdminBoardDict, getCommonDict, getScheduleDict, normalizeLocale } from "@/lib/i18n";
 
@@ -34,13 +35,26 @@ export default async function AdminBoardPage({
   const s = getScheduleDict(locale);
   const c = getCommonDict(locale);
 
-  const [{ data: clinic }, { data: rooms }, { data: users }] = await Promise.all([
+  const [{ data: clinic }, { data: rooms }, { data: users }, { data: upcomingBlocks }] = await Promise.all([
     supabase.from("clinics").select("name, timezone, open_hour, close_hour").eq("id", clinicId).single(),
     supabase.from("rooms").select("id, name").eq("clinic_id", clinicId).eq("active", true).order("sort_order"),
     supabase.from("profiles").select("id, full_name").eq("clinic_id", clinicId).eq("status", "active").order("full_name"),
+    supabase
+      .from("room_blocks")
+      .select("id, starts_at, ends_at, reason, rooms(name)")
+      .eq("clinic_id", clinicId)
+      .gt("ends_at", new Date().toISOString())
+      .order("starts_at")
+      .limit(30),
   ]);
 
   const timezone = clinic?.timezone ?? DEFAULT_TIMEZONE;
+  const blockRows = (upcomingBlocks ?? []).map((b) => ({
+    id: b.id,
+    roomName: (b.rooms as { name?: string } | null)?.name ?? "",
+    label: `${formatInTimeZone(new Date(b.starts_at), timezone, "dd/MM/yyyy HH:mm")} – ${formatInTimeZone(new Date(b.ends_at), timezone, "dd/MM/yyyy HH:mm")}`,
+    reason: b.reason,
+  }));
   const openHour = clinic?.open_hour ?? DAY_START_HOUR;
   const closeHour = clinic?.close_hour ?? DAY_END_HOUR;
   const today = formatInTimeZone(new Date(), timezone, "yyyy-MM-dd");
@@ -112,6 +126,18 @@ export default async function AdminBoardPage({
             )}
           </CardContent>
         </Card>
+
+        {rooms && rooms.length > 0 && (
+          <Card className="shadow-e1">
+            <CardHeader>
+              <CardTitle className="text-base font-medium">{t.blocksTitle}</CardTitle>
+              <CardDescription>{t.blocksDescription}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RoomBlocks rooms={rooms} blocks={blockRows} initialDate={date} />
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AppShell>
   );

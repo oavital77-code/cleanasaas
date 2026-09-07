@@ -16,6 +16,8 @@ import {
   completeDepositAction,
 } from "./actions";
 import { getAdminTherapistDetailDict, getCommonDict, normalizeLocale } from "@/lib/i18n";
+import { IssueCardForm } from "./issue-card-form";
+import { BookingRowActions } from "./booking-row-actions";
 
 // לפני התיקון הוצג כאן ה-enum הגולמי מה-DB (confirmed/cancelled_by_user/…) —
 // אדמין לא היה מבחין בקלות אילו הזמנות בוטלו. עכשיו תווית + צבע.
@@ -43,6 +45,9 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
     { data: payments },
     { data: subscriptions },
     { data: note },
+    { data: tiers },
+    { data: vatSetting },
+    { data: overruns },
   ] = await Promise.all([
     supabase.from("clinics").select("name").eq("id", clinicId).single(),
     supabase.from("profiles").select("*").eq("id", id).eq("clinic_id", clinicId).maybeSingle(),
@@ -51,9 +56,20 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
     supabase.from("payments").select("id, type, status, amount_total, created_at").eq("user_id", id).order("created_at", { ascending: false }).limit(10),
     supabase.from("session_subscriptions").select("id, status, weekly_hours, monthly_price").eq("user_id", id).order("created_at", { ascending: false }),
     supabase.from("therapist_admin_notes").select("note").eq("user_id", id).maybeSingle(),
+    supabase.from("punch_card_tiers").select("id, hours, price_per_hour, deposit_hours").eq("clinic_id", clinicId).eq("active", true).order("sort_order"),
+    supabase.from("app_settings").select("value").eq("clinic_id", clinicId).eq("key", "vat_rate").maybeSingle(),
+    supabase.from("overrun_charges").select("id, minutes, amount, source, note, created_at").eq("user_id", id).order("created_at", { ascending: false }).limit(10),
   ]);
 
   if (!target) notFound();
+
+  const vatRate = typeof vatSetting?.value === "number" ? vatSetting.value : 0.18;
+  const tierOptions = (tiers ?? []).map((tier) => ({
+    id: tier.id,
+    hours: tier.hours,
+    totalLabel: formatCurrencyILS((tier.hours + tier.deposit_hours) * tier.price_per_hour * (1 + vatRate)),
+  }));
+  const now = new Date();
 
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
@@ -134,6 +150,12 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
             ))}
             {(!cards || cards.length === 0) && <p className="text-sm text-muted-foreground">{t.noCards}</p>}
 
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <p className="text-sm font-medium">{t.issueCardTitle}</p>
+              <p className="text-xs text-muted-foreground">{t.issueCardDescription}</p>
+              <IssueCardForm userId={target.id} tiers={tierOptions} />
+            </div>
+
             <form
               action={grantBonusHoursAction}
               className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:flex-wrap sm:items-end"
@@ -171,20 +193,45 @@ export default async function TherapistDetailPage({ params }: { params: Promise<
           <CardHeader>
             <CardTitle className="text-base font-medium">{t.recentBookingsTitle}</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2 text-sm">
-            {(bookings ?? []).map((b) => (
-              <div key={b.id} className="flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  {(b.rooms as { name?: string } | null)?.name} · {formatDateTimeHe(new Date(b.starts_at))}
-                </span>
-                <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${BOOKING_STATUS_TONE[b.status] ?? "bg-subtle"}`}>
-                  {t.bookingStatus[b.status] ?? b.status}
-                </span>
-              </div>
-            ))}
+          <CardContent className="flex flex-col gap-3 text-sm">
+            {(bookings ?? []).map((b) => {
+              const actionable = b.status === "confirmed" && new Date(b.starts_at) <= now;
+              return (
+                <div key={b.id} className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span>
+                      {(b.rooms as { name?: string } | null)?.name} · {formatDateTimeHe(new Date(b.starts_at))}
+                    </span>
+                    <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${BOOKING_STATUS_TONE[b.status] ?? "bg-subtle"}`}>
+                      {t.bookingStatus[b.status] ?? b.status}
+                    </span>
+                  </div>
+                  {actionable && <BookingRowActions bookingId={b.id} userId={target.id} />}
+                </div>
+              );
+            })}
             {(!bookings || bookings.length === 0) && <p className="text-muted-foreground">{t.noBookings}</p>}
           </CardContent>
         </Card>
+
+        {overruns && overruns.length > 0 && (
+          <Card className="shadow-e1">
+            <CardHeader>
+              <CardTitle className="text-base font-medium">{t.overrunsTitle}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2 text-sm">
+              {overruns.map((o) => (
+                <div key={o.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span>{t.overrunSummary(o.minutes, formatCurrencyILS(Number(o.amount)), o.source)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {o.note ? `${o.note} · ` : ""}
+                    {formatDateTimeHe(new Date(o.created_at ?? "1970-01-01T00:00:00Z"))}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="shadow-e1">
           <CardHeader>

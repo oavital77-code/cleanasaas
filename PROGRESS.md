@@ -873,9 +873,74 @@ Cloud API אפשרי בעתיד עם provider חדש ב-`lib/whatsapp` בלי ל
 נבדק**: שליחה אמיתית מול Green API/Whapi (אין חשבון/QR מקושר בסביבה
 הזו) — לכן קיים כפתור הבדיקה בהגדרות.
 
+## ✅ 25. סקירת "כאילו אני משתמש/ת" — ממצאים ותיקונים
+
+סקירה מול ה-DB החי, הקוד, ו-Supabase advisors (07/09). **לא** הורצה
+האפליקציה בדפדפן (אין `.env.local` בסביבה, אין גישת Vercel מהסשן).
+
+### ממצאים שתוקנו
+
+1. **רגרסיית אבטחה שלי (advisor):** `admin_set_clinic_whatsapp_settings`
+   הייתה ניתנת להרצה ע"י `anon` — אותה תקלה בדיוק שתוקנה יום קודם ל-Woo
+   (`revoke from public` לא מסיר את ה-grant הישיר של Supabase ל-anon),
+   וחזרתי עליה. מיגרציה `20260907000001`. אומת: לפני anon/authenticated/
+   postgres/service_role → אחרי בלי anon. לקח (בהערת המיגרציה): כל RPC
+   חדש — `revoke ... from public, anon` מפורש.
+2. **אי אפשר להכניס שעות למטפל/ת** (חוסם הפעלה): כרטיסייה נוצרה רק דרך
+   Woo (0 קליניקות הגדירו) או `grant_bonus_hours` (חסום ב-trial — שתי
+   הקליניקות ב-trial, תקרה 20ש', חינם). → `admin_issue_punch_card`
+   (מיגרציה `20260907000002`): תשלום אמיתי (payment `paid` + method
+   מזומן/bit/PayBox/אשראי-ידני/העברה), לפי מדרגה (מחירון, או סכום ידני
+   להנחה) או מותאם (שעות+סכום); מע"מ נגזר מהסכום ששולם בפועל. **לא**
+   חסום ב-trial (לא מתנה). audit `punch_card_issued_manually` מודגש ⚠️.
+   UI ב-`/admin/therapists/[id]` (כרטיס "הנפקת כרטיסייה ידנית").
+   נבדק חי: מדרגת 10ש' → ₪649 (55×10×1.18 ✓), payment+card נוצרו ונמחקו.
+3. **כפתור "איפוס סיסמה" שבור:** קרא ל-`supabase.auth.resetPasswordForEmail`
+   — כל 3 הפרופילים על Clerk, וה-client במצב Clerk זורק על `supabase.auth.*`
+   (מתועד ב-`guards.ts`). הוסר: ה-action, הכפתור+העמודה בטבלה, מפתחות
+   i18n, ומסך `/reset-password` (שריד Supabase Auth; `auth.users` = שורה
+   אחת ישנה, כבר מקושרת ל-Clerk). איפוס סיסמה = "שכחתי סיסמה" של
+   `<SignIn>` ב-/login.
+4. **חסימת חדר בלי מסך:** `room_blocks` היה מוצג בלוח, אבל לא היה איך
+   ליצור. → `admin_create_room_block` (דוחה חפיפה עם הזמנה מאושרת —
+   `BLOCK_OVERLAPS_BOOKING`, האדמין מבטל קודם במודע; חפיפה עם חסימה →
+   `BLOCK_OVERLAPS_BLOCK` מה-gist constraint) + `admin_delete_room_block`,
+   audit לשניהם. כרטיס "חסימות חדר" ב-`/admin/board` (טופס + רשימת
+   חסימות קרובות עם הסרה). נבדק חי: יצירה+מחיקה.
+5. **הושלם / לא-הגיע/ה בלי דרך להגיע אליהם:** `admin_set_booking_status`
+   (רק `completed`/`no_show`, רק הזמנה מאושרת שכבר התחילה; לא-הגיע/ה לא
+   מחזיר שעות). נבדק חי: הזמנה עתידית → `BOOKING_NOT_STARTED` ✓.
+6. **חריגות זמן בלי UI:** `record_overrun` קיים מהיום הראשון — עכשיו
+   ב-`/admin/therapists/[id]`, על כל הזמנה מאושרת שהתחילה: כפתורי
+   הושלם/לא-הגיע/ה + טופס "דקות חריגה" (מנכה מהפיקדון או יוצר payment
+   `overrun` ממתין — התוצאה מוצגת). כרטיס "חריגות זמן" מציג את ההיסטוריה.
+7. **`.env.example` בלי מפתחות Clerk** — `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+   ו-`CLERK_SECRET_KEY` נוספו בראש הקובץ (בלעדיהם האפליקציה לא עולה).
+8. **Resend:** אומת דרך ה-API — שני דומיינים מאומתים עם שליחה פעילה
+   (`cleana.co.il`, `mail.cleanagroup.app`). לא נשלח מייל בדיקה מכאן
+   (דורש `from` שהמשתמש בוחר); `RESEND_FROM_EMAIL` ב-Vercel צריך להיות
+   מאחד מהם.
+
+### ממצאים שנבדקו ונמצאו תקינים
+
+- **0 פונקציות ו-0 policies** חיות משתמשות ב-`auth.uid()` — מעבר Clerk
+  נקי לגמרי (ה-`auth.uid()` בקבצי המיגרציה הישנים הוחלף ב-20260905000003).
+- `public_availability` = SECURITY DEFINER view (advisor ERROR) — **מכוון**:
+  כך זמינות נחשפת בלי לחשוף מי תפס (חוק #3). לא שונה.
+- `is_admin`/`current_clinic_id`/`app_user_id`/`is_superadmin` ניתנות
+  להרצה ע"י anon (advisor WARN) — מכוון, בתוך policies (ר' 20260904000001).
+- `platform_admins` = 1 (הבעלים) — משימת "סופר-אדמין ראשון" סגורה.
+
+**אימות**: `tsc`, `eslint`, `vitest` (49), `npm run build` נקיים. 4 ה-RPCs
+החדשים נבדקו חי (כולל נתיבי דחייה); כל נתוני הבדיקה נמחקו (אומת: cards=1,
+payments=0, blocks=0).
+
 ## מה הכי דחוף להמשיך בו
 
-1. WhatsApp: לפתוח חשבון Green API (או Whapi), לסרוק QR עם הטלפון העסקי,
+1. **לא נבדק בדפדפן** — כל המסכים החדשים (הנפקת כרטיסייה, חסימות, חריגות)
+   ושינוי ה-LTR צריכים מעבר ויזואלי אחד אמיתי.
+2. Sentry DSN (`NEXT_PUBLIC_SENTRY_DSN` ריק) — לפני משתמש/ת ראשון/ה.
+3. WhatsApp: לפתוח חשבון Green API (או Whapi), לסרוק QR עם הטלפון העסקי,
    להזין Instance ID / API URL / טוקן ב-/admin/settings וללחוץ "שליחת
    הודעת בדיקה אליי". לשקול Vercel Pro לתזכורת מדויקת של 24 שעות.
 2. מיילים לפי שפת הנמען/ת (`lib/email/templates.ts` עדיין עברית בלבד).

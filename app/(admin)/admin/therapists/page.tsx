@@ -6,13 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { X } from "lucide-react";
-import {
-  createInviteAction,
-  adminResetPasswordAction,
-  toggleClinicPublishedAction,
-  revokeInviteAction,
-  clearUsedInvitesAction,
-} from "./actions";
+import { createInviteAction, toggleClinicPublishedAction, revokeInviteAction, clearUsedInvitesAction } from "./actions";
 import { getAdminTherapistsDict, getCommonDict, normalizeLocale } from "@/lib/i18n";
 
 const STATUS_TONE: Record<string, string> = {
@@ -87,7 +81,6 @@ export default async function TherapistsPage() {
                   <th className="p-3 text-start font-medium">{t.colRole}</th>
                   <th className="p-3 text-start font-medium">{t.colStatus}</th>
                   <th className="hidden p-3 text-start font-medium sm:table-cell">{t.colHours}</th>
-                  <th className="p-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
@@ -111,14 +104,6 @@ export default async function TherapistsPage() {
                       </span>
                     </td>
                     <td className="tabular-nums hidden p-3 sm:table-cell">{hoursByUser.get(p.id) ?? 0}</td>
-                    <td className="p-3">
-                      <form action={adminResetPasswordAction}>
-                        <input type="hidden" name="email" value={p.email} />
-                        <Button type="submit" size="sm" variant="outline">
-                          {t.resetPassword}
-                        </Button>
-                      </form>
-                    </td>
                   </tr>
                 ))}
               </tbody>

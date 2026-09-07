@@ -53,14 +53,6 @@ export async function clearUsedInvitesAction() {
   revalidatePath("/admin/therapists");
 }
 
-// שולח מייל איפוס סיסמה סטנדרטי של Supabase Auth לכתובת המטפל/ת — לא
-// חושף/משנה סיסמה בעצמו, רק מתחיל את אותה זרימה כמו "שכחתי סיסמה".
-export async function adminResetPasswordAction(formData: FormData) {
-  await requireClinicAdmin();
-  const email = String(formData.get("email") ?? "");
-  if (!email) return;
-
-  const supabase = await createClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${appUrl}/reset-password` });
-}
+// adminResetPasswordAction הוסר (סקירה 07/09): קרא ל-supabase.auth.resetPasswordForEmail
+// — אבל כל המשתמשים על Clerk, וה-client במצב Clerk זורק על כל supabase.auth.*
+// (ר' lib/auth/guards.ts). איפוס סיסמה קורה ב-"שכחתי סיסמה" של <SignIn> ב-/login.

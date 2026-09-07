@@ -13,7 +13,12 @@ import { getAdminAuditDict, getCommonDict, normalizeLocale } from "@/lib/i18n";
 // עוד שורה ביומן. ר' CLAUDE.md (הזמנה רטרואקטיבית) ו-migration
 // 20260906000003 (cap על שעות מתנה) — שתיהן עוברות דרך RPC תקין, לא
 // שגיאה, אז רק הדגשה ויזואלית מבדילה אותן משאר היומן.
-const ALERT_ACTIONS = new Set(["booking_created_retroactively", "bonus_hours_granted", "whatsapp_reminder_failed"]);
+const ALERT_ACTIONS = new Set([
+  "booking_created_retroactively",
+  "bonus_hours_granted",
+  "punch_card_issued_manually",
+  "whatsapp_reminder_failed",
+]);
 
 export default async function AdminAuditPage() {
   const { profile, clinicId } = await requireClinicAdmin();

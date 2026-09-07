@@ -53,6 +53,17 @@ const BOARD_HE = {
   // actions
   slotTaken: "המשבצת תפוסה",
   assignError: "שגיאה בשיבוץ",
+  // room blocks
+  blocksTitle: "חסימות חדר",
+  blocksDescription: "תחזוקה, חג, שיפוץ — החדר מוצג כ\"חסום\" בלוח ולא ניתן להזמין אותו. חסימה שחופפת הזמנה מאושרת נדחית.",
+  blockFrom: "מ-",
+  blockTo: "עד",
+  blockReason: "סיבה",
+  blockCreate: "חסימה",
+  blockCreating: "חוסם/ת…",
+  blockDelete: "הסרת חסימה",
+  blocksEmpty: "אין חסימות קרובות.",
+  blockError: "שגיאה ביצירת החסימה",
 };
 
 const BOARD_EN: typeof BOARD_HE = {
@@ -78,6 +89,16 @@ const BOARD_EN: typeof BOARD_HE = {
   note: "Note",
   slotTaken: "This slot is taken",
   assignError: "Assignment failed",
+  blocksTitle: "Room blocks",
+  blocksDescription: "Maintenance, holiday, renovation — the room shows as \"blocked\" on the board and cannot be booked. A block overlapping a confirmed booking is rejected.",
+  blockFrom: "From",
+  blockTo: "To",
+  blockReason: "Reason",
+  blockCreate: "Block",
+  blockCreating: "Blocking…",
+  blockDelete: "Remove block",
+  blocksEmpty: "No upcoming blocks.",
+  blockError: "Failed to create the block",
 };
 
 export function getAdminBoardDict(locale: Locale) {
@@ -102,7 +123,6 @@ const THERAPISTS_HE = {
   colRole: "תפקיד",
   colStatus: "סטטוס",
   colHours: "שעות",
-  resetPassword: "איפוס סיסמה",
   manualInviteTitle: "הזמנה ידנית (חד-פעמית)",
   manualInviteDescription: "למקרה שרוצים להזמין אדמין/ית נוסף/ת, או מטפל/ת ספציפי/ת בלי לפרסם קישור כללי.",
   createInviteLink: "יצירת קישור הזמנה",
@@ -128,7 +148,6 @@ const THERAPISTS_EN: typeof THERAPISTS_HE = {
   colRole: "Role",
   colStatus: "Status",
   colHours: "Hours",
-  resetPassword: "Reset password",
   manualInviteTitle: "Manual invite (one-time)",
   manualInviteDescription: "For inviting an additional admin, or a specific therapist without publishing a general link.",
   createInviteLink: "Create invite link",
@@ -173,6 +192,42 @@ const THERAPIST_DETAIL_HE = {
   noPayments: "אין תשלומים.",
   adminNoteTitle: "הערת אדמין (פנימית)",
   saveNote: "שמירת הערה",
+  // הנפקת כרטיסייה ידנית
+  issueCardTitle: "הנפקת כרטיסייה ידנית",
+  issueCardDescription:
+    "למטפל/ת ששילם/ה במזומן / bit / העברה, מחוץ לחנות. נרשם כתשלום ששולם + כרטיסייה, ומודגש ביומן הפעולות.",
+  issueCardTier: "מדרגה",
+  issueCardCustom: "מותאם אישית (שעות + סכום)",
+  issueCardTierOption: (hours: number, price: string) => `${hours} שעות · ${price} כולל מע"מ`,
+  issueCardHours: "שעות",
+  issueCardAmount: "סכום ששולם (₪, כולל מע\"מ)",
+  issueCardAmountHint: "ריק = מחיר המחירון של המדרגה",
+  issueCardMethod: "אמצעי תשלום",
+  issueCardNote: "הערה",
+  issueCardSubmit: "הנפקת כרטיסייה",
+  issueCardPending: "מנפיק/ה…",
+  issueCardDone: (hours: number, amount: string) => `הונפקה כרטיסייה של ${hours} שעות (${amount}).`,
+  issueCardError: "שגיאה בהנפקת הכרטיסייה",
+  paymentMethods: {
+    cash: "מזומן",
+    bit: "bit",
+    paybox: "PayBox",
+    credit_card: "אשראי (ידני)",
+    other: "העברה בנקאית / אחר",
+  } as Record<string, string>,
+  // סטטוס הזמנה + חריגה
+  markCompleted: "הושלם",
+  markNoShow: "לא הגיע/ה",
+  overrunMinutes: "דקות חריגה",
+  overrunNote: "הערה",
+  overrunRecord: "רישום חריגה",
+  overrunRecording: "רושם/ת…",
+  overrunDone: (amount: string, source: string) =>
+    source === "deposit" ? `נרשמה חריגה — ${amount} נוכה מהפיקדון.` : `נרשמה חריגה — ${amount} ממתין לתשלום.`,
+  overrunError: "שגיאה ברישום החריגה",
+  overrunsTitle: "חריגות זמן",
+  overrunSummary: (minutes: number, amount: string, source: string) =>
+    `${minutes} דק' · ${amount} · ${source === "deposit" ? "מהפיקדון" : "לחיוב"}`,
   bookingStatus: {
     confirmed: "מאושרת",
     cancelled_by_user: 'בוטלה ע"י המטפל/ת',
@@ -208,6 +263,40 @@ const THERAPIST_DETAIL_EN: typeof THERAPIST_DETAIL_HE = {
   noPayments: "No payments.",
   adminNoteTitle: "Admin note (internal)",
   saveNote: "Save note",
+  issueCardTitle: "Issue punch card manually",
+  issueCardDescription:
+    "For a therapist who paid in cash / bit / bank transfer, outside the store. Recorded as a paid payment + punch card, and highlighted in the audit log.",
+  issueCardTier: "Tier",
+  issueCardCustom: "Custom (hours + amount)",
+  issueCardTierOption: (hours, price) => `${hours} hours · ${price} incl. VAT`,
+  issueCardHours: "Hours",
+  issueCardAmount: "Amount paid (₪, incl. VAT)",
+  issueCardAmountHint: "Empty = the tier's list price",
+  issueCardMethod: "Payment method",
+  issueCardNote: "Note",
+  issueCardSubmit: "Issue punch card",
+  issueCardPending: "Issuing…",
+  issueCardDone: (hours, amount) => `Issued a ${hours}-hour punch card (${amount}).`,
+  issueCardError: "Failed to issue the punch card",
+  paymentMethods: {
+    cash: "Cash",
+    bit: "bit",
+    paybox: "PayBox",
+    credit_card: "Credit card (manual)",
+    other: "Bank transfer / other",
+  },
+  markCompleted: "Completed",
+  markNoShow: "No-show",
+  overrunMinutes: "Overrun minutes",
+  overrunNote: "Note",
+  overrunRecord: "Record overrun",
+  overrunRecording: "Recording…",
+  overrunDone: (amount, source) =>
+    source === "deposit" ? `Overrun recorded — ${amount} deducted from deposit.` : `Overrun recorded — ${amount} pending payment.`,
+  overrunError: "Failed to record the overrun",
+  overrunsTitle: "Overruns",
+  overrunSummary: (minutes, amount, source) =>
+    `${minutes} min · ${amount} · ${source === "deposit" ? "from deposit" : "to be charged"}`,
   bookingStatus: {
     confirmed: "Confirmed",
     cancelled_by_user: "Cancelled by therapist",
@@ -518,6 +607,11 @@ const AUDIT_HE = {
     whatsapp_reminder_sent: "תזכורת WhatsApp נשלחה",
     whatsapp_reminder_failed: "תזכורת WhatsApp נכשלה",
     whatsapp_settings_updated: "הגדרות WhatsApp עודכנו",
+    punch_card_issued_manually: "כרטיסייה הונפקה ידנית (תשלום מחוץ לחנות)",
+    room_block_created: "חדר נחסם",
+    room_block_deleted: "חסימת חדר הוסרה",
+    booking_marked_completed: "הזמנה סומנה כהושלמה",
+    booking_marked_no_show: "הזמנה סומנה — לא הגיע/ה",
   } as Record<string, string>,
 };
 
@@ -563,6 +657,11 @@ const AUDIT_EN: typeof AUDIT_HE = {
     whatsapp_reminder_sent: "WhatsApp reminder sent",
     whatsapp_reminder_failed: "WhatsApp reminder failed",
     whatsapp_settings_updated: "WhatsApp settings updated",
+    punch_card_issued_manually: "Punch card issued manually (paid outside the store)",
+    room_block_created: "Room blocked",
+    room_block_deleted: "Room block removed",
+    booking_marked_completed: "Booking marked completed",
+    booking_marked_no_show: "Booking marked no-show",
   },
 };
 

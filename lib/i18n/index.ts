@@ -139,6 +139,14 @@ const COMMON_HE = {
     INVALID_START_DATE: "תאריך התחלה לא יכול להיות בעבר",
     BONUS_HOURS_CAP_EXCEEDED: "אין אפשרות להעניק יותר מ-20 שעות בפעולה אחת",
     BONUS_HOURS_BLOCKED_DURING_TRIAL: "לא ניתן להעניק שעות מתנה בזמן תקופת ניסיון",
+    TIER_NOT_FOUND: "המדרגה לא נמצאה או לא פעילה",
+    INVALID_HOURS: "מספר שעות לא תקין (0.5–100)",
+    INVALID_AMOUNT: "סכום לא תקין",
+    BLOCK_OVERLAPS_BOOKING: "יש הזמנה מאושרת בטווח הזה — יש לבטל אותה קודם",
+    BLOCK_OVERLAPS_BLOCK: "כבר קיימת חסימה בטווח הזה",
+    BOOKING_NOT_CONFIRMED: "ההזמנה כבר לא במצב מאושר",
+    BOOKING_NOT_STARTED: "ההזמנה עדיין לא התחילה",
+    INVALID_STATUS: "סטטוס לא תקין",
   } as Record<string, string>,
 };
 
@@ -211,6 +219,14 @@ const COMMON_EN: typeof COMMON_HE = {
     INVALID_START_DATE: "Start date cannot be in the past",
     BONUS_HOURS_CAP_EXCEEDED: "Cannot grant more than 20 hours in one action",
     BONUS_HOURS_BLOCKED_DURING_TRIAL: "Bonus hours cannot be granted during the trial period",
+    TIER_NOT_FOUND: "Tier not found or inactive",
+    INVALID_HOURS: "Invalid number of hours (0.5–100)",
+    INVALID_AMOUNT: "Invalid amount",
+    BLOCK_OVERLAPS_BOOKING: "A confirmed booking exists in this range — cancel it first",
+    BLOCK_OVERLAPS_BLOCK: "A block already exists in this range",
+    BOOKING_NOT_CONFIRMED: "The booking is no longer confirmed",
+    BOOKING_NOT_STARTED: "The booking has not started yet",
+    INVALID_STATUS: "Invalid status",
   },
 };
 
