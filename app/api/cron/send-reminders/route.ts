@@ -5,10 +5,12 @@ import { sendEmail } from "@/lib/email/resend";
 import { bookingReminderEmail, lowBalanceEmail, cardExpiringEmail, sessionRenewalReminderEmail } from "@/lib/email/templates";
 import { getAdminEmails } from "@/lib/email/recipients";
 import { accessWindow } from "@/lib/time";
+import { sendWhatsAppReminders } from "@/lib/whatsapp/reminders";
 
-// 09:00 — תזכורות 24 שעות + יתרה נמוכה + כרטיסייה פגה + חידוש ססיה קרב (7
-// ימים מראש, למטפל/ת ולאדמיני הקליניקה שלו/ה), כל הקליניקות. כל התראה
-// מסומנת עם *_notified_at כדי שלא תישלח שוב בכל ריצה.
+// 09:00 — תזכורות 24 שעות (מייל + WhatsApp לקליניקות שהפעילו) + יתרה נמוכה
+// + כרטיסייה פגה + חידוש ססיה קרב (7 ימים מראש, למטפל/ת ולאדמיני הקליניקה
+// שלו/ה), כל הקליניקות. כל התראה מסומנת עם *_sent_at/*_notified_at כדי
+// שלא תישלח שוב בכל ריצה.
 export const GET = withCronAlert("send-reminders", async () => {
   const supabase = createAdminClient();
   const now = new Date();
@@ -136,5 +138,9 @@ export const GET = withCronAlert("send-reminders", async () => {
     }
   }
 
-  return NextResponse.json({ ok: true, reminders, lowBalance, expiring, sessionReminders });
+  // WhatsApp — ערוץ נפרד עם סימון נפרד (bookings.whatsapp_reminder_sent_at),
+  // רק לקליניקות עם clinic_whatsapp_settings.enabled. ר' lib/whatsapp/reminders.ts.
+  const whatsapp = await sendWhatsAppReminders(supabase, now);
+
+  return NextResponse.json({ ok: true, reminders, lowBalance, expiring, sessionReminders, whatsapp });
 });

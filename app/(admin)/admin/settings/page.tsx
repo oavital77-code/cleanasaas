@@ -5,7 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updatePunchCardTierAction, updateSessionPricingAction, updatePaymentSettingsAction, updateClinicHoursAction } from "./actions";
+import {
+  updatePunchCardTierAction,
+  updateSessionPricingAction,
+  updatePaymentSettingsAction,
+  updateClinicHoursAction,
+  updateWhatsAppSettingsAction,
+} from "./actions";
+import { WhatsAppTestButton } from "./whatsapp-test-button";
+import { Select } from "@/components/ui/select";
 import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
 
 export default async function AdminSettingsPage() {
@@ -13,12 +21,19 @@ export default async function AdminSettingsPage() {
   const supabase = await createClient();
   const t = getAdminSettingsDict(normalizeLocale(profile.locale));
 
-  const [{ data: tiers }, { data: settingsRows }, { data: paymentSettings }, { data: clinic }] = await Promise.all([
-    supabase.from("punch_card_tiers").select("*").eq("clinic_id", clinicId).order("sort_order"),
-    supabase.from("app_settings").select("key, value").eq("clinic_id", clinicId),
-    supabase.from("clinic_payment_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
-    supabase.from("clinics").select("name, open_hour, close_hour").eq("id", clinicId).single(),
-  ]);
+  const [{ data: tiers }, { data: settingsRows }, { data: paymentSettings }, { data: clinic }, { data: whatsapp }] =
+    await Promise.all([
+      supabase.from("punch_card_tiers").select("*").eq("clinic_id", clinicId).order("sort_order"),
+      supabase.from("app_settings").select("key, value").eq("clinic_id", clinicId),
+      supabase.from("clinic_payment_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
+      supabase.from("clinics").select("name, open_hour, close_hour").eq("id", clinicId).single(),
+      // api_token הוא bytea מוצפן — נשלף רק כדי להציג "מוגדר"; לעולם לא מפוענח כאן.
+      supabase
+        .from("clinic_whatsapp_settings")
+        .select("enabled, provider, instance_id, api_url, api_token, sender_phone, hours_before, template")
+        .eq("clinic_id", clinicId)
+        .maybeSingle(),
+    ]);
 
   const settings = Object.fromEntries((settingsRows ?? []).map((r) => [r.key, r.value]));
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -154,6 +169,78 @@ export default async function AdminSettingsPage() {
                 {t.save}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-e1">
+          <CardHeader>
+            <CardTitle className="text-base font-medium">{t.whatsappTitle}</CardTitle>
+            <CardDescription>{t.whatsappDescription}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-5">
+            <form action={updateWhatsAppSettingsAction} className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="enabled" defaultChecked={whatsapp?.enabled ?? false} className="size-4 accent-violet-500" />
+                {t.whatsappEnabled}
+              </label>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="wa_provider">{t.whatsappProvider}</Label>
+                  <Select id="wa_provider" name="provider" defaultValue={whatsapp?.provider ?? "green_api"}>
+                    <option value="green_api">Green API</option>
+                    <option value="whapi">Whapi</option>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="wa_hours_before">{t.whatsappHoursBefore}</Label>
+                  <Input
+                    id="wa_hours_before"
+                    name="hours_before"
+                    type="number"
+                    min={1}
+                    max={72}
+                    defaultValue={whatsapp?.hours_before ?? 24}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="wa_instance_id">{t.whatsappInstanceId}</Label>
+                  <Input id="wa_instance_id" name="instance_id" dir="ltr" defaultValue={whatsapp?.instance_id ?? ""} placeholder="Green API only" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="wa_api_url">API URL</Label>
+                  <Input id="wa_api_url" name="api_url" dir="ltr" defaultValue={whatsapp?.api_url ?? ""} placeholder="https://7103.api.greenapi.com" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="wa_api_token">{t.whatsappToken}</Label>
+                  <Input id="wa_api_token" name="api_token" type="password" dir="ltr" placeholder={whatsapp?.api_token ? t.configuredPlaceholder : ""} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="wa_sender_phone">{t.whatsappSenderPhone}</Label>
+                  <Input id="wa_sender_phone" name="sender_phone" dir="ltr" defaultValue={whatsapp?.sender_phone ?? profile.phone} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="wa_template">{t.whatsappTemplate}</Label>
+                <textarea
+                  id="wa_template"
+                  name="template"
+                  rows={3}
+                  defaultValue={whatsapp?.template ?? ""}
+                  placeholder="שלום {name}, תזכורת להזמנה שלך ב-{clinic}: {date} בשעה {time}, {room} ({branch})."
+                  className="rounded-field border border-border-strong bg-surface p-3 text-base focus-visible:border-violet-500 focus-visible:outline-none focus-visible:[box-shadow:var(--focus-ring)] md:text-sm"
+                />
+                <p className="text-xs text-muted-foreground" dir="ltr">
+                  {t.whatsappTemplateHelp}
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground">{t.whatsappCronNote}</p>
+              <Button type="submit" className="w-fit">
+                {t.save}
+              </Button>
+            </form>
+            <div className="border-t border-border pt-4">
+              <WhatsAppTestButton />
+            </div>
           </CardContent>
         </Card>
       </div>

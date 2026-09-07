@@ -805,9 +805,80 @@ TypeScript תופס מפתח חסר.
 regex לעברית מחוץ להערות ב-`app/(app)`, `app/(admin)`, `components/`
 מחזירה 0 שורות (נותרו רק הערות JSX רב-שורתיות בעברית — לא נראות למשתמש).
 
+## ✅ 24. תזכורות WhatsApp למטפל/ת לפני הזמנה (שער QR — Green API / Whapi)
+
+בקשת המשתמש: תזכורת אוטומטית מהוואטסאפ העסקי של מנהל/ת הקליניקה לוואטסאפ
+של המטפל/ת, 24 שעות לפני ההזמנה, מופעלת מההגדרות.
+
+### החלטת ספק — הוצגה למשתמש, נבחרה במפורש
+
+שליחה "מהמספר של המנהל/ת" דורשת שער. הוצגו 4 מסלולים עם ההבדל המרכזי:
+ב-**Meta Cloud API הרשמי** המספר נרשם ל-API ולא ניתן להמשיך להשתמש בו
+באפליקציית WhatsApp Business בטלפון (+ Business verification, אישור
+תבניות); ב-**שערי QR לא-רשמיים** (Green API / Whapi) הטלפון ממשיך לעבוד
+כרגיל (קישור בסריקת QR כמו WhatsApp Web) — אבל זה **מנוגד לתנאי השימוש של
+WhatsApp, עם סיכון חסימה של המספר העסקי**. המשתמש בחר בשער QR בידיעה על
+הסיכון. 🔴 אם המספר ייחסם — זה הסיכון שנלקח כאן במכוון; המעבר ל-Meta
+Cloud API אפשרי בעתיד עם provider חדש ב-`lib/whatsapp` בלי לשנות את
+שאר המבנה.
+
+### DB (מיגרציה `20260906000007`)
+
+- `clinic_whatsapp_settings` (per-clinic): `enabled`, `provider`
+  (`green_api`/`whapi`), `instance_id`, `api_url` (Green API מקצה כתובת
+  ייעודית לכל instance — בלי זה קריאות היו נכשלות בפועל), **`api_token`
+  bytea מוצפן** (pgcrypto + מפתח ייעודי `whatsapp_secrets_key` ב-Vault —
+  אותה תבנית בדיוק כמו סודות Woo), `sender_phone` (תצוגה בלבד — השער
+  שולח ממה שקושר אצלו), `hours_before` (1–72, ברירת מחדל 24), `template`
+  עם `{name} {date} {time} {room} {branch} {clinic}`.
+- `bookings.whatsapp_reminder_sent_at` — סימון נפרד מ-`reminder_sent_at`
+  של המייל, כדי ששני הערוצים לא ישפיעו זה על זה.
+- `admin_set_clinic_whatsapp_settings(...)` — אדמין הקליניקה בלבד, מצפין,
+  null = "לא לגעת", וכותב `whatsapp_settings_updated` ל-audit_log (בלי
+  טוקן/טלפון). `get_clinic_whatsapp_credentials(clinic_id)` — מפוענח,
+  **service_role בלבד**.
+- **נבדק מול ה-DB החי**: round-trip הצפנה/פענוח (80 בייט ciphertext →
+  הטוקן המקורי דרך service_role), ו-`authenticated` נדחה ב-`FORBIDDEN`.
+  הבדיקה כתבה שורת הגדרות + audit על הקליניקה האמיתית של המשתמש (אין
+  קליניקת בדיקה) — **שתיהן נמחקו בסוף, אומת 0 שורות**.
+
+### אפליקציה
+
+- `lib/whatsapp/index.ts` — `sendWhatsAppText()` לשני הספקים (לא זורק,
+  כמו `sendEmail`; אין טלפון/טוקן בלוגים), `renderReminderTemplate()`
+  (+ vitest). `lib/whatsapp/reminders.ts` — שלב ה-WhatsApp של ה-cron:
+  לולאה על קליניקות עם `enabled`, חלון `now → now+hours_before`, סימון
+  `whatsapp_reminder_sent_at` בהצלחה + `whatsapp_reminder_sent` ב-audit;
+  בכישלון `whatsapp_reminder_failed` (מודגש ⚠️ ב-/admin/audit) ובלי
+  סימון → ניסיון חוזר בריצה הבאה.
+- `app/api/cron/send-reminders` — קורא ל-`sendWhatsAppReminders` אחרי
+  המיילים (כישלון קליניקה אחת לא מפיל את השאר).
+- `/admin/settings` — כרטיס "תזכורות WhatsApp": הפעלה, ספק, Instance ID,
+  API URL, טוקן (write-only, "•••• מוגדר"), מספר עסקי, שעות לפני, תבנית,
+  ו-**"שליחת הודעת בדיקה אליי"** (`sendWhatsAppTestAction` — לטלפון של
+  האדמין/ית עצמו/ה; הדרך לוודא שה-QR מקושר והטוקן תקין לפני שמטפל/ת
+  אמיתי/ת תלוי/ה בזה). `createAdminClient` רק אחרי `requireClinicAdmin`,
+  ה-clinicId ממנו ולא מהטופס.
+
+### 🔴 מגבלה: תדירות ה-cron
+
+`vercel.json` מגדיר את כל ה-crons **יומיים** (Vercel Hobby לא מאפשר
+יותר — למרות ש-CLAUDE.md מדבר על "כל שעה"). לכן "24 שעות לפני" בפועל =
+"בריצת הבוקר (07:00 UTC), כל ההזמנות שמתחילות ב-hours_before השעות
+הבאות" — הזמנה ל-20:00 מחר תקבל תזכורת מחר ב-10:00, לא היום ב-20:00.
+הקוד אידמפוטנטי; מעבר ל-Pro + cron שעתי (`0 * * * *`) יהפוך את זה
+למדויק בלי שינוי קוד. מוסבר גם ב-UI (`whatsappCronNote`).
+
+**אימות**: `tsc`, `eslint`, `vitest` (49), `npm run build` נקיים. **לא
+נבדק**: שליחה אמיתית מול Green API/Whapi (אין חשבון/QR מקושר בסביבה
+הזו) — לכן קיים כפתור הבדיקה בהגדרות.
+
 ## מה הכי דחוף להמשיך בו
 
-1. מיילים לפי שפת הנמען/ת (`lib/email/templates.ts` עדיין עברית בלבד).
+1. WhatsApp: לפתוח חשבון Green API (או Whapi), לסרוק QR עם הטלפון העסקי,
+   להזין Instance ID / API URL / טוקן ב-/admin/settings וללחוץ "שליחת
+   הודעת בדיקה אליי". לשקול Vercel Pro לתזכורת מדויקת של 24 שעות.
+2. מיילים לפי שפת הנמען/ת (`lib/email/templates.ts` עדיין עברית בלבד).
 2. וידוא בפועל שמיילי Resend נשלחים (התשתית קיימת, לא נבדק end-to-end).
 3. Sentry DSN — לא הוגדר בפרודקשן (`NEXT_PUBLIC_SENTRY_DSN` ריק).
 4. חיבור endpoint ה-webhook (`user.deleted`) בדשבורד של Clerk —

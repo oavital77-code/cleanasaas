@@ -164,6 +164,7 @@ export type Database = {
           status: Database["public"]["Enums"]["booking_status"]
           subscription_id: string | null
           user_id: string
+          whatsapp_reminder_sent_at: string | null
         }
         Insert: {
           admin_note?: string | null
@@ -183,6 +184,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           subscription_id?: string | null
           user_id: string
+          whatsapp_reminder_sent_at?: string | null
         }
         Update: {
           admin_note?: string | null
@@ -202,6 +204,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           subscription_id?: string | null
           user_id?: string
+          whatsapp_reminder_sent_at?: string | null
         }
         Relationships: [
           {
@@ -385,6 +388,63 @@ export type Database = {
           },
           {
             foreignKeyName: "clinic_payment_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_whatsapp_settings: {
+        Row: {
+          api_token: string | null
+          api_url: string | null
+          clinic_id: string
+          enabled: boolean
+          hours_before: number
+          instance_id: string | null
+          provider: string
+          sender_phone: string | null
+          template: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          api_token?: string | null
+          api_url?: string | null
+          clinic_id: string
+          enabled?: boolean
+          hours_before?: number
+          instance_id?: string | null
+          provider?: string
+          sender_phone?: string | null
+          template?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          api_token?: string | null
+          api_url?: string | null
+          clinic_id?: string
+          enabled?: boolean
+          hours_before?: number
+          instance_id?: string | null
+          provider?: string
+          sender_phone?: string | null
+          template?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_whatsapp_settings_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinic_whatsapp_settings_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1423,6 +1483,19 @@ export type Database = {
         Args: { p_subscription_id: string; p_term_months: number }
         Returns: undefined
       }
+      admin_set_clinic_whatsapp_settings: {
+        Args: {
+          p_api_token?: string
+          p_api_url?: string
+          p_enabled?: boolean
+          p_hours_before?: number
+          p_instance_id?: string
+          p_provider?: string
+          p_sender_phone?: string
+          p_template?: string
+        }
+        Returns: undefined
+      }
       admin_set_clinic_woo_secrets: {
         Args: {
           p_woo_consumer_key?: string
@@ -1558,6 +1631,19 @@ export type Database = {
           p_transaction_uid?: string
         }
         Returns: undefined
+      }
+      get_clinic_whatsapp_credentials: {
+        Args: { p_clinic_id: string }
+        Returns: {
+          api_token: string
+          api_url: string
+          enabled: boolean
+          hours_before: number
+          instance_id: string
+          provider: string
+          sender_phone: string
+          template: string
+        }[]
       }
       get_clinic_woo_credentials: {
         Args: { p_clinic_id: string }

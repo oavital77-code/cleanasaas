@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireClinicAdmin } from "@/lib/auth/guards";
+import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
+import { isWhatsAppProvider, renderReminderTemplate, sendWhatsAppText } from "@/lib/whatsapp";
+import { formatDateHe, formatTimeHe, DEFAULT_TIMEZONE } from "@/lib/time";
 
 // SAASMIGRATIONSPEC §6: מסך "תשלומים וכרטיסיות" — חלק א' (מחירים, ישירות על
 // punch_card_tiers/app_settings, לא RPC — אינן בין הטבלאות שדורשות RPC) +
@@ -90,4 +94,71 @@ export async function updatePaymentSettingsAction(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/settings");
+}
+
+// 🔴 אותה תבנית כמו Woo: הטוקן מוצפן בתוך admin_set_clinic_whatsapp_settings
+// (migration 20260906000007) — לא upsert ישיר. שדה ריק → undefined → הפונקציה
+// שומרת על הערך הקיים. enabled מועבר תמיד במפורש (checkbox).
+export async function updateWhatsAppSettingsAction(formData: FormData) {
+  await requireClinicAdmin();
+  const supabase = await createClient();
+
+  const providerRaw = String(formData.get("provider") ?? "green_api");
+  const hoursBefore = Number(formData.get("hours_before"));
+  const template = String(formData.get("template") ?? "").trim();
+
+  const { error } = await supabase.rpc("admin_set_clinic_whatsapp_settings", {
+    p_enabled: formData.get("enabled") === "on",
+    p_provider: isWhatsAppProvider(providerRaw) ? providerRaw : "green_api",
+    p_instance_id: String(formData.get("instance_id") ?? "").trim() || undefined,
+    p_api_url: String(formData.get("api_url") ?? "").trim() || undefined,
+    p_api_token: String(formData.get("api_token") ?? "").trim() || undefined,
+    p_sender_phone: String(formData.get("sender_phone") ?? "").trim() || undefined,
+    p_hours_before: Number.isInteger(hoursBefore) && hoursBefore >= 1 && hoursBefore <= 72 ? hoursBefore : undefined,
+    p_template: template || undefined,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/settings");
+}
+
+export type WhatsAppTestState = { message?: string; ok?: boolean };
+
+// שליחת הודעת בדיקה לטלפון של האדמין/ית עצמו/ה — הדרך היחידה לוודא שה-QR
+// אכן מקושר ושהטוקן תקין, לפני שמטפל/ת אמיתי/ת מקבל/ת (או לא) תזכורת.
+// createAdminClient כי get_clinic_whatsapp_credentials מפוענח רק
+// ל-service_role; ההרשאה נבדקת קודם ב-requireClinicAdmin, וה-clinicId
+// מגיע ממנו (לא מהטופס).
+export async function sendWhatsAppTestAction(): Promise<WhatsAppTestState> {
+  const { profile, clinicId } = await requireClinicAdmin();
+  const t = getAdminSettingsDict(normalizeLocale(profile.locale));
+  if (!profile.phone) return { ok: false, message: t.whatsappNoPhone };
+
+  const admin = createAdminClient();
+  const [{ data: credsRows }, { data: clinic }] = await Promise.all([
+    admin.rpc("get_clinic_whatsapp_credentials", { p_clinic_id: clinicId }),
+    admin.from("clinics").select("name, timezone").eq("id", clinicId).maybeSingle(),
+  ]);
+  const creds = credsRows?.[0];
+  if (!creds?.api_token || !isWhatsAppProvider(creds.provider) || (creds.provider === "green_api" && !creds.instance_id)) {
+    return { ok: false, message: t.whatsappNotConfigured };
+  }
+
+  const now = new Date();
+  const tz = clinic?.timezone ?? DEFAULT_TIMEZONE;
+  const text = renderReminderTemplate(creds.template, {
+    name: profile.full_name,
+    date: formatDateHe(now, tz),
+    time: formatTimeHe(now, tz),
+    room: "Test",
+    branch: "Test",
+    clinic: clinic?.name ?? "",
+  });
+
+  const result = await sendWhatsAppText(
+    { provider: creds.provider, instanceId: creds.instance_id, apiUrl: creds.api_url, apiToken: creds.api_token },
+    profile.phone,
+    text,
+  );
+  return result.ok ? { ok: true, message: t.whatsappTestSent } : { ok: false, message: t.whatsappTestFailed(result.error) };
 }
