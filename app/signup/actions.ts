@@ -40,7 +40,10 @@ export async function completeSignupClinicAction(formData: FormData): Promise<Si
 
   if (error) return { error: translateSignupError(error.message) };
 
-  const { subject, html } = clinicWelcomeEmail({ clinicName, ownerName: ownerFullName });
+  // שפת מייל קבלת הפנים = profiles.locale של הבעלים שנוצר הרגע (ברירת
+  // המחדל ב-DB היא en) — נקרא מה-DB, לא קבוע בקוד.
+  const { data: ownerProfile } = await supabase.from("profiles").select("locale").eq("email", email).maybeSingle();
+  const { subject, html } = clinicWelcomeEmail({ clinicName, ownerName: ownerFullName, locale: ownerProfile?.locale });
   sendEmail({ to: email, subject, html }).catch(() => {});
 
   return {};

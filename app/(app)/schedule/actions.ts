@@ -82,6 +82,7 @@ async function sendBookingConfirmation(
     accessStart,
     accessEnd,
     timezone,
+    locale: profile.locale,
   });
 
   const ics = bookingId
@@ -133,6 +134,6 @@ async function sendCancellationEmail(
   const { data: room } = await supabase.from("rooms").select("name").eq("id", roomId).maybeSingle();
   if (!room) return;
 
-  const { subject, html } = bookingCancelledEmail({ roomName: room.name, startsAt, hoursRefunded });
+  const { subject, html } = bookingCancelledEmail({ roomName: room.name, startsAt, hoursRefunded, locale: profile.locale });
   await sendEmail({ to: profile.email, subject, html });
 }

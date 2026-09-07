@@ -51,10 +51,10 @@ export async function notifyTherapistOfApproval(
   ]);
   if (!sub || !paymentSettings?.woo_store_url) return;
 
-  const { data: profile } = await supabase.from("profiles").select("email").eq("id", sub.user_id).maybeSingle();
+  const { data: profile } = await supabase.from("profiles").select("email, locale").eq("id", sub.user_id).maybeSingle();
   if (!profile) return;
 
-  const { subject, html } = sessionApprovedEmail(paymentSettings.woo_store_url);
+  const { subject, html } = sessionApprovedEmail(paymentSettings.woo_store_url, profile.locale);
   await sendEmail({ to: profile.email, subject, html });
 }
 
@@ -66,9 +66,9 @@ async function notifyTherapistOfRejection(
   const { data: sub } = await supabase.from("session_subscriptions").select("user_id").eq("id", subscriptionId).maybeSingle();
   if (!sub) return;
 
-  const { data: profile } = await supabase.from("profiles").select("email").eq("id", sub.user_id).maybeSingle();
+  const { data: profile } = await supabase.from("profiles").select("email, locale").eq("id", sub.user_id).maybeSingle();
   if (!profile) return;
 
-  const { subject, html } = sessionRejectedEmail(reason);
+  const { subject, html } = sessionRejectedEmail(reason, profile.locale);
   await sendEmail({ to: profile.email, subject, html });
 }

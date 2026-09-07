@@ -34,7 +34,7 @@ export const GET = withCronAlert("send-reminders", async () => {
 
   for (const b of upcomingBookings ?? []) {
     const [{ data: profile }, { data: room }] = await Promise.all([
-      supabase.from("profiles").select("email").eq("id", b.user_id).maybeSingle(),
+      supabase.from("profiles").select("email, locale").eq("id", b.user_id).maybeSingle(),
       supabase.from("rooms").select("name, branch_id").eq("id", b.room_id).maybeSingle(),
     ]);
     if (!profile || !room) continue;
@@ -46,6 +46,7 @@ export const GET = withCronAlert("send-reminders", async () => {
       branchName: branch?.name ?? "",
       startsAt: new Date(b.starts_at),
       accessStart,
+      locale: profile.locale,
     });
     const result = await sendEmail({ to: profile.email, subject, html });
     if (result.ok) {
@@ -64,9 +65,9 @@ export const GET = withCronAlert("send-reminders", async () => {
     .gt("expires_at", now.toISOString());
 
   for (const card of lowBalanceCards ?? []) {
-    const { data: profile } = await supabase.from("profiles").select("email").eq("id", card.user_id).maybeSingle();
+    const { data: profile } = await supabase.from("profiles").select("email, locale").eq("id", card.user_id).maybeSingle();
     if (!profile) continue;
-    const { subject, html } = lowBalanceEmail(card.hours_remaining);
+    const { subject, html } = lowBalanceEmail(card.hours_remaining, profile.locale);
     const result = await sendEmail({ to: profile.email, subject, html });
     if (result.ok) {
       await supabase.from("punch_cards").update({ low_balance_notified_at: now.toISOString() }).eq("id", card.id);
@@ -85,9 +86,9 @@ export const GET = withCronAlert("send-reminders", async () => {
     .gt("expires_at", now.toISOString());
 
   for (const card of expiringCards ?? []) {
-    const { data: profile } = await supabase.from("profiles").select("email").eq("id", card.user_id).maybeSingle();
+    const { data: profile } = await supabase.from("profiles").select("email, locale").eq("id", card.user_id).maybeSingle();
     if (!profile) continue;
-    const { subject, html } = cardExpiringEmail(new Date(card.expires_at), card.hours_remaining);
+    const { subject, html } = cardExpiringEmail(new Date(card.expires_at), card.hours_remaining, profile.locale);
     const result = await sendEmail({ to: profile.email, subject, html });
     if (result.ok) {
       await supabase.from("punch_cards").update({ expiry_notified_at: now.toISOString() }).eq("id", card.id);
@@ -107,7 +108,7 @@ export const GET = withCronAlert("send-reminders", async () => {
 
   for (const sub of renewingSubs ?? []) {
     if (!sub.next_billing_date) continue;
-    const { data: profile } = await supabase.from("profiles").select("full_name, email").eq("id", sub.user_id).maybeSingle();
+    const { data: profile } = await supabase.from("profiles").select("full_name, email, locale").eq("id", sub.user_id).maybeSingle();
     if (!profile) continue;
 
     const nextBillingDate = new Date(sub.next_billing_date);
@@ -116,6 +117,7 @@ export const GET = withCronAlert("send-reminders", async () => {
       weeklyHours: sub.weekly_hours,
       nextBillingDate,
       forAdmin: false,
+      locale: profile.locale,
     });
     const adminEmails = await getAdminEmails(supabase, sub.clinic_id);
     const adminEmailContent = sessionRenewalReminderEmail({

@@ -178,12 +178,12 @@ async function activateSessionFromWooOrder(
   clinicId: string,
   params: { phone: string | null; email: string | null; wooOrderId: number; amountTotal: number },
 ) {
-  let profile: { id: string; email: string } | null = null;
+  let profile: { id: string; email: string; locale: string } | null = null;
 
   if (params.phone) {
     const { data } = await supabase
       .from("profiles")
-      .select("id, email")
+      .select("id, email, locale")
       .eq("clinic_id", clinicId)
       .eq("phone", params.phone)
       .maybeSingle();
@@ -192,7 +192,7 @@ async function activateSessionFromWooOrder(
   if (!profile && params.email) {
     const { data } = await supabase
       .from("profiles")
-      .select("id, email")
+      .select("id, email, locale")
       .eq("clinic_id", clinicId)
       .ilike("email", params.email)
       .maybeSingle();
@@ -243,6 +243,6 @@ async function activateSessionFromWooOrder(
     p_transaction_uid: transactionUid,
   });
 
-  const { subject, html } = sessionRenewedEmail(params.amountTotal, null);
+  const { subject, html } = sessionRenewedEmail(params.amountTotal, null, profile.locale);
   sendEmail({ to: profile.email, subject, html }).catch(() => {});
 }
