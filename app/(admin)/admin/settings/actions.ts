@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
-import { isWhatsAppProvider, renderReminderTemplate, sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppReminderTemplate } from "@/lib/whatsapp";
 import { formatDateHe, formatTimeHe, DEFAULT_TIMEZONE } from "@/lib/time";
 
 // SAASMIGRATIONSPEC §6: מסך "תשלומים וכרטיסיות" — חלק א' (מחירים, ישירות על
@@ -103,32 +103,33 @@ export async function updateWhatsAppSettingsAction(formData: FormData) {
   await requireClinicAdmin();
   const supabase = await createClient();
 
-  const providerRaw = String(formData.get("provider") ?? "green_api");
   const hoursBefore = Number(formData.get("hours_before"));
   const template = String(formData.get("template") ?? "").trim();
+  const templateLang = String(formData.get("template_lang") ?? "").trim();
 
   const { error } = await supabase.rpc("admin_set_clinic_whatsapp_settings", {
     p_enabled: formData.get("enabled") === "on",
-    p_provider: isWhatsAppProvider(providerRaw) ? providerRaw : "green_api",
-    p_instance_id: String(formData.get("instance_id") ?? "").trim() || undefined,
-    p_api_url: String(formData.get("api_url") ?? "").trim() || undefined,
-    p_api_token: String(formData.get("api_token") ?? "").trim() || undefined,
+    p_phone_number_id: String(formData.get("phone_number_id") ?? "").trim() || undefined,
+    p_access_token: String(formData.get("access_token") ?? "").trim() || undefined,
     p_sender_phone: String(formData.get("sender_phone") ?? "").trim() || undefined,
     p_hours_before: Number.isInteger(hoursBefore) && hoursBefore >= 1 && hoursBefore <= 72 ? hoursBefore : undefined,
     p_template: template || undefined,
+    p_template_name: String(formData.get("template_name") ?? "").trim() || undefined,
+    p_template_lang: /^[a-z]{2}(_[A-Z]{2})?$/.test(templateLang) ? templateLang : undefined,
   });
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/settings");
+  revalidatePath("/admin/reminders");
 }
 
 export type WhatsAppTestState = { message?: string; ok?: boolean };
 
-// שליחת הודעת בדיקה לטלפון של האדמין/ית עצמו/ה — הדרך היחידה לוודא שה-QR
-// אכן מקושר ושהטוקן תקין, לפני שמטפל/ת אמיתי/ת מקבל/ת (או לא) תזכורת.
-// createAdminClient כי get_clinic_whatsapp_credentials מפוענח רק
-// ל-service_role; ההרשאה נבדקת קודם ב-requireClinicAdmin, וה-clinicId
-// מגיע ממנו (לא מהטופס).
+// שליחת הודעת בדיקה (התבנית המאושרת, עם ערכי דוגמה) לטלפון של האדמין/ית
+// עצמו/ה — מוודא Phone Number ID + טוקן + שם/שפת תבנית מול Meta לפני
+// שמטפל/ת אמיתי/ת תלוי/ה בזה. createAdminClient כי get_clinic_whatsapp_credentials
+// מפוענח רק ל-service_role; ההרשאה נבדקת קודם ב-requireClinicAdmin,
+// וה-clinicId מגיע ממנו (לא מהטופס).
 export async function sendWhatsAppTestAction(): Promise<WhatsAppTestState> {
   const { profile, clinicId } = await requireClinicAdmin();
   const t = getAdminSettingsDict(normalizeLocale(profile.locale));
@@ -140,25 +141,28 @@ export async function sendWhatsAppTestAction(): Promise<WhatsAppTestState> {
     admin.from("clinics").select("name, timezone").eq("id", clinicId).maybeSingle(),
   ]);
   const creds = credsRows?.[0];
-  if (!creds?.api_token || !isWhatsAppProvider(creds.provider) || (creds.provider === "green_api" && !creds.instance_id)) {
+  if (!creds?.access_token || !creds.phone_number_id || !creds.template_name) {
     return { ok: false, message: t.whatsappNotConfigured };
   }
 
   const now = new Date();
   const tz = clinic?.timezone ?? DEFAULT_TIMEZONE;
-  const text = renderReminderTemplate(creds.template, {
-    name: profile.full_name,
-    date: formatDateHe(now, tz),
-    time: formatTimeHe(now, tz),
-    room: "Test",
-    branch: "Test",
-    clinic: clinic?.name ?? "",
-  });
-
-  const result = await sendWhatsAppText(
-    { provider: creds.provider, instanceId: creds.instance_id, apiUrl: creds.api_url, apiToken: creds.api_token },
+  const result = await sendWhatsAppReminderTemplate(
+    {
+      phoneNumberId: creds.phone_number_id,
+      accessToken: creds.access_token,
+      templateName: creds.template_name,
+      templateLang: creds.template_lang,
+    },
     profile.phone,
-    text,
+    {
+      name: profile.full_name,
+      clinic: clinic?.name ?? "",
+      date: formatDateHe(now, tz),
+      time: formatTimeHe(now, tz),
+      room: "Test",
+      branch: "Test",
+    },
   );
   return result.ok ? { ok: true, message: t.whatsappTestSent } : { ok: false, message: t.whatsappTestFailed(result.error) };
 }

@@ -22,6 +22,7 @@ import {
   ArrowLeftRight,
   LogOut,
   Menu,
+  MessageCircle,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -58,6 +59,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/sessions", navKey: "adminSessions", icon: ListChecks },
   { href: "/admin/payments", navKey: "adminPayments", icon: Receipt },
   { href: "/admin/rooms", navKey: "adminRooms", icon: Building2 },
+  { href: "/admin/reminders", navKey: "adminReminders", icon: MessageCircle },
   { href: "/admin/settings", navKey: "adminSettings", icon: Settings },
   { href: "/admin/reports", navKey: "adminReports", icon: BarChart3 },
   { href: "/admin/audit", navKey: "adminAudit", icon: ScrollText },

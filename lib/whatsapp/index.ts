@@ -1,91 +1,121 @@
 import "server-only";
 
-// שליחת הודעת WhatsApp דרך שער QR (המספר של הקליניקה מקושר בסריקת QR
-// בקונסולת הספק, כמו WhatsApp Web). שני ספקים נתמכים, אותו חוזה:
+// שליחת תזכורת WhatsApp דרך Meta WhatsApp Cloud API הרשמי (החליף את שערי
+// ה-QR הלא-רשמיים — ר' PROGRESS.md סעיף 27). המספר שנרשם ל-Meta הוא מספר
+// ייעודי של הקליניקה.
 //
-//   green_api — POST {apiUrl}/waInstance{instanceId}/sendMessage/{token}
-//               body { chatId: "<digits>@c.us", message }
-//   whapi     — POST https://gate.whapi.cloud/messages/text
-//               Authorization: Bearer <token>, body { to: "<digits>", body }
+//   POST https://graph.facebook.com/{version}/{phone_number_id}/messages
+//   Authorization: Bearer <access_token>
+//   { messaging_product: "whatsapp", to: "<digits>", type: "template",
+//     template: { name, language: { code }, components: [{ type: "body",
+//       parameters: [{ type: "text", text }, …] }] } }
 //
-// 🔴 לעולם לא זורק — כמו sendEmail: כישלון שליחה לא מפיל את ה-cron ולא
-// זרימה עסקית. הקורא מחליט מה לעשות (לסמן/לא לסמן, לרשום audit).
-// 🔴 אין לוגים עם מספר טלפון או טוקן (CLAUDE.md: אין PII בלוגים).
+// 🔴 הודעה יזומה חייבת להיות תבנית *מאושרת* ב-Meta Business Manager — לא
+// טקסט חופשי. הפרמטרים נשלחים בסדר קבוע (REMINDER_TEMPLATE_PARAMS) והתבנית
+// שהקליניקה מאשרת ב-Meta חייבת לכלול {{1}}…{{6}} באותו סדר. הטקסט המומלץ
+// להעתקה ל-Meta מוצג במסך ההגדרות (suggestedMetaTemplateBody).
+//
+// 🔴 לעולם לא זורק (כמו sendEmail); אין טלפון/טוקן בלוגים (CLAUDE.md).
 
-export type WhatsAppProvider = "green_api" | "whapi";
+export const META_GRAPH_VERSION = "v21.0";
 
-export interface WhatsAppCredentials {
-  provider: WhatsAppProvider;
-  instanceId: string | null;
-  apiUrl: string | null;
-  apiToken: string;
+export interface MetaCloudCredentials {
+  phoneNumberId: string;
+  accessToken: string;
+  templateName: string;
+  templateLang: string;
 }
 
-export type SendWhatsAppResult = { ok: true } | { ok: false; error: string };
-
-const GREEN_API_DEFAULT_URL = "https://api.green-api.com";
-const WHAPI_URL = "https://gate.whapi.cloud/messages/text";
-
-/** "+972501234567" → "972501234567" (ספרות בלבד, כמו שכל השערים מצפים). */
-function toDigits(e164: string): string {
-  return e164.replace(/[^\d]/g, "");
-}
-
-export function isWhatsAppProvider(value: string): value is WhatsAppProvider {
-  return value === "green_api" || value === "whapi";
-}
-
-export async function sendWhatsAppText(
-  creds: WhatsAppCredentials,
-  toPhoneE164: string,
-  text: string,
-): Promise<SendWhatsAppResult> {
-  const digits = toDigits(toPhoneE164);
-  if (!digits) return { ok: false, error: "INVALID_PHONE" };
-  if (!creds.apiToken) return { ok: false, error: "NOT_CONFIGURED" };
-
-  try {
-    let res: Response;
-    if (creds.provider === "green_api") {
-      if (!creds.instanceId) return { ok: false, error: "NOT_CONFIGURED" };
-      const base = (creds.apiUrl || GREEN_API_DEFAULT_URL).replace(/\/+$/, "");
-      res = await fetch(
-        `${base}/waInstance${encodeURIComponent(creds.instanceId)}/sendMessage/${encodeURIComponent(creds.apiToken)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chatId: `${digits}@c.us`, message: text }),
-        },
-      );
-    } else {
-      res = await fetch(WHAPI_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${creds.apiToken}` },
-        body: JSON.stringify({ to: digits, body: text }),
-      });
-    }
-
-    if (!res.ok) {
-      console.error(`[whatsapp:${creds.provider}] HTTP ${res.status}`);
-      return { ok: false, error: `${creds.provider.toUpperCase()}_${res.status}` };
-    }
-    return { ok: true };
-  } catch (err) {
-    console.error(`[whatsapp:${creds.provider}] שליחה נכשלה`, err instanceof Error ? err.message : err);
-    return { ok: false, error: err instanceof Error ? err.message : "UNKNOWN" };
-  }
-}
+export type SendWhatsAppResult = { ok: true; messageId?: string } | { ok: false; error: string };
 
 export type ReminderTemplateVars = {
   name: string;
+  clinic: string;
   date: string;
   time: string;
   room: string;
   branch: string;
-  clinic: string;
 };
 
-/** ממלא {name} {date} {time} {room} {branch} {clinic} בתבנית שהאדמין הגדיר. */
+/** סדר הפרמטרים {{1}}…{{6}} בתבנית ה-Meta — חוזה עם מה שהקליניקה מאשרת שם. */
+export const REMINDER_TEMPLATE_PARAMS: (keyof ReminderTemplateVars)[] = ["name", "clinic", "date", "time", "room", "branch"];
+
+/** "+972501234567" → "972501234567" (E.164 בלי "+", כמו ש-Meta מצפה). */
+export function toWhatsAppDigits(e164: string): string {
+  return e164.replace(/[^\d]/g, "");
+}
+
+export async function sendWhatsAppReminderTemplate(
+  creds: MetaCloudCredentials,
+  toPhoneE164: string,
+  vars: ReminderTemplateVars,
+): Promise<SendWhatsAppResult> {
+  const digits = toWhatsAppDigits(toPhoneE164);
+  if (!digits) return { ok: false, error: "INVALID_PHONE" };
+  if (!creds.phoneNumberId || !creds.accessToken || !creds.templateName) return { ok: false, error: "NOT_CONFIGURED" };
+
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/${encodeURIComponent(creds.phoneNumberId)}/messages`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${creds.accessToken}` },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: digits,
+          type: "template",
+          template: {
+            name: creds.templateName,
+            language: { code: creds.templateLang || "he" },
+            components: [
+              {
+                type: "body",
+                // Meta דוחה פרמטר ריק / עם שורות חדשות / 4+ רווחים רצופים.
+                parameters: REMINDER_TEMPLATE_PARAMS.map((key) => ({
+                  type: "text",
+                  text: (vars[key] || "-").replace(/\s+/g, " ").trim() || "-",
+                })),
+              },
+            ],
+          },
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      let detail = `HTTP ${res.status}`;
+      try {
+        const body = (await res.json()) as { error?: { message?: string; code?: number } };
+        if (body.error?.message) detail = `${body.error.code ?? res.status}: ${body.error.message}`;
+      } catch {
+        // גוף לא-JSON — נשארים עם קוד ה-HTTP
+      }
+      console.error(`[whatsapp:meta] ${detail}`);
+      return { ok: false, error: detail };
+    }
+    const body = (await res.json()) as { messages?: { id?: string }[] };
+    return { ok: true, messageId: body.messages?.[0]?.id };
+  } catch (err) {
+    console.error("[whatsapp:meta] שליחה נכשלה", err instanceof Error ? err.message : err);
+    return { ok: false, error: err instanceof Error ? err.message : "UNKNOWN" };
+  }
+}
+
+/** ממלא {name} {clinic} {date} {time} {room} {branch} בתבנית הטקסט החופשי —
+ * למסלול החצי-ידני (wa.me) ולתצוגה מקדימה. */
 export function renderReminderTemplate(template: string, vars: ReminderTemplateVars): string {
-  return template.replace(/\{(name|date|time|room|branch|clinic)\}/g, (_m, key: keyof ReminderTemplateVars) => vars[key]);
+  return template.replace(/\{(name|clinic|date|time|room|branch)\}/g, (_m, key: keyof ReminderTemplateVars) => vars[key]);
+}
+
+/** קישור "לחיצה ושליחה" — פותח את WhatsApp של המנהל/ת עם ההודעה מוכנה
+ * למטפל/ת. השליחה עצמה ידנית, מהטלפון האמיתי — אפס סיכון חסימה. */
+export function buildWaMeLink(toPhoneE164: string, text: string): string {
+  return `https://wa.me/${toWhatsAppDigits(toPhoneE164)}?text=${encodeURIComponent(text)}`;
+}
+
+/** גוף התבנית המומלץ להעתקה ל-Meta Business Manager, עם {{n}} בסדר הנכון. */
+export function suggestedMetaTemplateBody(lang: "he" | "en"): string {
+  return lang === "he"
+    ? "שלום {{1}}, תזכורת להזמנה שלך ב-{{2}}: {{3}} בשעה {{4}}, {{5}} ({{6}})."
+    : "Hi {{1}}, a reminder of your booking at {{2}}: {{3}} at {{4}}, {{5}} ({{6}}).";
 }

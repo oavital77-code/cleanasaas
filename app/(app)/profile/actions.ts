@@ -34,3 +34,13 @@ export async function updateLocaleAction(formData: FormData) {
   await supabase.from("profiles").update({ locale }).eq("id", userId);
   revalidatePath("/", "layout");
 }
+
+// opt-in/out לתזכורות WhatsApp (profiles.whatsapp_reminders, migration
+// 20260907000003) — לא privileged, עדכון עצמי ישיר. טוגל בלחיצה אחת.
+export async function toggleWhatsAppRemindersAction(formData: FormData) {
+  const { userId } = await requireTherapistProfile();
+  const supabase = await createClient();
+  const next = formData.get("enabled") === "on";
+  await supabase.from("profiles").update({ whatsapp_reminders: next }).eq("id", userId);
+  revalidatePath("/profile");
+}

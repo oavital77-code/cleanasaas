@@ -13,7 +13,7 @@ import {
   updateWhatsAppSettingsAction,
 } from "./actions";
 import { WhatsAppTestButton } from "./whatsapp-test-button";
-import { Select } from "@/components/ui/select";
+import { suggestedMetaTemplateBody } from "@/lib/whatsapp";
 import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
 
 export default async function AdminSettingsPage() {
@@ -30,7 +30,7 @@ export default async function AdminSettingsPage() {
       // api_token הוא bytea מוצפן — נשלף רק כדי להציג "מוגדר"; לעולם לא מפוענח כאן.
       supabase
         .from("clinic_whatsapp_settings")
-        .select("enabled, provider, instance_id, api_url, api_token, sender_phone, hours_before, template")
+        .select("enabled, phone_number_id, api_token, sender_phone, hours_before, template, template_name, template_lang")
         .eq("clinic_id", clinicId)
         .maybeSingle(),
     ]);
@@ -185,11 +185,24 @@ export default async function AdminSettingsPage() {
               </label>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="wa_provider">{t.whatsappProvider}</Label>
-                  <Select id="wa_provider" name="provider" defaultValue={whatsapp?.provider ?? "green_api"}>
-                    <option value="green_api">Green API</option>
-                    <option value="whapi">Whapi</option>
-                  </Select>
+                  <Label htmlFor="wa_phone_number_id">{t.whatsappPhoneNumberId}</Label>
+                  <Input id="wa_phone_number_id" name="phone_number_id" dir="ltr" defaultValue={whatsapp?.phone_number_id ?? ""} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="wa_access_token">{t.whatsappToken}</Label>
+                  <Input id="wa_access_token" name="access_token" type="password" dir="ltr" placeholder={whatsapp?.api_token ? t.configuredPlaceholder : ""} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="wa_template_name">{t.whatsappTemplateName}</Label>
+                  <Input id="wa_template_name" name="template_name" dir="ltr" defaultValue={whatsapp?.template_name ?? ""} placeholder="booking_reminder" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="wa_template_lang">{t.whatsappTemplateLang}</Label>
+                  <Input id="wa_template_lang" name="template_lang" dir="ltr" defaultValue={whatsapp?.template_lang ?? "he"} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="wa_sender_phone">{t.whatsappSenderPhone}</Label>
+                  <Input id="wa_sender_phone" name="sender_phone" dir="ltr" defaultValue={whatsapp?.sender_phone ?? ""} />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="wa_hours_before">{t.whatsappHoursBefore}</Label>
@@ -202,22 +215,15 @@ export default async function AdminSettingsPage() {
                     defaultValue={whatsapp?.hours_before ?? 24}
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="wa_instance_id">{t.whatsappInstanceId}</Label>
-                  <Input id="wa_instance_id" name="instance_id" dir="ltr" defaultValue={whatsapp?.instance_id ?? ""} placeholder="Green API only" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="wa_api_url">API URL</Label>
-                  <Input id="wa_api_url" name="api_url" dir="ltr" defaultValue={whatsapp?.api_url ?? ""} placeholder="https://7103.api.greenapi.com" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="wa_api_token">{t.whatsappToken}</Label>
-                  <Input id="wa_api_token" name="api_token" type="password" dir="ltr" placeholder={whatsapp?.api_token ? t.configuredPlaceholder : ""} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="wa_sender_phone">{t.whatsappSenderPhone}</Label>
-                  <Input id="wa_sender_phone" name="sender_phone" dir="ltr" defaultValue={whatsapp?.sender_phone ?? profile.phone} />
-                </div>
+              </div>
+              <div className="flex flex-col gap-1.5 rounded-field bg-subtle p-3 text-xs text-muted-foreground">
+                <p>{t.whatsappMetaTemplateHelp}</p>
+                <code dir="rtl" className="block rounded bg-surface px-2 py-1.5 text-foreground">
+                  {suggestedMetaTemplateBody("he")}
+                </code>
+                <code dir="ltr" className="block rounded bg-surface px-2 py-1.5 text-foreground">
+                  {suggestedMetaTemplateBody("en")}
+                </code>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="wa_template">{t.whatsappTemplate}</Label>

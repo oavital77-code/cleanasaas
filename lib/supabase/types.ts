@@ -398,40 +398,43 @@ export type Database = {
       clinic_whatsapp_settings: {
         Row: {
           api_token: string | null
-          api_url: string | null
           clinic_id: string
           enabled: boolean
           hours_before: number
-          instance_id: string | null
+          phone_number_id: string | null
           provider: string
           sender_phone: string | null
           template: string
+          template_lang: string
+          template_name: string | null
           updated_at: string | null
           updated_by: string | null
         }
         Insert: {
           api_token?: string | null
-          api_url?: string | null
           clinic_id: string
           enabled?: boolean
           hours_before?: number
-          instance_id?: string | null
+          phone_number_id?: string | null
           provider?: string
           sender_phone?: string | null
           template?: string
+          template_lang?: string
+          template_name?: string | null
           updated_at?: string | null
           updated_by?: string | null
         }
         Update: {
           api_token?: string | null
-          api_url?: string | null
           clinic_id?: string
           enabled?: boolean
           hours_before?: number
-          instance_id?: string | null
+          phone_number_id?: string | null
           provider?: string
           sender_phone?: string | null
           template?: string
+          template_lang?: string
+          template_name?: string | null
           updated_at?: string | null
           updated_by?: string | null
         }
@@ -808,6 +811,7 @@ export type Database = {
           status: Database["public"]["Enums"]["user_status"]
           terms_accepted_at: string | null
           terms_version: string | null
+          whatsapp_reminders: boolean
         }
         Insert: {
           business_number?: string | null
@@ -830,6 +834,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["user_status"]
           terms_accepted_at?: string | null
           terms_version?: string | null
+          whatsapp_reminders?: boolean
         }
         Update: {
           business_number?: string | null
@@ -852,6 +857,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["user_status"]
           terms_accepted_at?: string | null
           terms_version?: string | null
+          whatsapp_reminders?: boolean
         }
         Relationships: [
           {
@@ -1510,6 +1516,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_mark_whatsapp_reminder_sent: {
+        Args: { p_booking_id: string }
+        Returns: undefined
+      }
       admin_renew_session_term: {
         Args: { p_subscription_id: string; p_term_months: number }
         Returns: undefined
@@ -1523,14 +1533,14 @@ export type Database = {
       }
       admin_set_clinic_whatsapp_settings: {
         Args: {
-          p_api_token?: string
-          p_api_url?: string
+          p_access_token?: string
           p_enabled?: boolean
           p_hours_before?: number
-          p_instance_id?: string
-          p_provider?: string
+          p_phone_number_id?: string
           p_sender_phone?: string
           p_template?: string
+          p_template_lang?: string
+          p_template_name?: string
         }
         Returns: undefined
       }
@@ -1590,6 +1600,7 @@ export type Database = {
           status: Database["public"]["Enums"]["user_status"]
           terms_accepted_at: string | null
           terms_version: string | null
+          whatsapp_reminders: boolean
         }[]
         SetofOptions: {
           from: "*"
@@ -1673,14 +1684,14 @@ export type Database = {
       get_clinic_whatsapp_credentials: {
         Args: { p_clinic_id: string }
         Returns: {
-          api_token: string
-          api_url: string
+          access_token: string
           enabled: boolean
           hours_before: number
-          instance_id: string
-          provider: string
+          phone_number_id: string
           sender_phone: string
           template: string
+          template_lang: string
+          template_name: string
         }[]
       }
       get_clinic_woo_credentials: {
@@ -1741,6 +1752,7 @@ export type Database = {
           status: Database["public"]["Enums"]["user_status"]
           terms_accepted_at: string | null
           terms_version: string | null
+          whatsapp_reminders: boolean
         }[]
         SetofOptions: {
           from: "*"

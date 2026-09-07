@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateProfileAction, updateLocaleAction } from "./actions";
+import { updateProfileAction, updateLocaleAction, toggleWhatsAppRemindersAction } from "./actions";
 import { LOCALE_NATIVE_NAME, getCommonDict, getProfileDict, normalizeLocale, otherLocale } from "@/lib/i18n";
 
 export default async function ProfilePage() {
@@ -75,6 +75,21 @@ export default async function ProfilePage() {
               <input type="hidden" name="locale" value={otherLocale(locale)} />
               <Button type="submit" variant="outline">
                 {LOCALE_NATIVE_NAME[otherLocale(locale)]}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-e1">
+          <CardHeader>
+            <CardTitle className="text-base font-medium">{t.whatsappCardTitle}</CardTitle>
+            <CardDescription>{t.whatsappCardDescription}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={toggleWhatsAppRemindersAction}>
+              <input type="hidden" name="enabled" value={profile.whatsapp_reminders ? "off" : "on"} />
+              <Button type="submit" variant={profile.whatsapp_reminders ? "outline" : "default"}>
+                {profile.whatsapp_reminders ? t.whatsappOn : t.whatsappOff}
               </Button>
             </form>
           </CardContent>

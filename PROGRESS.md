@@ -953,12 +953,65 @@ woo/process-order, signup) שולפים `locale` יחד עם `email` ומעבי�
 
 **אימות**: `tsc`, `eslint`, `vitest` (49), `npm run build` נקיים.
 
+## ✅ 27. WhatsApp: מעבר ל-Meta Cloud API הרשמי + מסלול חצי-ידני (wa.me)
+
+המשתמש חשש (בצדק) מחסימה בשער ה-QR הלא-רשמי (סעיף 24). הוצגו החלופות
+(Meta רשמי עם מספר ייעודי / מייל בלבד / Web Push / חצי-ידני), והוחלט:
+**Meta Cloud API** + **מסלול חצי-ידני** כגיבוי/חלופה בלי הקמה.
+
+### Meta Cloud API (מיגרציה `20260907000003`)
+
+- `provider` הצטמצם ל-`meta_cloud` בלבד; `instance_id` → `phone_number_id`,
+  `api_url` הוסר, נוספו `template_name` + `template_lang`. הטוקן (Access
+  Token קבוע של System User) נשאר מוצפן ב-`api_token`. RPCs הוחלפו (drop +
+  create — חתימה/return שונים), anon revoked מפורשות.
+- 🔴 **הודעה יזומה ב-Cloud API חייבת להיות תבנית מאושרת** (לא טקסט חופשי).
+  החוזה: 6 פרמטרים בסדר קבוע `{{1}}` שם, `{{2}}` קליניקה, `{{3}}` תאריך,
+  `{{4}}` שעה, `{{5}}` חדר, `{{6}}` סניף (`REMINDER_TEMPLATE_PARAMS` ב-
+  `lib/whatsapp`). מסך ההגדרות מציג את גוף התבנית המומלץ להעתקה ל-Meta
+  Business Manager (he/en), ו-vitest מוודא שהגוף המומלץ מכיל בדיוק
+  `{{1}}`…`{{6}}`.
+- `sendWhatsAppReminderTemplate()` — `POST graph.facebook.com/v21.0/{phone_number_id}/messages`,
+  type template; שגיאת Meta (code + message) מוחזרת ל-UI של הבדיקה ונרשמת
+  ב-audit בכישלון. פרמטרים מנוקים (Meta דוחה שורות חדשות/רווחים כפולים).
+- כפתור "שליחת הודעת בדיקה אליי" שולח את התבנית האמיתית עם ערכי דוגמה.
+- **opt-in/out למטפל/ת** (`profiles.whatsapp_reminders`, ברירת מחדל on;
+  טוגל בלחיצה אחת ב-/profile). ה-cron והמסך הידני מכבדים אותו. דרישה של
+  Meta, ומוריד דיווחי ספאם.
+
+### מסלול חצי-ידני — `/admin/reminders` (פריט ניווט חדש "תזכורות")
+
+רשימת כל ההזמנות המאושרות בטווח (24/48/72 שעות; ברירת מחדל `hours_before`).
+לכל שורה: כפתור **WhatsApp** = קישור `wa.me/<phone>?text=<ההודעה מוכנה>`
+(מהשדה `template` עם `{name}`… — שנשאר בדיוק בשביל זה) שפותח את הוואטסאפ
+של המנהל/ת עם ההודעה; השליחה מהטלפון האמיתי — **אפס סיכון חסימה, אפס
+הקמה**. אחרי השליחה: "סמן נשלח" → `admin_mark_whatsapp_reminder_sent`
+(אותה עמודת סימון כמו ה-cron → אין כפילות; audit עם `provider: manual`).
+תגיות: נשלח / מייל נשלח / ביקש/ה לא לקבל / אין טלפון.
+
+**נבדק חי**: החתימה החדשה של ה-RPC + round-trip הצפנה (phone_number_id,
+token, template_name/lang חוזרים מפוענחים ל-service_role); שורות הבדיקה
+נמחקו (אומת 0). **לא נבדק**: שליחה אמיתית מול Meta (אין WABA בסביבה זו)
+— לכן כפתור הבדיקה בהגדרות.
+
+**אימות**: `tsc`, `eslint`, `vitest` (51), `npm run build` נקיים.
+
+### מה צריך מהמשתמש כדי להפעיל את המסלול האוטומטי
+
+1. Meta Business Manager → WhatsApp → מספר ייעודי לקליניקה (לא האישי).
+2. ליצור תבנית Utility בשם (למשל) `booking_reminder`, שפה he, עם הגוף
+   המומלץ מהמסך (6 משתנים בסדר). לחכות לאישור.
+3. System User → Access Token קבוע עם הרשאת `whatsapp_business_messaging`.
+4. להזין Phone Number ID + Token + שם/שפת תבנית ב-/admin/settings → "שליחת
+   הודעת בדיקה אליי" → להדליק "שליחה אוטומטית".
+עד אז: המסלול הידני ב-/admin/reminders עובד מיד.
+
 ## מה הכי דחוף להמשיך בו
 
-1. **לא נבדק בדפדפן** — כל המסכים החדשים (הנפקת כרטיסייה, חסימות, חריגות)
-   ושינוי ה-LTR צריכים מעבר ויזואלי אחד אמיתי.
+1. **לא נבדק בדפדפן** — כל המסכים החדשים (הנפקת כרטיסייה, חסימות, חריגות,
+   תזכורות) ושינוי ה-LTR צריכים מעבר ויזואלי אחד אמיתי.
 2. Sentry DSN (`NEXT_PUBLIC_SENTRY_DSN` ריק) — לפני משתמש/ת ראשון/ה.
-3. WhatsApp: לפתוח חשבון Green API (או Whapi), לסרוק QR עם הטלפון העסקי,
+3. WhatsApp אוטומטי: ההקמה ב-Meta (סעיף 27). ~~Green API~~ — הוסר;
    להזין Instance ID / API URL / טוקן ב-/admin/settings וללחוץ "שליחת
    הודעת בדיקה אליי". לשקול Vercel Pro לתזכורת מדויקת של 24 שעות.
 2. מיילים לפי שפת הנמען/ת (`lib/email/templates.ts` עדיין עברית בלבד).

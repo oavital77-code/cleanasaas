@@ -475,22 +475,24 @@ const SETTINGS_HE = {
   webhookSecretLabel: "Webhook Secret (אופציונלי — אם לא מוגדר, נעבוד ב-polling)",
   sessionProductIdLabel: "Product ID של מוצר הססיה בחנות (0 אם אין מודל ססיה)",
   // WhatsApp reminders
-  whatsappTitle: "תזכורות WhatsApp",
+  whatsappTitle: "תזכורות WhatsApp (Meta Cloud API)",
   whatsappDescription:
-    "תזכורת אוטומטית למטפל/ת לפני כל הזמנה, מהמספר העסקי של הקליניקה, דרך שער QR (Green API / Whapi). הטלפון ממשיך לעבוד כרגיל — מקשרים אותו פעם אחת בסריקת QR בקונסולת הספק.",
-  whatsappEnabled: "שליחת תזכורות פעילה",
-  whatsappProvider: "ספק",
-  whatsappInstanceId: "Instance ID",
-  whatsappToken: "API Token",
-  whatsappSenderPhone: "המספר העסקי המקושר (לתצוגה בלבד)",
+    "תזכורת אוטומטית למטפל/ת לפני כל הזמנה, דרך ה-API הרשמי של Meta — מומלץ עם מספר ייעודי לקליניקה (לא הוואטסאפ האישי של המנהל/ת). הודעה יזומה חייבת להיות תבנית שאושרה ב-Meta Business Manager.",
+  whatsappEnabled: "שליחה אוטומטית פעילה",
+  whatsappPhoneNumberId: "Phone Number ID",
+  whatsappToken: "Access Token (קבוע, של System User)",
+  whatsappSenderPhone: "המספר שרשום ב-Meta (לתצוגה בלבד)",
   whatsappHoursBefore: "כמה שעות לפני ההזמנה",
-  whatsappTemplate: "תבנית ההודעה",
-  whatsappTemplateHelp: "משתנים: {name} {date} {time} {room} {branch} {clinic}",
-  whatsappCronNote: "ההודעות נשלחות בריצת ה-cron היומית (בבוקר) לכל ההזמנות שמתחילות בטווח השעות שהוגדר.",
+  whatsappTemplateName: "שם התבנית ב-Meta",
+  whatsappTemplateLang: "שפת התבנית (he / en_US)",
+  whatsappMetaTemplateHelp: "צרו ב-Meta תבנית מסוג Utility עם 6 משתנים בסדר הזה: {{1}} שם, {{2}} קליניקה, {{3}} תאריך, {{4}} שעה, {{5}} חדר, {{6}} סניף. גוף מומלץ להעתקה:",
+  whatsappTemplate: "טקסט ההודעה למסלול הידני (/admin/reminders)",
+  whatsappTemplateHelp: "משתנים: {name} {clinic} {date} {time} {room} {branch}",
+  whatsappCronNote: "השליחה האוטומטית רצה בריצת ה-cron היומית (בבוקר) לכל ההזמנות שמתחילות בטווח השעות שהוגדר. בלי הגדרת Meta, אפשר לשלוח ידנית מהמסך \"תזכורות\".",
   whatsappSendTest: "שליחת הודעת בדיקה אליי",
   whatsappTestSent: "הודעת בדיקה נשלחה",
   whatsappTestFailed: (reason: string) => `שליחת הבדיקה נכשלה: ${reason}`,
-  whatsappNotConfigured: "יש להגדיר ספק, Instance ID וטוקן לפני שליחת בדיקה",
+  whatsappNotConfigured: "יש להגדיר Phone Number ID, Access Token ושם תבנית לפני שליחת בדיקה",
   whatsappNoPhone: "אין טלפון בפרופיל שלך לשליחת הבדיקה",
 };
 
@@ -514,27 +516,76 @@ const SETTINGS_EN: typeof SETTINGS_HE = {
   configuredPlaceholder: "•••• configured",
   webhookSecretLabel: "Webhook Secret (optional — without it we fall back to polling)",
   sessionProductIdLabel: "Product ID of the session product in the store (0 if no session model)",
-  whatsappTitle: "WhatsApp reminders",
+  whatsappTitle: "WhatsApp reminders (Meta Cloud API)",
   whatsappDescription:
-    "An automatic reminder to the therapist before each booking, sent from the clinic's business number via a QR gateway (Green API / Whapi). The phone keeps working as usual — link it once by scanning a QR code in the provider's console.",
-  whatsappEnabled: "Reminders enabled",
-  whatsappProvider: "Provider",
-  whatsappInstanceId: "Instance ID",
-  whatsappToken: "API Token",
-  whatsappSenderPhone: "Linked business number (display only)",
+    "An automatic reminder to the therapist before each booking via Meta's official API — recommended with a dedicated clinic number (not the manager's personal WhatsApp). Business-initiated messages must use a template approved in Meta Business Manager.",
+  whatsappEnabled: "Automatic sending enabled",
+  whatsappPhoneNumberId: "Phone Number ID",
+  whatsappToken: "Access Token (permanent, System User)",
+  whatsappSenderPhone: "Number registered with Meta (display only)",
   whatsappHoursBefore: "Hours before the booking",
-  whatsappTemplate: "Message template",
-  whatsappTemplateHelp: "Variables: {name} {date} {time} {room} {branch} {clinic}",
-  whatsappCronNote: "Messages are sent by the daily cron run (in the morning) for all bookings starting within the configured window.",
+  whatsappTemplateName: "Template name in Meta",
+  whatsappTemplateLang: "Template language (he / en_US)",
+  whatsappMetaTemplateHelp: "Create a Utility template in Meta with 6 variables in this order: {{1}} name, {{2}} clinic, {{3}} date, {{4}} time, {{5}} room, {{6}} branch. Suggested body to copy:",
+  whatsappTemplate: "Message text for the manual route (/admin/reminders)",
+  whatsappTemplateHelp: "Variables: {name} {clinic} {date} {time} {room} {branch}",
+  whatsappCronNote: "Automatic sending runs in the daily cron (morning) for all bookings starting within the configured window. Without a Meta setup you can still send manually from the \"Reminders\" screen.",
   whatsappSendTest: "Send a test message to me",
   whatsappTestSent: "Test message sent",
   whatsappTestFailed: (reason) => `Test failed: ${reason}`,
-  whatsappNotConfigured: "Set a provider, Instance ID and token before sending a test",
+  whatsappNotConfigured: "Set Phone Number ID, Access Token and template name before sending a test",
   whatsappNoPhone: "Your profile has no phone number to send the test to",
 };
 
 export function getAdminSettingsDict(locale: Locale) {
   return locale === "en" ? SETTINGS_EN : SETTINGS_HE;
+}
+
+// ---------------------------------------------------------------------------
+// /admin/reminders — המסלול החצי-ידני (wa.me)
+// ---------------------------------------------------------------------------
+const REMINDERS_HE = {
+  title: "תזכורות",
+  description:
+    "כל ההזמנות המאושרות בטווח הקרוב. לחיצה על \"WhatsApp\" פותחת את ההודעה מוכנה בוואטסאפ שלך — השליחה מהטלפון שלך, ואז מסמנים \"נשלח\". מה שכבר נשלח אוטומטית (Meta) או ידנית מסומן.",
+  windowLabel: "טווח:",
+  windowHours: (h: number) => `${h} שעות`,
+  colTime: "מתי",
+  colTherapist: "מטפל/ת",
+  colRoom: "חדר",
+  colStatus: "סטטוס",
+  sent: "תזכורת WhatsApp נשלחה",
+  emailSent: "מייל נשלח",
+  optedOut: "ביקש/ה לא לקבל WhatsApp",
+  noPhone: "אין טלפון",
+  openWhatsApp: "WhatsApp",
+  markSent: "סמן נשלח",
+  empty: "אין הזמנות בטווח הזה.",
+  templateMissing: "לא הוגדר טקסט הודעה בהגדרות — משתמשים בברירת מחדל.",
+};
+
+const REMINDERS_EN: typeof REMINDERS_HE = {
+  title: "Reminders",
+  description:
+    "All confirmed bookings in the upcoming window. \"WhatsApp\" opens the ready message in your own WhatsApp — you send it from your phone, then mark it \"sent\". Anything already sent automatically (Meta) or manually is flagged.",
+  windowLabel: "Window:",
+  windowHours: (h) => `${h} hours`,
+  colTime: "When",
+  colTherapist: "Therapist",
+  colRoom: "Room",
+  colStatus: "Status",
+  sent: "WhatsApp reminder sent",
+  emailSent: "Email sent",
+  optedOut: "Opted out of WhatsApp",
+  noPhone: "No phone",
+  openWhatsApp: "WhatsApp",
+  markSent: "Mark sent",
+  empty: "No bookings in this window.",
+  templateMissing: "No message text set in settings — using the default.",
+};
+
+export function getAdminRemindersDict(locale: Locale) {
+  return locale === "en" ? REMINDERS_EN : REMINDERS_HE;
 }
 
 // ---------------------------------------------------------------------------
