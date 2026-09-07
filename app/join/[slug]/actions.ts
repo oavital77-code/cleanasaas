@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { therapistJoinedAdminEmail } from "@/lib/email/templates";
 import { getAdminEmails } from "@/lib/email/recipients";
+import { toE164Israel } from "@/lib/phone";
 
 export type JoinResult = { error?: string };
 
@@ -17,9 +18,14 @@ export type JoinResult = { error?: string };
 // /admin/therapists (create_therapist_invite, טוקן חד-פעמי).
 export async function completeJoinAction(slug: string, formData: FormData): Promise<JoinResult> {
   const fullName = String(formData.get("full_name") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
-  if (!fullName || !phone) {
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+  if (!fullName || !phoneRaw) {
     return { error: "נא למלא את כל השדות" };
+  }
+  // E.164 לפני שמירה — ר' app/signup/actions.ts.
+  const phone = toE164Israel(phoneRaw);
+  if (!phone) {
+    return { error: "מספר טלפון לא תקין — נייד ישראלי (05X-XXXXXXX)" };
   }
 
   const email = (await currentUser())?.primaryEmailAddress?.emailAddress;

@@ -1,4 +1,5 @@
 import "server-only";
+import { toE164Israel } from "@/lib/phone";
 
 // שליחת תזכורת WhatsApp דרך Meta WhatsApp Cloud API הרשמי (החליף את שערי
 // ה-QR הלא-רשמיים — ר' PROGRESS.md סעיף 27). המספר שנרשם ל-Meta הוא מספר
@@ -40,9 +41,15 @@ export type ReminderTemplateVars = {
 /** סדר הפרמטרים {{1}}…{{6}} בתבנית ה-Meta — חוזה עם מה שהקליניקה מאשרת שם. */
 export const REMINDER_TEMPLATE_PARAMS: (keyof ReminderTemplateVars)[] = ["name", "clinic", "date", "time", "room", "branch"];
 
-/** "+972501234567" → "972501234567" (E.164 בלי "+", כמו ש-Meta מצפה). */
-export function toWhatsAppDigits(e164: string): string {
-  return e164.replace(/[^\d]/g, "");
+/**
+ * מספר בפורמט בינלאומי בלי "+" (כמו ש-Meta ו-wa.me מצפים): "972501234567".
+ * 🔴 מנרמל גם פורמט מקומי ישראלי ("0501234567") — בלי קידומת מדינה WhatsApp
+ * מפרש את הספרות כ-username ("isn't on WhatsApp"). מספר שאינו ישראלי עובר
+ * כספרות בלבד (בהנחה שכבר בינלאומי).
+ */
+export function toWhatsAppDigits(phone: string): string {
+  const e164 = toE164Israel(phone);
+  return (e164 ?? phone).replace(/[^\d]/g, "");
 }
 
 export async function sendWhatsAppReminderTemplate(

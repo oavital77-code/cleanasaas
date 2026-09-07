@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
 import { therapistJoinedAdminEmail } from "@/lib/email/templates";
 import { getAdminEmails } from "@/lib/email/recipients";
+import { toE164Israel } from "@/lib/phone";
 
 export type InviteResult = { error?: string };
 
@@ -13,9 +14,14 @@ export type InviteResult = { error?: string };
 // להסבר המלא על התבנית.
 export async function completeInviteAction(token: string, formData: FormData): Promise<InviteResult> {
   const fullName = String(formData.get("full_name") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
-  if (!fullName || !phone) {
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+  if (!fullName || !phoneRaw) {
     return { error: "נא למלא את כל השדות" };
+  }
+  // E.164 לפני שמירה — ר' app/signup/actions.ts.
+  const phone = toE164Israel(phoneRaw);
+  if (!phone) {
+    return { error: "מספר טלפון לא תקין — נייד ישראלי (05X-XXXXXXX)" };
   }
 
   const email = (await currentUser())?.primaryEmailAddress?.emailAddress;

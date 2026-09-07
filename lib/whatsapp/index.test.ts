@@ -19,6 +19,16 @@ describe("toWhatsAppDigits / buildWaMeLink", () => {
     expect(toWhatsAppDigits("+972-50-123 4567")).toBe("972501234567");
   });
 
+  it("מנרמל פורמט מקומי ישראלי (05…) לבינלאומי — אחרת WhatsApp מפרש כ-username", () => {
+    expect(toWhatsAppDigits("0526760560")).toBe("972526760560");
+    expect(toWhatsAppDigits("052-676-0560")).toBe("972526760560");
+    expect(toWhatsAppDigits("972526760560")).toBe("972526760560");
+  });
+
+  it("מספר לא-ישראלי עובר כספרות בלבד", () => {
+    expect(toWhatsAppDigits("+1 415 555 0100")).toBe("14155550100");
+  });
+
   it("בונה קישור wa.me עם הטקסט מקודד", () => {
     const link = buildWaMeLink("+972501234567", "שלום דנה, 10:00");
     expect(link.startsWith("https://wa.me/972501234567?text=")).toBe(true);

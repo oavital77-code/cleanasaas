@@ -4,6 +4,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { clinicWelcomeEmail } from "@/lib/email/templates";
+import { toE164Israel } from "@/lib/phone";
 
 export type SignupResult = { error?: string };
 
@@ -15,10 +16,16 @@ export async function completeSignupClinicAction(formData: FormData): Promise<Si
   const clinicName = String(formData.get("clinic_name") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim().toLowerCase();
   const ownerFullName = String(formData.get("owner_full_name") ?? "").trim();
-  const ownerPhone = String(formData.get("owner_phone") ?? "").trim();
+  const ownerPhoneRaw = String(formData.get("owner_phone") ?? "").trim();
 
-  if (!clinicName || !slug || !ownerFullName || !ownerPhone) {
+  if (!clinicName || !slug || !ownerFullName || !ownerPhoneRaw) {
     return { error: "נא למלא את כל השדות" };
+  }
+  // 🔴 E.164 לפני שמירה — profiles.phone משמש לשיוך רכישות Woo ולקישורי
+  // WhatsApp (wa.me/Meta), ושניהם נכשלים על "05…" מקומי.
+  const ownerPhone = toE164Israel(ownerPhoneRaw);
+  if (!ownerPhone) {
+    return { error: "מספר טלפון לא תקין — נייד ישראלי (05X-XXXXXXX)" };
   }
   if (!/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/.test(slug)) {
     return { error: "כתובת (slug) לא תקינה — אותיות לועזיות קטנות, ספרות ומקף בלבד" };
