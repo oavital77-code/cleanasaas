@@ -1,0 +1,15 @@
+-- ביקורת אבטחה (Supabase advisor: anon_security_definer_function_executable).
+--
+-- 🔴 אותה תקלה בדיוק כמו admin_set_clinic_woo_secrets (תוקנה במיגרציה
+-- 20260906200000) — וחזרה כאן: המיגרציה 20260906000007 עשתה
+-- `revoke all ... from public`, אבל Supabase מעניקה EXECUTE ל-anon
+-- ול-authenticated *ישירות* דרך default privileges, ולכן revoke מ-public
+-- לא הסיר את ההרשאה של anon: הפונקציה שמקבלת את טוקן ה-WhatsApp הייתה
+-- נגישה ב-/rest/v1/rpc/admin_set_clinic_whatsapp_settings בלי session בכלל.
+--
+-- כמו שם: הפונקציה בודקת is_admin() בפנים ולכן anon נופל על FORBIDDEN —
+-- זו סגירת חשיפה, לא פרצה פתוחה. authenticated נשאר (אדמיני קליניקה
+-- קוראים לה מ-/admin/settings).
+--
+-- לקח: כל RPC חדש שמקבל סוד חייב revoke מפורש מ-anon, לא רק מ-public.
+revoke all on function admin_set_clinic_whatsapp_settings(boolean, text, text, text, text, text, integer, text) from anon;
