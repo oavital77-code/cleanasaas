@@ -20,6 +20,7 @@ import {
   BarChart3,
   ScrollText,
   ArrowLeftRight,
+  Languages,
   LogOut,
   Menu,
   MessageCircle,
@@ -28,8 +29,9 @@ import {
 } from "lucide-react";
 import { Logo } from "./logo";
 import { SignOutButton } from "./sign-out-button";
-import { dirFor, getAppShellDict, normalizeLocale } from "@/lib/i18n";
+import { LOCALE_NATIVE_NAME, dirFor, getAppShellDict, normalizeLocale, otherLocale } from "@/lib/i18n";
 import { LocaleProvider } from "@/lib/i18n/context";
+import { switchLocaleAction } from "@/lib/i18n/actions";
 
 // שלד משותף לשני "הצדדים" (מטפל/ת ⇄ אדמין), לפי CLEANASITEMAPANDDESIGN §1:
 // סרגל צד קבוע 220px בדסקטופ (inset-inline-start, אז ב-RTL הוא מימין
@@ -182,6 +184,29 @@ export function AppShell({
   // הבית של המטפל/ת) — התנהגות מצופה בכל דשבורד.
   const homeHref = side === "admin" ? "/admin" : "/dashboard";
 
+  // מתג שפה בלחיצה אחת, בסרגל עצמו — כך שגם אדמין בפאנל (שאין לו /profile
+  // בניווט) יכול לעבור עברית⇄English בלי לצאת "חזרה לאפליקציה". הכפתור מציג
+  // את שם השפה שעוברים אליה (endonym), כמו ב-/profile.
+  const nextLocale = otherLocale(locale);
+  const localeSwitch = (compact: boolean) => (
+    <form action={switchLocaleAction}>
+      <input type="hidden" name="locale" value={nextLocale} />
+      <button
+        type="submit"
+        title={LOCALE_NATIVE_NAME[nextLocale]}
+        lang={nextLocale}
+        className={
+          compact
+            ? "flex h-9 shrink-0 items-center gap-1.5 rounded-button px-2 text-xs font-medium text-muted-foreground hover:bg-subtle hover:text-foreground"
+            : "flex w-full items-center gap-3 rounded-button px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-subtle"
+        }
+      >
+        <Languages className={compact ? "size-4" : "size-[18px]"} />
+        {LOCALE_NATIVE_NAME[nextLocale]}
+      </button>
+    </form>
+  );
+
   const sidebarBody = (
     <>
       <div className="flex h-[var(--page-header-h)] shrink-0 items-center gap-2 border-b border-border px-4">
@@ -206,6 +231,7 @@ export function AppShell({
             {fullName && <p className="truncate text-sm font-medium">{fullName}</p>}
             {clinicName && <p className="truncate text-xs text-muted-foreground">{clinicName}</p>}
           </div>
+          {localeSwitch(true)}
           <SignOutButton>
             <button
               type="button"
@@ -291,6 +317,7 @@ export function AppShell({
                     {crossLink.label}
                   </Link>
                 )}
+                {localeSwitch(false)}
                 <SignOutButton>
                   <button
                     type="button"
