@@ -12,6 +12,8 @@ import {
   STICKY_HOUR,
   STICKY_CORNER,
 } from "@/components/calendar-grid-styles";
+import { getCommonDict, getScheduleDict } from "@/lib/i18n";
+import { useLocale } from "@/lib/i18n/context";
 import { cancelBookingAction, createBookingAction } from "./actions";
 
 // רשת אינטראקטיבית לבחירת משבצות: לחיצה ראשונה = התחלה, לחיצה שניה
@@ -33,6 +35,9 @@ export type GridColumn = {
 };
 
 export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: GridColumn[]; cells: CellState[][] }) {
+  const locale = useLocale();
+  const t = getScheduleDict(locale);
+  const c = getCommonDict(locale);
   const [selection, setSelection] = useState<{ colIdx: number; startIdx: number; endIdx: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -107,10 +112,10 @@ export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: 
         >
           <thead>
             <tr>
-              <th className={`${STICKY_CORNER} w-16 p-2 text-xs font-normal text-muted-foreground`}>שעה</th>
-              {columns.map((c) => (
-                <th key={c.key} className={`${STICKY_HEAD} p-2 text-center font-medium`}>
-                  {c.header}
+              <th className={`${STICKY_CORNER} w-16 p-2 text-xs font-normal text-muted-foreground`}>{t.hourColumn}</th>
+              {columns.map((col) => (
+                <th key={col.key} className={`${STICKY_HEAD} p-2 text-center font-medium`}>
+                  {col.header}
                 </th>
               ))}
             </tr>
@@ -132,14 +137,14 @@ export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: 
                         <div
                           className={`flex ${CELL_HEIGHT} items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700`}
                         >
-                          <span className="min-w-0 truncate">שלך</span>
+                          <span className="min-w-0 truncate">{t.mine}</span>
                           {cell.cancellable && (
                             <form action={cancelBookingAction}>
                               <input type="hidden" name="booking_id" value={cell.bookingId} />
                               <button
                                 type="submit"
                                 className="-me-1 flex size-8 shrink-0 items-center justify-center rounded-button text-violet-500 hover:text-danger md:size-5"
-                                title="ביטול"
+                                title={t.cancelTitle}
                               >
                                 <X className="size-3.5" />
                               </button>
@@ -155,7 +160,7 @@ export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: 
                         <div
                           className={`flex ${CELL_HEIGHT} items-center justify-center rounded-field bg-subtle text-xs text-muted-foreground`}
                         >
-                          {cell.status === "taken" ? "תפוס" : "חסום"}
+                          {cell.status === "taken" ? t.taken : t.blocked}
                         </div>
                       </td>
                     );
@@ -171,7 +176,7 @@ export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: 
                             : "border-success-border bg-success-bg text-success-fg hover:bg-success/20"
                         }`}
                       >
-                        {isSelected ? "נבחר" : "פנוי"}
+                        {isSelected ? t.selected : t.available}
                       </button>
                     </td>
                   );
@@ -196,7 +201,7 @@ export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: 
             <div className="text-sm">
               <span className="font-medium">{columns[selection.colIdx].header}</span>
               <span className="text-muted-foreground"> · {slots[selLo]}–{addHalfHour(slots[selHi])}</span>
-              <span className="text-muted-foreground"> · {(selHi - selLo + 1) * 0.5} שעות</span>
+              <span className="text-muted-foreground"> · {c.hoursN((selHi - selLo + 1) * 0.5)}</span>
             </div>
             <div className="flex items-center gap-2">
               {error && <span className="text-xs text-destructive">{error}</span>}
@@ -205,7 +210,7 @@ export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: 
                 onClick={() => setSelection(null)}
                 className="flex h-10 items-center justify-center rounded-button border border-border-strong px-3 text-sm hover:bg-subtle md:h-9"
               >
-                ביטול
+                {c.cancel}
               </button>
               <button
                 type="button"
@@ -213,7 +218,7 @@ export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: 
                 disabled={pending}
                 className="flex h-10 items-center justify-center rounded-button bg-violet-600 px-4 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60 md:h-9"
               >
-                {pending ? "שולח/ת…" : "אישור הזמנה"}
+                {pending ? c.sending : t.confirmBooking}
               </button>
             </div>
           </div>

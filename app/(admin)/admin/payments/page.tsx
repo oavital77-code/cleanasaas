@@ -5,25 +5,21 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { markSessionPaymentCashAction } from "./actions";
+import { getAdminPaymentsDict, getCommonDict, normalizeLocale } from "@/lib/i18n";
 
-const TYPE_LABEL: Record<string, string> = {
-  punch_card: "כרטיסייה",
-  session_initial: "ססיה — תשלום ראשון",
-  session_recurring: "ססיה — חיוב חודשי",
-  overrun: "חריגת זמן",
-  deposit_topup: "השלמת פיקדון",
-};
-
-const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  pending: { label: "ממתין", tone: "bg-warning-bg text-warning-fg" },
-  paid: { label: "שולם", tone: "bg-success-bg text-success-fg" },
-  failed: { label: "נכשל", tone: "bg-danger-bg text-danger" },
-  refunded: { label: "זוכה", tone: "bg-subtle text-muted-foreground" },
+const STATUS_TONE: Record<string, string> = {
+  pending: "bg-warning-bg text-warning-fg",
+  paid: "bg-success-bg text-success-fg",
+  failed: "bg-danger-bg text-danger",
+  refunded: "bg-subtle text-muted-foreground",
 };
 
 export default async function AdminPaymentsPage() {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
+  const locale = normalizeLocale(profile.locale);
+  const t = getAdminPaymentsDict(locale);
+  const c = getCommonDict(locale);
 
   const [{ data: clinic }, { data: payments }] = await Promise.all([
     supabase.from("clinics").select("name").eq("id", clinicId).single(),
@@ -38,32 +34,33 @@ export default async function AdminPaymentsPage() {
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <h1 className="text-2xl font-semibold">תשלומים</h1>
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
 
         <Card className="shadow-e1 overflow-hidden p-0">
           <CardContent className="overflow-x-auto p-0">
             <table className="w-full text-sm">
-              <thead className="bg-muted text-right">
+              <thead className="bg-muted">
                 <tr>
-                  <th className="p-3 font-medium">מטפל/ת</th>
-                  <th className="hidden p-3 font-medium sm:table-cell">סוג</th>
-                  <th className="p-3 font-medium">סכום</th>
-                  <th className="p-3 font-medium">סטטוס</th>
-                  <th className="hidden p-3 font-medium md:table-cell">תאריך</th>
+                  <th className="p-3 text-start font-medium">{t.colTherapist}</th>
+                  <th className="hidden p-3 text-start font-medium sm:table-cell">{t.colType}</th>
+                  <th className="p-3 text-start font-medium">{t.colAmount}</th>
+                  <th className="p-3 text-start font-medium">{t.colStatus}</th>
+                  <th className="hidden p-3 text-start font-medium md:table-cell">{t.colDate}</th>
                   <th className="p-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
                 {(payments ?? []).map((p) => {
-                  const status = STATUS_LABEL[p.status] ?? { label: p.status, tone: "bg-subtle" };
                   const isSessionPending = p.status === "pending" && (p.type === "session_initial" || p.type === "session_recurring");
                   return (
                     <tr key={p.id} className="border-t border-border">
                       <td className="p-3">{(p.profiles as { full_name?: string } | null)?.full_name}</td>
-                      <td className="hidden p-3 sm:table-cell">{TYPE_LABEL[p.type] ?? p.type}</td>
+                      <td className="hidden p-3 sm:table-cell">{c.paymentType[p.type] ?? p.type}</td>
                       <td className="tabular-nums p-3">{formatCurrencyILS(p.amount_total)}</td>
                       <td className="p-3">
-                        <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${status.tone}`}>{status.label}</span>
+                        <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${STATUS_TONE[p.status] ?? "bg-subtle"}`}>
+                          {c.paymentStatus[p.status] ?? p.status}
+                        </span>
                       </td>
                       <td className="hidden p-3 text-muted-foreground md:table-cell">
                         {formatDateTimeHe(new Date(p.paid_at ?? p.created_at ?? "1970-01-01T00:00:00Z"))}
@@ -74,7 +71,7 @@ export default async function AdminPaymentsPage() {
                             <input type="hidden" name="payment_id" value={p.id} />
                             <input type="hidden" name="kind" value={p.type === "session_recurring" ? "recurring" : "initial"} />
                             <Button type="submit" size="sm" variant="outline">
-                              סימון כשולם במזומן
+                              {t.markPaidCash}
                             </Button>
                           </form>
                         )}

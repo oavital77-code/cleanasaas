@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateProfileAction, updateLocaleAction } from "./actions";
-import { LOCALE_NATIVE_NAME, dirFor, getProfileDict, normalizeLocale, otherLocale } from "@/lib/i18n";
+import { LOCALE_NATIVE_NAME, getCommonDict, getProfileDict, normalizeLocale, otherLocale } from "@/lib/i18n";
 
 export default async function ProfilePage() {
   const { userId, profile } = await requireTherapistProfile();
@@ -22,11 +22,11 @@ export default async function ProfilePage() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const locale = normalizeLocale(profile.locale);
   const t = getProfileDict(locale);
-  const roleLabel = t.roleValues[profile.role as keyof typeof t.roleValues] ?? profile.role;
+  const roleLabel = getCommonDict(locale).role[profile.role] ?? profile.role;
 
   return (
     <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale} isAdmin={isAdmin}>
-      <div dir={dirFor(locale)} lang={locale} className="mx-auto flex w-full max-w-xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
         <h1 className="text-2xl font-semibold">{t.title}</h1>
 
         <Card className="shadow-e1">

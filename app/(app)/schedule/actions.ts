@@ -7,6 +7,7 @@ import { zonedDateTimeToUtc, accessWindow, DEFAULT_TIMEZONE } from "@/lib/time";
 import { sendEmail } from "@/lib/email/resend";
 import { bookingConfirmedEmail, bookingCancelledEmail } from "@/lib/email/templates";
 import { generateSingleEventIcs } from "@/lib/ics";
+import { getCommonDict, getScheduleDict, normalizeLocale, translateRpcError } from "@/lib/i18n";
 
 export type BookingState = { error?: string; success?: boolean };
 
@@ -21,13 +22,15 @@ async function getClinicTimezone(supabase: Awaited<ReturnType<typeof createClien
 
 export async function createBookingAction(_prevState: BookingState, formData: FormData): Promise<BookingState> {
   const supabase = await createClient();
+  const { profile } = await getAuthState();
+  const locale = normalizeLocale(profile?.locale);
   const roomId = String(formData.get("room_id") ?? "");
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("start_time") ?? "");
   const durationHours = Number(formData.get("duration_hours") ?? 1);
 
   if (!roomId || !date || !startTime) {
-    return { error: "נא למלא את כל השדות" };
+    return { error: getCommonDict(locale).fillAllFields };
   }
 
   const timezone = await getClinicTimezone(supabase);
@@ -43,7 +46,7 @@ export async function createBookingAction(_prevState: BookingState, formData: Fo
     .single();
 
   if (error) {
-    return { error: translateBookingError(error.message) };
+    return { error: translateRpcError(locale, error.message, getScheduleDict(locale).bookingError) };
   }
 
   // מייל אישור אסינכרוני, מחוץ לזרימת ה-RPC — כישלון שליחה לא אמור לבטל
@@ -132,25 +135,4 @@ async function sendCancellationEmail(
 
   const { subject, html } = bookingCancelledEmail({ roomName: room.name, startsAt, hoursRefunded });
   await sendEmail({ to: profile.email, subject, html });
-}
-
-function translateBookingError(code: string): string {
-  const map: Record<string, string> = {
-    NO_CREDIT: "אין יתרת שעות בתוקף",
-    INSUFFICIENT_HOURS: "היתרה קטנה מהמבוקש",
-    DEPOSIT_DEPLETED: "הפיקדון חסר — נדרשת השלמה",
-    ROOM_TAKEN: "המשבצת נתפסה זה עתה",
-    ROOM_UNAVAILABLE: "החדר חסום או לא פעיל",
-    SELF_OVERLAP: "יש לך כבר הזמנה בשעה הזו",
-    TOO_FAR_AHEAD: "מעבר לטווח ההזמנה המותר",
-    TOO_FAR_PAST: "לא ניתן להזמין רחוק כל כך בעבר",
-    INVALID_SLOT: "השעה חייבת להיות מיושרת ל-30 דקות",
-    BOOKING_PASSED: "המועד עבר",
-    USER_SUSPENDED: "החשבון מושעה",
-    CLINIC_SUSPENDED: "הקליניקה מושעית זמנית",
-  };
-  for (const key of Object.keys(map)) {
-    if (code.includes(key)) return map[key];
-  }
-  return "שגיאה בהזמנה";
 }

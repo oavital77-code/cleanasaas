@@ -5,10 +5,14 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SlotBuilder } from "@/components/slot-builder";
 import { requestSessionAction } from "../actions";
+import { getCommonDict, getSessionsDict, normalizeLocale } from "@/lib/i18n";
 
 export default async function NewSessionPage() {
   const { profile } = await requireTherapistProfile();
   const supabase = await createClient();
+  const locale = normalizeLocale(profile.locale);
+  const t = getSessionsDict(locale);
+  const c = getCommonDict(locale);
 
   const [{ data: clinic }, { data: rooms }, { data: baseHoursSetting }] = await Promise.all([
     supabase.from("clinics").select("name, sessions_enabled").eq("id", profile.clinic_id).single(),
@@ -24,15 +28,12 @@ export default async function NewSessionPage() {
   return (
     <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale} isAdmin={isAdmin}>
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-        <h1 className="text-2xl font-semibold">בקשת ססיה חדשה</h1>
+        <h1 className="text-2xl font-semibold">{t.newTitle}</h1>
 
         <Card className="shadow-e1">
           <CardHeader>
-            <CardTitle className="text-base font-medium">משבצות שבועיות קבועות</CardTitle>
-            <CardDescription>
-              הססיה היא היקף שבועי קבוע — {baseHours} שעות בדיוק, בחדר/ים ובזמן/ים שתבחרו. הבקשה
-              נשלחת לאישור אדמין ולא בודקת זמינות בפועל מראש.
-            </CardDescription>
+            <CardTitle className="text-base font-medium">{t.fixedSlotsTitle}</CardTitle>
+            <CardDescription>{t.fixedSlotsDescription(baseHours)}</CardDescription>
           </CardHeader>
           <CardContent>
             {rooms && rooms.length > 0 ? (
@@ -40,11 +41,11 @@ export default async function NewSessionPage() {
                 rooms={rooms}
                 action={requestSessionAction}
                 requiredHours={baseHours}
-                submitLabel="שליחת בקשה לאישור אדמין"
-                pendingLabel="שולח/ת…"
+                submitLabel={t.submitRequest}
+                pendingLabel={c.sending}
               />
             ) : (
-              <p className="text-muted-foreground">אין עדיין חדרים פעילים בקליניקה.</p>
+              <p className="text-muted-foreground">{c.noRoomsYet}</p>
             )}
           </CardContent>
         </Card>

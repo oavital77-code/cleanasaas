@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addBranchAction, updateBranchAction, addRoomAction, updateRoomAction } from "./actions";
+import { getAdminRoomsDict, normalizeLocale } from "@/lib/i18n";
 
 export default async function AdminRoomsPage() {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
+  const t = getAdminRoomsDict(normalizeLocale(profile.locale));
 
   const [{ data: clinic }, { data: branches }, { data: rooms }] = await Promise.all([
     supabase.from("clinics").select("name").eq("id", clinicId).single(),
@@ -20,7 +22,7 @@ export default async function AdminRoomsPage() {
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-        <h1 className="text-2xl font-semibold">סניפים וחדרים</h1>
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
 
         {(branches ?? []).map((b) => (
           <Card key={b.id} className="shadow-e1">
@@ -34,19 +36,19 @@ export default async function AdminRoomsPage() {
               >
                 <input type="hidden" name="id" value={b.id} />
                 <div className="flex flex-col gap-1">
-                  <Label className="text-xs">שם</Label>
+                  <Label className="text-xs">{t.name}</Label>
                   <Input name="name" defaultValue={b.name} className="w-full sm:w-40" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <Label className="text-xs">כתובת</Label>
+                  <Label className="text-xs">{t.address}</Label>
                   <Input name="address" defaultValue={b.address} className="w-full sm:w-56" />
                 </div>
                 <label className="flex items-center gap-2 text-sm sm:pb-2">
                   <input type="checkbox" name="active" defaultChecked={b.active ?? true} className="size-4 accent-violet-500" />
-                  פעיל
+                  {t.active}
                 </label>
                 <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
-                  שמירה
+                  {t.save}
                 </Button>
               </form>
 
@@ -61,23 +63,23 @@ export default async function AdminRoomsPage() {
                     >
                       <input type="hidden" name="id" value={r.id} />
                       <div className="flex flex-col gap-1">
-                        <Label className="text-xs">שם החדר</Label>
+                        <Label className="text-xs">{t.roomName}</Label>
                         <Input name="name" defaultValue={r.name} className="w-full sm:w-36" />
                       </div>
                       <div className="flex flex-col gap-1">
-                        <Label className="text-xs">קיבולת</Label>
+                        <Label className="text-xs">{t.capacity}</Label>
                         <Input name="capacity" type="number" defaultValue={r.capacity ?? 2} className="w-full sm:w-20" />
                       </div>
                       <div className="flex flex-col gap-1">
-                        <Label className="text-xs">תיאור</Label>
+                        <Label className="text-xs">{t.description}</Label>
                         <Input name="description" defaultValue={r.description ?? ""} className="w-full sm:w-48" />
                       </div>
                       <label className="flex items-center gap-2 text-sm sm:pb-2">
                         <input type="checkbox" name="active" defaultChecked={r.active ?? true} className="size-4 accent-violet-500" />
-                        פעיל
+                        {t.active}
                       </label>
                       <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
-                        שמירה
+                        {t.save}
                       </Button>
                     </form>
                   ))}
@@ -89,15 +91,15 @@ export default async function AdminRoomsPage() {
               >
                 <input type="hidden" name="branch_id" value={b.id} />
                 <div className="flex flex-col gap-1">
-                  <Label className="text-xs">שם חדר חדש</Label>
+                  <Label className="text-xs">{t.newRoomName}</Label>
                   <Input name="name" required className="w-full sm:w-40" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <Label className="text-xs">קיבולת</Label>
+                  <Label className="text-xs">{t.capacity}</Label>
                   <Input name="capacity" type="number" defaultValue={2} className="w-full sm:w-20" />
                 </div>
                 <Button type="submit" size="sm" className="w-full sm:w-auto">
-                  הוספת חדר
+                  {t.addRoom}
                 </Button>
               </form>
             </CardContent>
@@ -106,20 +108,20 @@ export default async function AdminRoomsPage() {
 
         <Card className="shadow-e1">
           <CardHeader>
-            <CardTitle className="text-base font-medium">הוספת סניף</CardTitle>
+            <CardTitle className="text-base font-medium">{t.addBranchTitle}</CardTitle>
           </CardHeader>
           <CardContent>
             <form action={addBranchAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="branch_name">שם הסניף</Label>
+                <Label htmlFor="branch_name">{t.branchName}</Label>
                 <Input id="branch_name" name="name" required />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="branch_address">כתובת</Label>
+                <Label htmlFor="branch_address">{t.address}</Label>
                 <Input id="branch_address" name="address" required />
               </div>
               <Button type="submit" className="w-full sm:w-auto">
-                הוספת סניף
+                {t.addBranch}
               </Button>
             </form>
           </CardContent>

@@ -13,17 +13,20 @@ import {
   revokeInviteAction,
   clearUsedInvitesAction,
 } from "./actions";
+import { getAdminTherapistsDict, getCommonDict, normalizeLocale } from "@/lib/i18n";
 
-const ROLE_LABEL: Record<string, string> = { owner: "בעלים", admin: "אדמין/ית", therapist: "מטפל/ת" };
-const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  active: { label: "פעיל", tone: "bg-success-bg text-success-fg" },
-  suspended: { label: "מושעה", tone: "bg-danger-bg text-danger" },
-  archived: { label: "בארכיון", tone: "bg-subtle text-muted-foreground" },
+const STATUS_TONE: Record<string, string> = {
+  active: "bg-success-bg text-success-fg",
+  suspended: "bg-danger-bg text-danger",
+  archived: "bg-subtle text-muted-foreground",
 };
 
 export default async function TherapistsPage() {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
+  const locale = normalizeLocale(profile.locale);
+  const t = getAdminTherapistsDict(locale);
+  const c = getCommonDict(locale);
 
   const [{ data: clinic }, { data: profiles }, { data: cards }, { data: invites }] = await Promise.all([
     supabase.from("clinics").select("name, slug, published").eq("id", clinicId).single(),
@@ -38,8 +41,8 @@ export default async function TherapistsPage() {
   ]);
 
   const hoursByUser = new Map<string, number>();
-  for (const c of cards ?? []) {
-    hoursByUser.set(c.user_id, (hoursByUser.get(c.user_id) ?? 0) + Number(c.hours_remaining));
+  for (const card of cards ?? []) {
+    hoursByUser.set(card.user_id, (hoursByUser.get(card.user_id) ?? 0) + Number(card.hours_remaining));
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -48,25 +51,21 @@ export default async function TherapistsPage() {
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-        <h1 className="text-2xl font-semibold">מטפלים</h1>
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
 
         <Card className="shadow-e1">
           <CardHeader>
-            <CardTitle className="text-base font-medium">קישור הצטרפות לקליניקה</CardTitle>
-            <CardDescription>
-              קישור אחד וקבוע — כל מי שמקבל אותו יכול/ה להירשם ישירות כמטפל/ת אצלכם, בלי
-              שתצטרכו ליצור הזמנה בנפרד לכל אחד/ת. גישת אדמין/ית עדיין ניתנת רק דרך הזמנה
-              ידנית למטה.
-            </CardDescription>
+            <CardTitle className="text-base font-medium">{t.joinLinkTitle}</CardTitle>
+            <CardDescription>{t.joinLinkDescription}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <form action={toggleClinicPublishedAction} className="flex flex-wrap items-center gap-3">
               <input type="hidden" name="published" value={clinic?.published ? "off" : "on"} />
               <Button type="submit" variant={clinic?.published ? "outline" : "default"} size="sm">
-                {clinic?.published ? "כיבוי ההרשמה" : "פרסום קליניקה — פתיחת הרשמה"}
+                {clinic?.published ? t.closeRegistration : t.publishClinic}
               </Button>
               <span className={`text-sm ${clinic?.published ? "text-success" : "text-muted-foreground"}`}>
-                {clinic?.published ? "פתוח להרשמה" : "סגור להרשמה"}
+                {clinic?.published ? t.openForRegistration : t.closedForRegistration}
               </span>
             </form>
             {clinic?.published && joinUrl && (
@@ -80,49 +79,48 @@ export default async function TherapistsPage() {
         <Card className="shadow-e1 overflow-hidden p-0">
           <CardContent className="overflow-x-auto p-0">
             <table className="w-full text-sm">
-              <thead className="bg-muted text-right">
+              <thead className="bg-muted text-start">
                 <tr>
-                  <th className="p-3 font-medium">שם</th>
-                  <th className="hidden p-3 font-medium sm:table-cell">טלפון</th>
-                  <th className="hidden p-3 font-medium md:table-cell">אימייל</th>
-                  <th className="p-3 font-medium">תפקיד</th>
-                  <th className="p-3 font-medium">סטטוס</th>
-                  <th className="hidden p-3 font-medium sm:table-cell">שעות</th>
+                  <th className="p-3 text-start font-medium">{t.colName}</th>
+                  <th className="hidden p-3 text-start font-medium sm:table-cell">{t.colPhone}</th>
+                  <th className="hidden p-3 text-start font-medium md:table-cell">{t.colEmail}</th>
+                  <th className="p-3 text-start font-medium">{t.colRole}</th>
+                  <th className="p-3 text-start font-medium">{t.colStatus}</th>
+                  <th className="hidden p-3 text-start font-medium sm:table-cell">{t.colHours}</th>
                   <th className="p-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
-                {(profiles ?? []).map((p) => {
-                  const status = STATUS_LABEL[p.status] ?? { label: p.status, tone: "bg-subtle" };
-                  return (
-                    <tr key={p.id} className="border-t border-border">
-                      <td className="p-3">
-                        <Link href={`/admin/therapists/${p.id}`} className="font-medium text-violet-600 hover:underline">
-                          {p.full_name}
-                        </Link>
-                      </td>
-                      <td className="hidden p-3 sm:table-cell" dir="ltr">
-                        {p.phone}
-                      </td>
-                      <td className="hidden p-3 md:table-cell" dir="ltr">
-                        {p.email}
-                      </td>
-                      <td className="p-3">{ROLE_LABEL[p.role] ?? p.role}</td>
-                      <td className="p-3">
-                        <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${status.tone}`}>{status.label}</span>
-                      </td>
-                      <td className="tabular-nums hidden p-3 sm:table-cell">{hoursByUser.get(p.id) ?? 0}</td>
-                      <td className="p-3">
-                        <form action={adminResetPasswordAction}>
-                          <input type="hidden" name="email" value={p.email} />
-                          <Button type="submit" size="sm" variant="outline">
-                            איפוס סיסמה
-                          </Button>
-                        </form>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {(profiles ?? []).map((p) => (
+                  <tr key={p.id} className="border-t border-border">
+                    <td className="p-3">
+                      <Link href={`/admin/therapists/${p.id}`} className="font-medium text-violet-600 hover:underline">
+                        {p.full_name}
+                      </Link>
+                    </td>
+                    <td className="hidden p-3 sm:table-cell" dir="ltr">
+                      {p.phone}
+                    </td>
+                    <td className="hidden p-3 md:table-cell" dir="ltr">
+                      {p.email}
+                    </td>
+                    <td className="p-3">{c.role[p.role] ?? p.role}</td>
+                    <td className="p-3">
+                      <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${STATUS_TONE[p.status] ?? "bg-subtle"}`}>
+                        {c.profileStatus[p.status] ?? p.status}
+                      </span>
+                    </td>
+                    <td className="tabular-nums hidden p-3 sm:table-cell">{hoursByUser.get(p.id) ?? 0}</td>
+                    <td className="p-3">
+                      <form action={adminResetPasswordAction}>
+                        <input type="hidden" name="email" value={p.email} />
+                        <Button type="submit" size="sm" variant="outline">
+                          {t.resetPassword}
+                        </Button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </CardContent>
@@ -130,17 +128,17 @@ export default async function TherapistsPage() {
 
         <Card className="shadow-e1">
           <CardHeader>
-            <CardTitle className="text-base font-medium">הזמנה ידנית (חד-פעמית)</CardTitle>
-            <CardDescription>למקרה שרוצים להזמין אדמין/ית נוסף/ת, או מטפל/ת ספציפי/ת בלי לפרסם קישור כללי.</CardDescription>
+            <CardTitle className="text-base font-medium">{t.manualInviteTitle}</CardTitle>
+            <CardDescription>{t.manualInviteDescription}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <form action={createInviteAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <Select name="role" className="sm:w-auto">
-                <option value="therapist">מטפל/ת</option>
-                <option value="admin">אדמין/ית</option>
+                <option value="therapist">{c.role.therapist}</option>
+                <option value="admin">{c.role.admin}</option>
               </Select>
               <Button type="submit" className="w-full sm:w-auto">
-                יצירת קישור הזמנה
+                {t.createInviteLink}
               </Button>
             </form>
             {invites && invites.length > 0 && (
@@ -154,13 +152,13 @@ export default async function TherapistsPage() {
                         <code dir="ltr" className="min-w-0 truncate text-xs">
                           {appUrl}/invite/{inv.token}
                         </code>
-                        <span className="shrink-0 text-xs">{used ? "נוצל" : expired ? "פג תוקף" : "פעיל"}</span>
+                        <span className="shrink-0 text-xs">{used ? t.inviteUsed : expired ? t.inviteExpired : t.inviteActive}</span>
                         <form action={revokeInviteAction}>
                           <input type="hidden" name="token" value={inv.token} />
                           <button
                             type="submit"
                             className="flex size-8 shrink-0 items-center justify-center rounded-button text-muted-foreground hover:text-danger"
-                            title="ביטול קישור"
+                            title={t.revokeInviteTitle}
                           >
                             <X className="size-3.5" />
                           </button>
@@ -172,7 +170,7 @@ export default async function TherapistsPage() {
                 {invites.some((inv) => inv.used_at || new Date(inv.expires_at) < new Date()) && (
                   <form action={clearUsedInvitesAction}>
                     <Button type="submit" size="sm" variant="outline">
-                      ניקוי קישורים שנוצלו / פג תוקפם
+                      {t.clearUsedInvites}
                     </Button>
                   </form>
                 )}

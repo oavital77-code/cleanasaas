@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-
-const WEEKDAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+import { getCommonDict, getSessionsDict } from "@/lib/i18n";
+import { useLocale } from "@/lib/i18n/context";
 
 type Row = { room_id: string; weekday: number; start_time: string; duration: number };
 type SlotFormState = { error?: string };
@@ -31,6 +31,9 @@ export function SlotBuilder({
   extraFields?: ReactNode;
   showStartDate?: boolean;
 }) {
+  const locale = useLocale();
+  const t = getSessionsDict(locale);
+  const c = getCommonDict(locale);
   const [state, formAction, pending] = useActionState(action, {});
   const [rows, setRows] = useState<Row[]>([
     { room_id: rooms[0]?.id ?? "", weekday: 0, start_time: "09:00", duration: requiredHours ?? 1 },
@@ -80,7 +83,7 @@ export function SlotBuilder({
             className="flex flex-col gap-3 rounded-field border border-border p-3 sm:flex-row sm:flex-wrap sm:items-end"
           >
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">חדר</Label>
+              <Label className="text-xs">{t.room}</Label>
               <Select
                 value={row.room_id}
                 onChange={(e) => updateRow(i, { room_id: e.target.value })}
@@ -94,13 +97,13 @@ export function SlotBuilder({
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">יום</Label>
+              <Label className="text-xs">{t.weekday}</Label>
               <Select
                 value={row.weekday}
                 onChange={(e) => updateRow(i, { weekday: Number(e.target.value) })}
                 className="sm:w-auto"
               >
-                {WEEKDAYS.map((d, idx) => (
+                {c.weekdaysLong.map((d, idx) => (
                   <option key={idx} value={idx}>
                     {d}
                   </option>
@@ -108,7 +111,7 @@ export function SlotBuilder({
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">שעת התחלה</Label>
+              <Label className="text-xs">{t.startTime}</Label>
               <Input
                 type="time"
                 step={1800}
@@ -118,7 +121,7 @@ export function SlotBuilder({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">משך (שעות)</Label>
+              <Label className="text-xs">{t.durationHours}</Label>
               <Input
                 type="number"
                 step={0.5}
@@ -130,7 +133,7 @@ export function SlotBuilder({
             </div>
             {rows.length > 1 && (
               <Button type="button" variant="ghost" size="sm" onClick={() => removeRow(i)} className="w-full sm:w-auto">
-                הסרה
+                {t.remove}
               </Button>
             )}
           </div>
@@ -139,20 +142,20 @@ export function SlotBuilder({
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Button type="button" variant="outline" size="sm" onClick={addRow}>
-          הוספת משבצת נוספת
+          {t.addSlot}
         </Button>
         {requiredHours !== undefined ? (
           <p className={`text-sm tabular-nums ${matches ? "text-success" : "text-warning-fg"}`}>
-            סה&quot;כ {totalHours} מתוך {requiredHours} שעות שבועיות נדרשות
+            {t.totalOfRequired(totalHours, requiredHours)}
           </p>
         ) : (
-          <p className="text-sm tabular-nums text-muted-foreground">סה&quot;כ {totalHours} שעות שבועיות</p>
+          <p className="text-sm tabular-nums text-muted-foreground">{t.totalWeekly(totalHours)}</p>
         )}
       </div>
 
       {showStartDate && (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="start_date">תאריך התחלה מבוקש (אופציונלי)</Label>
+          <Label htmlFor="start_date">{t.startDateOptional}</Label>
           <Input id="start_date" name="start_date" type="date" className="w-full sm:w-48" />
         </div>
       )}

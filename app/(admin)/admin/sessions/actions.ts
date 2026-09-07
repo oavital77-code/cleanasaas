@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { sendEmail } from "@/lib/email/resend";
 import { sessionApprovedEmail, sessionRejectedEmail } from "@/lib/email/templates";
+import { getAdminSessionsDict, normalizeLocale } from "@/lib/i18n";
 
 export async function approveSessionAction(formData: FormData) {
   const { clinicId } = await requireClinicAdmin();
@@ -22,9 +23,11 @@ export async function approveSessionAction(formData: FormData) {
 }
 
 export async function rejectSessionAction(formData: FormData) {
-  await requireClinicAdmin();
+  const { profile } = await requireClinicAdmin();
   const subscriptionId = String(formData.get("subscription_id") ?? "");
-  const reason = String(formData.get("reason") ?? "לא צוין");
+  // הסיבה נשמרת ב-DB ומוצגת למטפל/ת — ברירת המחדל לפי שפת האדמין שדוחה.
+  const reason =
+    String(formData.get("reason") ?? "").trim() || getAdminSessionsDict(normalizeLocale(profile.locale)).reasonNotGiven;
   if (!subscriptionId) return;
 
   const supabase = await createClient();

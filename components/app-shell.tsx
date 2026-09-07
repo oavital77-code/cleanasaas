@@ -28,6 +28,7 @@ import {
 import { Logo } from "./logo";
 import { SignOutButton } from "./sign-out-button";
 import { dirFor, getAppShellDict, normalizeLocale } from "@/lib/i18n";
+import { LocaleProvider } from "@/lib/i18n/context";
 
 // שלד משותף לשני "הצדדים" (מטפל/ת ⇄ אדמין), לפי CLEANASITEMAPANDDESIGN §1:
 // סרגל צד קבוע 220px בדסקטופ (inset-inline-start, אז ב-RTL הוא מימין
@@ -124,6 +125,24 @@ export function AppShell({
   const dict = getAppShellDict(locale);
   const dir = dirFor(locale);
 
+  // 🔴 היפוך מלא של הממשק לפי שפה: ה-wrapper החיצוני מקבל dir/lang (SSR —
+  // הסרגל קופץ לשמאל באנגלית כבר ב-paint הראשון, בלי flash), וה-<html>
+  // הגלובלי מסונכרן אחרי hydration — כדי שגם פס הגלילה של הדפדפן וכיוון
+  // ברירת המחדל של אלמנטים "מחוץ" לעץ (portals) יתאימו. ה-cleanup מחזיר
+  // rtl/he כי הדפים הציבוריים (login/signup/landing) נשארים עברית תמיד
+  // וה-<html> ב-app/layout.tsx מוגדר rtl סטטית.
+  useEffect(() => {
+    const html = document.documentElement;
+    const prevDir = html.getAttribute("dir");
+    const prevLang = html.getAttribute("lang");
+    html.setAttribute("dir", dir);
+    html.setAttribute("lang", locale);
+    return () => {
+      html.setAttribute("dir", prevDir ?? "rtl");
+      html.setAttribute("lang", prevLang ?? "he");
+    };
+  }, [dir, locale]);
+
   // כשהמגירה פתוחה — נעילת גלילת הדף שמאחוריה, וסגירה ב-Escape.
   // בלי זה במובייל גוללים את התוכן "מתחת" למגירה וזה מרגיש שבור.
   useEffect(() => {
@@ -200,7 +219,8 @@ export function AppShell({
   );
 
   return (
-    <div className="flex min-h-full flex-1">
+    <LocaleProvider locale={locale}>
+    <div dir={dir} lang={locale} className="flex min-h-full flex-1">
       {/* דסקטופ — סרגל צד קבוע. sticky top-0 self-start h-screen: בלי
           self-start הוא נמתח (align-items:stretch כברירת מחדל של flex)
           לגובה כל השורה הכוללת את תוכן העמוד, ואז "sticky" לא עוזר —
@@ -286,5 +306,6 @@ export function AppShell({
         <main className="mx-auto w-full max-w-[var(--content-max)] flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
+    </LocaleProvider>
   );
 }

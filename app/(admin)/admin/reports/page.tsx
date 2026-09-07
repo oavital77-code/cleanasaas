@@ -3,12 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { formatCurrencyILS } from "@/lib/time";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAdminReportsDict, normalizeLocale } from "@/lib/i18n";
 
 // דוח בסיסי — ספירות/סכומים לחודש הנוכחי. לא אנליטיקס/גרפים (מחוץ להיקף
 // הנוכחי, ר' PROGRESS.md).
 export default async function AdminReportsPage() {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
+  const t = getAdminReportsDict(normalizeLocale(profile.locale));
 
   const monthStart = new Date();
   monthStart.setDate(1);
@@ -41,17 +43,17 @@ export default async function AdminReportsPage() {
   const hoursSold = (cardsThisMonth ?? []).reduce((sum, c) => sum + Number(c.hours_purchased), 0);
 
   const stats = [
-    { label: "הכנסות החודש", value: formatCurrencyILS(revenue) },
-    { label: "שעות כרטיסייה שנמכרו החודש", value: hoursSold },
-    { label: "הזמנות שנוצרו החודש", value: bookingsThisMonth ?? 0 },
-    { label: "מנויי ססיה פעילים", value: activeSessions ?? 0 },
-    { label: "מטפלים פעילים", value: activeTherapists ?? 0 },
+    { label: t.revenueThisMonth, value: formatCurrencyILS(revenue) },
+    { label: t.hoursSoldThisMonth, value: hoursSold },
+    { label: t.bookingsThisMonth, value: bookingsThisMonth ?? 0 },
+    { label: t.activeSessions, value: activeSessions ?? 0 },
+    { label: t.activeTherapists, value: activeTherapists ?? 0 },
   ];
 
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-        <h1 className="text-2xl font-semibold">דוחות</h1>
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
         <div className="grid gap-4 sm:grid-cols-2">
           {stats.map((s) => (
             <Card key={s.label} className="shadow-e1">

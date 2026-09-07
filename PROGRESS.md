@@ -757,11 +757,57 @@ CAPTCHA/bot-protection של Clerk, שרק דפדפן אמיתי יכול לעו�
   הוא שם השפה שעוברים **אליה** (כפתור בעברית מציג "English" ולהפך) —
   לחיצה אחת, בלי שלב "שמירה" נפרד.
 
+## ✅ 23. i18n — מעבר תרגום מלא + היפוך LTR אמיתי באנגלית
+
+משוב המשתמש אחרי סעיף 22: (א) "לא הכל תורגם" — נכון, רק Dashboard/Profile;
+(ב) "אנגלית = כל הממשק אנגלי, כולל הסרגל שנפתח משמאל" — כלומר לא
+מספיק לתרגם טקסט; הפריסה כולה צריכה להתהפך ל-LTR.
+
+### היפוך פריסה (AppShell)
+
+- ה-wrapper החיצוני של `AppShell` מקבל `dir`/`lang` ב-SSR — הסרגל קופץ
+  לשמאל באנגלית כבר ב-paint הראשון, בלי flash; כל ה-children (תוכן הדף)
+  יורשים את הכיוון, אז ה-wrappers הפר-דף מסעיף 22 הוסרו (מיותרים).
+- `useEffect` מסנכרן את `<html dir lang>` הגלובלי אחרי hydration (פס
+  גלילה של הדפדפן, portals) ומחזיר `rtl`/`he` ב-cleanup — הדפים הציבוריים
+  (login/signup/landing) נשארים עברית תמיד, וה-`<html>` ב-`app/layout.tsx`
+  לא נגע. **לא** הועבר ל-root layout בכוונה: זה היה מכניס `auth()` +
+  שאילתת profiles לכל דף ציבורי/סטטי (landing, /group, /privacy).
+- חצי הניווט בלוח (קודם/הבא) מתחלפים לפי כיוון הקריאה.
+- `text-right` קשיח בכותרות טבלאות → `text-start` (לוגי).
+
+### תרגום מלא — 19 המסכים הנותרים + client components + שגיאות
+
+`lib/i18n.ts` → תיקייה `lib/i18n/`: `index.ts` (ליבה, common, AppShell,
+Dashboard, Profile), `app.ts` (schedule/bookings/purchase/payments/sessions),
+`admin.ts` (9 מסכי אדמין), `context.tsx` (`LocaleProvider`/`useLocale` —
+AppShell מספק, client components כמו SlotGrid/SlotBuilder/AssignForm
+צורכים; server components מקבלים `profile.locale` ישירות). כל מילון
+מוגדר בעברית ו-`const EN: typeof HE` מחייב את האנגלית לאותה צורה —
+TypeScript תופס מפתח חסר.
+
+- `common`: סטטוסים משותפים (הזמנה/תשלום/ססיה/פרופיל/תפקיד), ימים
+  (קצר/ארוך + "יום X" רק בעברית), ו-`rpcErrors` — מפת קודי ה-RPC
+  (נספח ב') להודעות, דרך `translateRpcError()`; החליף 3 מפות מקומיות
+  כפולות (schedule/sessions/therapists actions).
+- server actions מזהים locale מ-`profile` (`requireTherapistProfile`/
+  `requireClinicAdmin`/`getAuthState`) ומחזירים הודעות מתורגמות; סיבת
+  דחייה ריקה של ססיה נשמרת ב-DB לפי שפת האדמין ("לא צוין"/"Not specified").
+- `dateFnsLocale()` — שמות ימים/חודשים (`EEEE`, `MMMM`) לפי שפה; פורמט
+  מספרי (`dd/MM/yyyy`) ומטבע נשארו כמוסכמה (ר' סעיף 21).
+
+**לא בהיקף (בכוונה)**: דפים ציבוריים (login/signup/landing/onboarding —
+"מאחורי login" בלבד), widgets של Clerk (`heIL`), ו-**מיילים**
+(`lib/email/templates.ts` — עדיין עברית לכל הנמענים; מועמד טבעי לשלב
+הבא: לבחור תבנית לפי `profiles.locale` של הנמען/ת).
+
+**אימות**: `tsc`, `eslint`, `vitest` (46), `npm run build` נקיים. סריקת
+regex לעברית מחוץ להערות ב-`app/(app)`, `app/(admin)`, `components/`
+מחזירה 0 שורות (נותרו רק הערות JSX רב-שורתיות בעברית — לא נראות למשתמש).
+
 ## מה הכי דחוף להמשיך בו
 
-1. תרגום שאר המסכים בהדרגה (schedule → bookings → purchase → sessions
-   → payments, ואז 9 מסכי אדמין) — אין רשימת סדר קבועה, ממשיכים לפי
-   מה שהכי בשימוש.
+1. מיילים לפי שפת הנמען/ת (`lib/email/templates.ts` עדיין עברית בלבד).
 2. וידוא בפועל שמיילי Resend נשלחים (התשתית קיימת, לא נבדק end-to-end).
 3. Sentry DSN — לא הוגדר בפרודקשן (`NEXT_PUBLIC_SENTRY_DSN` ריק).
 4. חיבור endpoint ה-webhook (`user.deleted`) בדשבורד של Clerk —

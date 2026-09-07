@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDateTimeHe } from "@/lib/time";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { dirFor, getDashboardDict, normalizeLocale } from "@/lib/i18n";
+import { getDashboardDict, normalizeLocale } from "@/lib/i18n";
 
 // "הבית" של מטפל/ת מחובר/ת — הועבר מ-"/" (ר' app/(app)/page.tsx) כי אותה
 // כתובת שימשה גם לדף הנחיתה הציבורי וגם למסך הזה, מה שהקשה על אבחון
@@ -34,7 +34,7 @@ export default async function DashboardPage() {
 
   return (
     <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale} isAdmin={isAdmin}>
-      <div dir={dirFor(locale)} lang={locale} className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
         <div>
           <h1 className="text-2xl font-semibold">{t.greeting(profile.full_name)}</h1>
           <p className="text-muted-foreground">{clinic?.name}</p>

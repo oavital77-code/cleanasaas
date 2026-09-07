@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { formatInTimeZone } from "date-fns-tz";
-import { he } from "date-fns/locale";
 import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
 import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES, DAY_START_HOUR, DAY_END_HOUR } from "@/lib/calendar";
 import { AppShell } from "@/components/app-shell";
@@ -12,9 +11,9 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { AssignForm } from "./assign-form";
 import { AdminSlotGrid, type AdminCellState, type GridColumn } from "./admin-slot-grid";
+import { type Locale, dateFnsLocale, getAdminBoardDict, getCommonDict, getScheduleDict, normalizeLocale } from "@/lib/i18n";
 
 type View = "day" | "week" | "month";
-const HEB_WEEKDAYS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 function viewHref(view: View, date: string, room?: string) {
   const params = new URLSearchParams({ view, date });
@@ -30,6 +29,10 @@ export default async function AdminBoardPage({
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
   const { date: dateParam, room: roomParam, time: timeParam, view: viewParam } = await searchParams;
+  const locale = normalizeLocale(profile.locale);
+  const t = getAdminBoardDict(locale);
+  const s = getScheduleDict(locale);
+  const c = getCommonDict(locale);
 
   const [{ data: clinic }, { data: rooms }, { data: users }] = await Promise.all([
     supabase.from("clinics").select("name, timezone, open_hour, close_hour").eq("id", clinicId).single(),
@@ -50,7 +53,7 @@ export default async function AdminBoardPage({
       <RealtimeAvailabilityRefresh clinicId={clinicId} />
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold">לוח מלא</h1>
+          <h1 className="text-2xl font-semibold">{t.title}</h1>
           <div className="flex overflow-hidden rounded-button border border-border-strong">
             {(["day", "week", "month"] as View[]).map((v) => (
               <Link
@@ -60,16 +63,16 @@ export default async function AdminBoardPage({
                   view === v ? "bg-violet-500 text-white" : "bg-surface hover:bg-subtle"
                 }`}
               >
-                {v === "day" ? "יום" : v === "week" ? "שבוע" : "חודש"}
+                {s.view[v]}
               </Link>
             ))}
           </div>
         </div>
 
         {!rooms || rooms.length === 0 ? (
-          <p className="text-muted-foreground">אין עדיין חדרים פעילים בקליניקה.</p>
+          <p className="text-muted-foreground">{c.noRoomsYet}</p>
         ) : view === "month" ? (
-          <MonthView date={date} today={today} timezone={timezone} clinicId={clinicId} />
+          <MonthView date={date} today={today} timezone={timezone} clinicId={clinicId} locale={locale} />
         ) : view === "week" ? (
           <WeekView
             date={date}
@@ -81,6 +84,7 @@ export default async function AdminBoardPage({
             users={users ?? []}
             openHour={openHour}
             closeHour={closeHour}
+            locale={locale}
           />
         ) : (
           <DayView
@@ -92,18 +96,19 @@ export default async function AdminBoardPage({
             users={users ?? []}
             openHour={openHour}
             closeHour={closeHour}
+            locale={locale}
           />
         )}
 
         <Card id="assign" className="shadow-e1 scroll-mt-6">
           <CardHeader>
-            <CardTitle className="text-base font-medium">שיבוץ ידני</CardTitle>
+            <CardTitle className="text-base font-medium">{t.manualAssignTitle}</CardTitle>
           </CardHeader>
           <CardContent>
             {users && users.length > 0 && rooms && rooms.length > 0 ? (
               <AssignForm rooms={rooms} users={users} initialRoomId={roomParam} initialDate={date} initialTime={timeParam} />
             ) : (
-              <p className="text-muted-foreground">צריך לפחות מטפל/ת אחד/ת וחדר פעיל אחד כדי לשבץ.</p>
+              <p className="text-muted-foreground">{t.needTherapistAndRoom}</p>
             )}
           </CardContent>
         </Card>
@@ -112,40 +117,43 @@ export default async function AdminBoardPage({
   );
 }
 
-function DayNav({ view, date, today, room }: { view: View; date: string; today: string; room?: string }) {
+function DayNav({ view, date, today, room, locale }: { view: View; date: string; today: string; room?: string; locale: Locale }) {
+  const s = getScheduleDict(locale);
   let prev: string, next: string, label: string, isCurrent: boolean;
   if (view === "week") {
     prev = addDays(date, -7);
     next = addDays(date, 7);
-    label = "שבוע";
+    label = s.view.week;
     isCurrent = startOfWeek(date) === startOfWeek(today);
   } else if (view === "month") {
     const [y, m] = date.split("-").map(Number);
     prev = `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, "0")}-01`;
     next = `${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, "0")}-01`;
-    label = "חודש";
+    label = s.view.month;
     isCurrent = date.slice(0, 7) === today.slice(0, 7);
   } else {
     prev = addDays(date, -1);
     next = addDays(date, 1);
-    label = "יום";
+    label = s.view.day;
     isCurrent = date === today;
   }
+  const PrevIcon = locale === "he" ? ChevronRight : ChevronLeft;
+  const NextIcon = locale === "he" ? ChevronLeft : ChevronRight;
   return (
     <div className="flex items-center gap-1">
       <Button asChild variant="outline" size="icon">
-        <Link href={viewHref(view, prev, room)} aria-label={`${label} קודם`}>
-          <ChevronRight className="size-4" />
+        <Link href={viewHref(view, prev, room)} aria-label={s.prevAria(label)}>
+          <PrevIcon className="size-4" />
         </Link>
       </Button>
       <Button asChild variant="outline" size="icon">
-        <Link href={viewHref(view, next, room)} aria-label={`${label} הבא`}>
-          <ChevronLeft className="size-4" />
+        <Link href={viewHref(view, next, room)} aria-label={s.nextAria(label)}>
+          <NextIcon className="size-4" />
         </Link>
       </Button>
       {!isCurrent && (
         <Button asChild variant="ghost" size="sm">
-          <Link href={viewHref(view, today, room)}>היום</Link>
+          <Link href={viewHref(view, today, room)}>{s.today}</Link>
         </Button>
       )}
     </div>
@@ -199,6 +207,7 @@ async function DayView({
   users,
   openHour,
   closeHour,
+  locale,
 }: {
   date: string;
   today: string;
@@ -208,6 +217,7 @@ async function DayView({
   users: { id: string; full_name: string }[];
   openHour: number;
   closeHour: number;
+  locale: Locale;
 }) {
   const supabase = await createClient();
   const dayStart = zonedDateTimeToUtc(date, "00:00", timezone);
@@ -242,9 +252,11 @@ async function DayView({
     <>
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium tabular-nums">
-          {formatInTimeZone(zonedDateTimeToUtc(date, "12:00", timezone), timezone, "EEEE, dd/MM/yyyy", { locale: he })}
+          {formatInTimeZone(zonedDateTimeToUtc(date, "12:00", timezone), timezone, "EEEE, dd/MM/yyyy", {
+            locale: dateFnsLocale(locale),
+          })}
         </span>
-        <DayNav view="day" date={date} today={today} />
+        <DayNav view="day" date={date} today={today} locale={locale} />
       </div>
 
       <Card className="shadow-e1 overflow-hidden p-0">
@@ -280,6 +292,7 @@ async function WeekView({
   users,
   openHour,
   closeHour,
+  locale,
 }: {
   date: string;
   today: string;
@@ -290,8 +303,10 @@ async function WeekView({
   users: { id: string; full_name: string }[];
   openHour: number;
   closeHour: number;
+  locale: Locale;
 }) {
   const supabase = await createClient();
+  const c = getCommonDict(locale);
   const days = weekDays(date);
   const rangeStart = zonedDateTimeToUtc(days[0], "00:00", timezone);
   const rangeEnd = zonedDateTimeToUtc(addDays(days[6], 1), "00:00", timezone);
@@ -327,7 +342,7 @@ async function WeekView({
           {formatInTimeZone(zonedDateTimeToUtc(days[0], "12:00", timezone), timezone, "dd/MM")} –{" "}
           {formatInTimeZone(zonedDateTimeToUtc(days[6], "12:00", timezone), timezone, "dd/MM/yyyy")}
         </span>
-        <DayNav view="week" date={date} today={today} room={selectedRoomId} />
+        <DayNav view="week" date={date} today={today} room={selectedRoomId} locale={locale} />
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -354,7 +369,7 @@ async function WeekView({
                 key: d,
                 roomId: selectedRoomId,
                 date: d,
-                header: `${HEB_WEEKDAYS[i]} · ${d.slice(8, 10)}/${d.slice(5, 7)}`,
+                header: `${c.weekdaysShort[i]} · ${d.slice(8, 10)}/${d.slice(5, 7)}`,
               }),
             )}
             cells={buildAdminCellStates(
@@ -377,13 +392,17 @@ async function MonthView({
   today,
   timezone,
   clinicId,
+  locale,
 }: {
   date: string;
   today: string;
   timezone: string;
   clinicId: string;
+  locale: Locale;
 }) {
   const supabase = await createClient();
+  const t = getAdminBoardDict(locale);
+  const c = getCommonDict(locale);
   const weeks = monthGrid(date);
   const rangeStart = zonedDateTimeToUtc(weeks[0][0], "00:00", timezone);
   const rangeEnd = zonedDateTimeToUtc(addDays(weeks[weeks.length - 1][6], 1), "00:00", timezone);
@@ -406,9 +425,11 @@ async function MonthView({
     <>
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">
-          {formatInTimeZone(zonedDateTimeToUtc(`${date.slice(0, 7)}-01`, "12:00", timezone), timezone, "MMMM yyyy", { locale: he })}
+          {formatInTimeZone(zonedDateTimeToUtc(`${date.slice(0, 7)}-01`, "12:00", timezone), timezone, "MMMM yyyy", {
+            locale: dateFnsLocale(locale),
+          })}
         </span>
-        <DayNav view="month" date={date} today={today} />
+        <DayNav view="month" date={date} today={today} locale={locale} />
       </div>
 
       <Card className="shadow-e1 overflow-hidden p-0">
@@ -416,7 +437,7 @@ async function MonthView({
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-border bg-muted">
-                {HEB_WEEKDAYS.map((d) => (
+                {c.weekdaysShort.map((d) => (
                   <th key={d} className="p-2 text-center text-xs font-normal text-muted-foreground">
                     {d}
                   </th>
@@ -438,7 +459,7 @@ async function MonthView({
                           } ${!inMonth ? "opacity-40" : ""}`}
                         >
                           <span className="tabular-nums text-xs font-medium">{d.slice(8, 10)}</span>
-                          {count > 0 && <span className="text-[10px] text-muted-foreground">{count} הזמנות</span>}
+                          {count > 0 && <span className="text-[10px] text-muted-foreground">{t.bookingsCount(count)}</span>}
                         </Link>
                       </td>
                     );

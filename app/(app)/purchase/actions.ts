@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthState } from "@/lib/auth/guards";
+import { getPurchaseDict, normalizeLocale } from "@/lib/i18n";
 
 export type ClaimState = { message?: string };
 
@@ -11,14 +13,16 @@ export type ClaimState = { message?: string };
 // לא יוצר תשלום/כרטיסייה בעצמו.
 export async function claimPendingPurchaseAction(): Promise<ClaimState> {
   const supabase = await createClient();
+  const { profile } = await getAuthState();
+  const t = getPurchaseDict(normalizeLocale(profile?.locale));
   const { data, error } = await supabase.rpc("claim_woo_pending_purchase");
   if (error) {
-    return { message: "לא נמצאה רכישה ממתינה לשיוך כרגע." };
+    return { message: t.noPendingPurchase };
   }
   revalidatePath("/purchase");
   revalidatePath("/");
   const claimed = data?.[0]?.claimed_count ?? 0;
   return {
-    message: claimed > 0 ? `שויכה רכישה אחת (${data?.[0]?.hours_granted ?? 0} שעות נוספו).` : "לא נמצאה רכישה ממתינה לשיוך כרגע.",
+    message: claimed > 0 ? t.claimed(data?.[0]?.hours_granted ?? 0) : t.noPendingPurchase,
   };
 }

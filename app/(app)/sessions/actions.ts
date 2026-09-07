@@ -7,6 +7,7 @@ import { requireTherapistProfile } from "@/lib/auth/guards";
 import { sendEmail } from "@/lib/email/resend";
 import { sessionRequestedAdminEmail } from "@/lib/email/templates";
 import { getAdminEmails } from "@/lib/email/recipients";
+import { getSessionsDict, normalizeLocale, translateRpcError } from "@/lib/i18n";
 
 export type RequestSessionState = { error?: string };
 
@@ -16,6 +17,8 @@ export type RequestSessionState = { error?: string };
 export async function requestSessionAction(_prevState: RequestSessionState, formData: FormData): Promise<RequestSessionState> {
   const { profile } = await requireTherapistProfile();
   const supabase = await createClient();
+  const locale = normalizeLocale(profile.locale);
+  const t = getSessionsDict(locale);
   const slotsRaw = String(formData.get("slots") ?? "[]");
   const startDate = String(formData.get("start_date") ?? "") || undefined;
 
@@ -23,7 +26,7 @@ export async function requestSessionAction(_prevState: RequestSessionState, form
   try {
     slots = JSON.parse(slotsRaw);
   } catch {
-    return { error: "משבצות לא תקינות" };
+    return { error: t.invalidSlots };
   }
 
   const { data, error } = await supabase
@@ -34,7 +37,7 @@ export async function requestSessionAction(_prevState: RequestSessionState, form
     .single();
 
   if (error) {
-    return { error: translateSessionError(error.message) };
+    return { error: translateRpcError(locale, error.message, t.requestError) };
   }
 
   if (data) {
@@ -66,20 +69,4 @@ export async function requestCancellationAction(formData: FormData) {
   if (!subscriptionId) return;
   await supabase.rpc("request_subscription_cancellation", { p_subscription_id: subscriptionId });
   revalidatePath("/sessions");
-}
-
-function translateSessionError(code: string): string {
-  const map: Record<string, string> = {
-    SESSIONS_NOT_ENABLED: "מודל ססיה לא פעיל בקליניקה שלכם",
-    SESSION_HOURS_FIXED: "סך השעות השבועיות חייב להיות שווה בדיוק להיקף הקבוע",
-    INVALID_SLOT: "משבצת לא תקינה — חייבת להיות מיושרת ל-30 דקות",
-    INVALID_START_DATE: "תאריך התחלה לא יכול להיות בעבר",
-    ROOM_UNAVAILABLE: "החדר שנבחר לא פעיל",
-    USER_SUSPENDED: "החשבון מושעה",
-    CLINIC_SUSPENDED: "הקליניקה מושעית זמנית",
-  };
-  for (const key of Object.keys(map)) {
-    if (code.includes(key)) return map[key];
-  }
-  return "שגיאה בשליחת הבקשה";
 }

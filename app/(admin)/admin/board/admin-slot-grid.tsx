@@ -14,6 +14,8 @@ import {
   STICKY_HOUR,
   STICKY_CORNER,
 } from "@/components/calendar-grid-styles";
+import { getAdminBoardDict, getCommonDict } from "@/lib/i18n";
+import { useLocale } from "@/lib/i18n/context";
 import { adminCancelBookingAction, adminAssignBookingAction } from "./actions";
 
 // גרסת אדמין ל-SlotGrid: אותו מנגנון בחירת טווח בשתי לחיצות, אבל התא
@@ -41,6 +43,9 @@ export function AdminSlotGrid({
   cells: AdminCellState[][];
   users: { id: string; full_name: string }[];
 }) {
+  const locale = useLocale();
+  const t = getAdminBoardDict(locale);
+  const c = getCommonDict(locale);
   const [selection, setSelection] = useState<{ colIdx: number; startIdx: number; endIdx: number } | null>(null);
   const [userId, setUserId] = useState(users[0]?.id ?? "");
   const [note, setNote] = useState("");
@@ -118,10 +123,10 @@ export function AdminSlotGrid({
         >
           <thead>
             <tr>
-              <th className={`${STICKY_CORNER} w-16 p-2 text-xs font-normal text-muted-foreground`}>שעה</th>
-              {columns.map((c) => (
-                <th key={c.key} className={`${STICKY_HEAD} p-2 text-center font-medium`}>
-                  {c.header}
+              <th className={`${STICKY_CORNER} w-16 p-2 text-xs font-normal text-muted-foreground`}>{t.hourColumn}</th>
+              {columns.map((col) => (
+                <th key={col.key} className={`${STICKY_HEAD} p-2 text-center font-medium`}>
+                  {col.header}
                 </th>
               ))}
             </tr>
@@ -146,7 +151,7 @@ export function AdminSlotGrid({
                             <button
                               type="submit"
                               className="-me-1 flex size-8 shrink-0 items-center justify-center rounded-button text-violet-500 hover:text-danger md:size-5"
-                              title="ביטול"
+                              title={t.cancelTitle}
                             >
                               <X className="size-3.5" />
                             </button>
@@ -161,7 +166,7 @@ export function AdminSlotGrid({
                         <div
                           className={`flex ${CELL_HEIGHT} items-center justify-center rounded-field bg-subtle text-xs text-muted-foreground`}
                         >
-                          חסום
+                          {t.blocked}
                         </div>
                       </td>
                     );
@@ -177,7 +182,7 @@ export function AdminSlotGrid({
                             : "border-success-border bg-success-bg text-success-fg hover:bg-success/20"
                         }`}
                       >
-                        {isSelected ? "נבחר" : "פנוי"}
+                        {isSelected ? t.selected : t.available}
                       </button>
                     </td>
                   );
@@ -196,11 +201,11 @@ export function AdminSlotGrid({
             <div className="text-sm">
               <span className="font-medium">{columns[selection.colIdx].header}</span>
               <span className="text-muted-foreground"> · {slots[selLo]}–{addHalfHour(slots[selHi])}</span>
-              <span className="text-muted-foreground"> · {(selHi - selLo + 1) * 0.5} שעות</span>
+              <span className="text-muted-foreground"> · {c.hoursN((selHi - selLo + 1) * 0.5)}</span>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
               <div className="flex-1 sm:min-w-[10rem]">
-                <Select value={userId} onChange={(e) => setUserId(e.target.value)} aria-label="עבור מי לקבוע">
+                <Select value={userId} onChange={(e) => setUserId(e.target.value)} aria-label={t.forWhomAria}>
                   {users.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.full_name}
@@ -209,7 +214,7 @@ export function AdminSlotGrid({
                 </Select>
               </div>
               <div className="flex-1 sm:min-w-[8rem]">
-                <Input placeholder="הערה (לא חובה)" value={note} onChange={(e) => setNote(e.target.value)} />
+                <Input placeholder={t.notePlaceholder} value={note} onChange={(e) => setNote(e.target.value)} />
               </div>
               <div className="flex items-center gap-2">
                 {error && <span className="text-xs text-destructive">{error}</span>}
@@ -218,7 +223,7 @@ export function AdminSlotGrid({
                   onClick={() => setSelection(null)}
                   className="flex h-10 shrink-0 items-center justify-center rounded-button border border-border-strong px-3 text-sm hover:bg-subtle md:h-9"
                 >
-                  ביטול
+                  {t.cancel}
                 </button>
                 <button
                   type="button"
@@ -226,7 +231,7 @@ export function AdminSlotGrid({
                   disabled={pending || !userId}
                   className="flex h-10 shrink-0 items-center justify-center rounded-button bg-violet-600 px-4 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60 md:h-9"
                 >
-                  {pending ? "משבץ/ת…" : "שיבוץ"}
+                  {pending ? t.assigning : t.assign}
                 </button>
               </div>
             </div>

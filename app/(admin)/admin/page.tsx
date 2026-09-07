@@ -5,10 +5,12 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatInTimeZone } from "date-fns-tz";
 import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
+import { getAdminHomeDict, normalizeLocale } from "@/lib/i18n";
 
 export default async function AdminHomePage() {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
+  const t = getAdminHomeDict(normalizeLocale(profile.locale));
 
   const { data: clinic } = await supabase.from("clinics").select("name, timezone").eq("id", clinicId).single();
   const timezone = clinic?.timezone ?? DEFAULT_TIMEZONE;
@@ -35,16 +37,16 @@ export default async function AdminHomePage() {
     ]);
 
   const widgets = [
-    { label: "הזמנות היום", value: todayBookings ?? 0, href: "/admin/board" },
-    { label: "בקשות ססיה ממתינות", value: pendingSessions ?? 0, href: "/admin/sessions" },
-    { label: "מטפלים פעילים", value: therapistsCount ?? 0, href: "/admin/therapists" },
-    { label: "יתרה נמוכה (מתחת ל-2 שעות)", value: (lowBalanceCards ?? []).length, href: "/admin/therapists" },
+    { label: t.todayBookings, value: todayBookings ?? 0, href: "/admin/board" },
+    { label: t.pendingSessions, value: pendingSessions ?? 0, href: "/admin/sessions" },
+    { label: t.activeTherapists, value: therapistsCount ?? 0, href: "/admin/therapists" },
+    { label: t.lowBalance, value: (lowBalanceCards ?? []).length, href: "/admin/therapists" },
   ];
 
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <h1 className="text-2xl font-semibold">מסך הבית</h1>
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {widgets.map((w) => (

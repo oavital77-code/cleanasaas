@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { zonedDateTimeToUtc, DEFAULT_TIMEZONE } from "@/lib/time";
+import { getAdminBoardDict, getCommonDict, normalizeLocale } from "@/lib/i18n";
 
 export async function adminCancelBookingAction(formData: FormData) {
   await requireClinicAdmin();
@@ -19,8 +20,10 @@ export async function adminCancelBookingAction(formData: FormData) {
 export type AssignState = { error?: string };
 
 export async function adminAssignBookingAction(_prev: AssignState, formData: FormData): Promise<AssignState> {
-  const { clinicId } = await requireClinicAdmin();
+  const { clinicId, profile } = await requireClinicAdmin();
   const supabase = await createClient();
+  const locale = normalizeLocale(profile.locale);
+  const t = getAdminBoardDict(locale);
 
   const userId = String(formData.get("user_id") ?? "");
   const roomId = String(formData.get("room_id") ?? "");
@@ -28,7 +31,7 @@ export async function adminAssignBookingAction(_prev: AssignState, formData: For
   const startTime = String(formData.get("start_time") ?? "");
   const durationHours = Number(formData.get("duration_hours") ?? 1);
   const note = String(formData.get("note") ?? "");
-  if (!userId || !roomId || !date || !startTime) return { error: "נא למלא את כל השדות" };
+  if (!userId || !roomId || !date || !startTime) return { error: getCommonDict(locale).fillAllFields };
 
   const { data: clinic } = await supabase.from("clinics").select("timezone").eq("id", clinicId).maybeSingle();
   const timezone = clinic?.timezone ?? DEFAULT_TIMEZONE;
@@ -43,7 +46,7 @@ export async function adminAssignBookingAction(_prev: AssignState, formData: For
     p_note: note || undefined,
   });
   if (error) {
-    return { error: error.message.includes("ROOM_TAKEN") ? "המשבצת תפוסה" : "שגיאה בשיבוץ" };
+    return { error: error.message.includes("ROOM_TAKEN") ? t.slotTaken : t.assignError };
   }
 
   revalidatePath("/admin/board");

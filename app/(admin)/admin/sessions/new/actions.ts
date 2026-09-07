@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { notifyTherapistOfApproval } from "@/app/(admin)/admin/sessions/actions";
+import { getAdminSessionsDict, normalizeLocale } from "@/lib/i18n";
 
 export type AdminCreateSessionState = { error?: string };
 
@@ -16,8 +17,9 @@ export async function adminCreateSessionAction(
   _prev: AdminCreateSessionState,
   formData: FormData,
 ): Promise<AdminCreateSessionState> {
-  const { clinicId } = await requireClinicAdmin();
+  const { clinicId, profile } = await requireClinicAdmin();
   const supabase = await createClient();
+  const t = getAdminSessionsDict(normalizeLocale(profile.locale));
 
   const userId = String(formData.get("user_id") ?? "");
   const slotsRaw = String(formData.get("slots") ?? "[]");
@@ -25,13 +27,13 @@ export async function adminCreateSessionAction(
   const termRaw = formData.get("term_months");
   const termMonths = termRaw ? Number(termRaw) : undefined;
 
-  if (!userId) return { error: "יש לבחור מטפל/ת" };
+  if (!userId) return { error: t.chooseTherapist };
 
   let slots: unknown;
   try {
     slots = JSON.parse(slotsRaw);
   } catch {
-    return { error: "משבצות לא תקינות" };
+    return { error: t.invalidSlots };
   }
 
   const { data, error } = await supabase
@@ -44,7 +46,7 @@ export async function adminCreateSessionAction(
     .single();
 
   if (error) {
-    return { error: error.message.includes("USER_SUSPENDED") ? "המטפל/ת מושעה" : "שגיאה בקביעת הססיה" };
+    return { error: error.message.includes("USER_SUSPENDED") ? t.therapistSuspended : t.createError };
   }
 
   if (data) {

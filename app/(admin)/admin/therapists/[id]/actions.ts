@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinicAdmin } from "@/lib/auth/guards";
+import { normalizeLocale, translateRpcError } from "@/lib/i18n";
 
 export async function updateRoleStatusAction(formData: FormData) {
   const { clinicId } = await requireClinicAdmin();
@@ -37,7 +38,7 @@ export async function updateAdminNoteAction(formData: FormData) {
 }
 
 export async function grantBonusHoursAction(formData: FormData) {
-  await requireClinicAdmin();
+  const { profile } = await requireClinicAdmin();
   const userId = String(formData.get("user_id") ?? "");
   const hours = Number(formData.get("hours"));
   const note = String(formData.get("note") ?? "");
@@ -46,9 +47,9 @@ export async function grantBonusHoursAction(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("grant_bonus_hours", { p_user_id: userId, p_hours: hours, p_note: note });
   if (error) {
-    if (error.message.includes("BONUS_HOURS_CAP_EXCEEDED")) throw new Error("אין אפשרות להעניק יותר מ-20 שעות בפעולה אחת");
-    if (error.message.includes("BONUS_HOURS_BLOCKED_DURING_TRIAL")) throw new Error("לא ניתן להעניק שעות מתנה בזמן תקופת ניסיון");
-    throw new Error(error.message);
+    // BONUS_HOURS_CAP_EXCEEDED / BONUS_HOURS_BLOCKED_DURING_TRIAL — מתורגמים
+    // דרך המילון המשותף; קוד לא מוכר נזרק כמו שהוא.
+    throw new Error(translateRpcError(normalizeLocale(profile.locale), error.message, error.message));
   }
 
   revalidatePath(`/admin/therapists/${userId}`);
