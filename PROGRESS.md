@@ -58,6 +58,12 @@
 (Stripe וכו') — הטבלאות/האכיפה קיימות, אבל אין checkout בפועל לתשלום
 הקליניקה עצמה על המנוי שלה.
 
+**החלטת תמחור (8.9.2026):** מסלול בתשלום אחד — **₪209 לחודש כולל מע״מ** —
+אחרי 30 ימי ניסיון. ה-limits של basic/pro נשארים כמנגנון אכיפה בלבד; לא
+מוצגים ללקוח כשני מסלולים. כשייבנה ה-checkout, לשימוש חוזר במתאם PayPlus של
+Cleana+ (`click-na/src/lib/payplus.ts`): דף תשלום מאוחסן עם הוראת קבע,
+אימות כל callback מול `PaymentPages/ipn`, אידמפוטנטיות לפי `transaction_uid`.
+
 ## ✅ 6. RPCs נותרים + Superadmin
 
 ססיות: `request_session`, `approve_session`/`reject_session`,
