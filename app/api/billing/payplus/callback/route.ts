@@ -54,3 +54,4 @@ export async function POST(request: Request) {
   await notifyPlatformPaymentOutcome({ clinicId: transaction.moreInfo, transactionUid: transaction.transactionUid }, outcome);
   return NextResponse.json({ outcome });
 }
+

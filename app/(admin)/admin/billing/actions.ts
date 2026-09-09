@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinicAdmin } from "@/lib/auth/guards";
-import { createPlatformCheckout, platformBillingAvailability, stopPlatformRecurring } from "@/lib/platform-billing";
+import { createPlatformCheckout, platformBillingAvailability } from "@/lib/platform-billing";
 import { normalizeLocale } from "@/lib/i18n";
 
 // פעולות שרת ולא route handlers: /api מוחרג מ-clerkMiddleware, ורק כאן יש
@@ -20,7 +20,6 @@ export async function startPlatformCheckoutAction() {
   const { data: clinic } = await supabase.from("clinics").select("name").eq("id", clinicId).single();
 
   const checkout = await createPlatformCheckout(availability.cfg, {
-    clinicId,
     clinicName: clinic?.name ?? "Cleana",
     ownerName: profile.full_name,
     ownerEmail: profile.email,
@@ -42,21 +41,13 @@ export async function cancelPlatformSubscriptionAction() {
 
   const { data: sub } = await supabase
     .from("platform_subscriptions")
-    .select("status, cancel_at_period_end, payplus_recurring_uid")
+    .select("status, cancel_at_period_end")
     .eq("clinic_id", clinicId)
     .maybeSingle();
   if (!sub || sub.status !== "active" || sub.cancel_at_period_end) return;
 
-  // קודם PayPlus, ואז הסימון אצלנו: אם העצירה נכשלת, כלום לא משתנה —
-  // עדיף מנוי שעדיין מסומן פעיל מאשר מנוי "מבוטל" שממשיך להתחייב.
-  if (sub.payplus_recurring_uid) {
-    try {
-      await stopPlatformRecurring(sub.payplus_recurring_uid);
-    } catch (err) {
-      console.error("[platform-billing] stopRecurring failed", err);
-      redirect("/admin/billing?returned=error");
-    }
-  }
+  // אין מה להגיד ל-PayPlus: לוח החיובים שלנו, ושורה מבוטלת לא מחויבת לעולם
+  // (platform_claim_due_renewals מדלגת על cancel_at_period_end).
   const { error } = await supabase.rpc("platform_request_cancellation");
   if (error) redirect("/admin/billing?returned=error");
   revalidatePath("/admin/billing");

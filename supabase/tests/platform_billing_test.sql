@@ -34,9 +34,9 @@ select set_config('cleana.test_role', 'service_role', true);
 select set_config('request.jwt.claims', '', true);
 
 do $$ declare r text; begin
-  r := platform_apply_payment((select clinic_id from t_c), 'tx_1', '000', 209, 209, 'req_1', 'rec_1', 'cus_1', '{"data":{"ok":true}}'::jsonb);
-  assert r = 'activated', 'first payment activates, got ' || r;
-  r := platform_apply_payment((select clinic_id from t_c), 'tx_1', '000', 209, 209, 'req_1', 'rec_1');
+  r := platform_apply_payment(null, 'tx_1', '000', 209, 209, 'req_1', 'tok_1', 'cus_1', 'term_1', 'cash_1', '{"data":{"ok":true}}'::jsonb);
+  assert r = 'activated', 'first payment activates (found by the pending page), got ' || r;
+  r := platform_apply_payment((select clinic_id from t_c), 'tx_1', '000', 209, 209, 'req_1', 'tok_1');
   assert r = 'duplicate', 'same transaction twice is a no-op, got ' || r;
 end $$;
 do $$ declare s platform_subscriptions%rowtype; c clinics%rowtype; begin
@@ -44,14 +44,15 @@ do $$ declare s platform_subscriptions%rowtype; c clinics%rowtype; begin
   select * into c from clinics where id = (select clinic_id from t_c);
   assert s.status = 'active' and s.plan = 'pro', 'active pro';
   assert s.current_period_end > now() + interval '27 days', 'a month ahead';
-  assert s.payplus_recurring_uid = 'rec_1' and s.pending_page_request_uid is null and s.grace_ends_at is null, 'handles stored, pending cleared';
+  assert s.payplus_token_uid = 'tok_1' and s.payplus_customer_uid = 'cus_1' and s.payplus_terminal_uid = 'term_1' and s.payplus_cashier_uid = 'cash_1', 'card + account ids stored';
+  assert s.pending_page_request_uid is null and s.grace_ends_at is null, 'pending cleared';
   assert c.status = 'active', 'clinic un-suspended';
   assert (select count(*) from platform_payments where clinic_id = s.clinic_id) = 1, 'one payment row';
 end $$;
 
 -- 4. סכום שגוי: נרשם, לא פותח כלום; קליניקה לא ידועה: מתעלמים
 do $$ declare r text; begin
-  r := platform_apply_payment(null, 'tx_wrong', '000', 5, 209, null, 'rec_1');
+  r := platform_apply_payment(null, 'tx_wrong', '000', 5, 209, null, 'tok_1');
   assert r = 'amount_mismatch', 'wrong amount, got ' || r;
   r := platform_apply_payment('00000000-0000-0000-0000-000000000000', 'tx_nobody', '000', 209, 209);
   assert r = 'unknown_clinic', 'unknown clinic, got ' || r;
@@ -59,14 +60,43 @@ end $$;
 
 -- 5. חידוש שנכשל → חסד; חידוש מאוחר מרפא
 do $$ declare r text; s platform_subscriptions%rowtype; begin
-  r := platform_apply_payment(null, 'tx_fail', '004', 209, 209, null, 'rec_1');
-  assert r = 'payment_failed', 'failed renewal, got ' || r;
+  r := platform_apply_payment(null, 'tx_fail', '004', 209, 209, null, 'tok_1');
+  assert r = 'payment_failed', 'failed renewal (found by token), got ' || r;
   select * into s from platform_subscriptions where clinic_id = (select clinic_id from t_c);
   assert s.status = 'past_due' and s.grace_ends_at is not null, 'grace started';
-  r := platform_apply_payment(null, 'tx_late', '000', 209, 209, null, 'rec_1');
+  -- ניסיון חוזר שנכשל בתוך החסד: המועד לא זז
+  r := platform_apply_payment((select clinic_id from t_c), 'tx_fail2', '004', 209, 209);
+  assert r = 'payment_failed', 'retry failed, got ' || r;
+  assert (select grace_ends_at from platform_subscriptions where clinic_id = (select clinic_id from t_c)) = s.grace_ends_at, 'grace deadline unchanged';
+  r := platform_apply_payment((select clinic_id from t_c), 'tx_late', '000', 209, 209);
   assert r = 'activated', 'late renewal heals, got ' || r;
   select * into s from platform_subscriptions where clinic_id = (select clinic_id from t_c);
   assert s.status = 'active' and s.grace_ends_at is null, 'active again';
+end $$;
+
+-- 5b. תפיסת חידושים: פעיל שתקופתו נגמרה נתפס פעם אחת ב-20 שעות; מבוטל לא
+reset role;
+update platform_subscriptions set current_period_end = now() - interval '1 hour', last_charge_attempt_at = null where clinic_id = (select clinic_id from t_c);
+select set_config('cleana.test_role', 'service_role', true);
+do $$ declare n int; r record; begin
+  select count(*) into n from platform_claim_due_renewals(now()) d where d.clinic_id = (select clinic_id from t_c);
+  assert n = 1, 'due row claimed once, got ' || n;
+  select * into r from platform_subscriptions where clinic_id = (select clinic_id from t_c);
+  assert r.last_charge_attempt_at is not null, 'attempt stamped';
+  select count(*) into n from platform_claim_due_renewals(now()) d where d.clinic_id = (select clinic_id from t_c);
+  assert n = 0, 'not claimed twice the same day, got ' || n;
+  select count(*) into n from platform_claim_due_renewals(now() + interval '1 day') d where d.clinic_id = (select clinic_id from t_c);
+  assert n = 1, 'claimed again next day, got ' || n;
+  -- הטוקן והמזהים שנשמרו חוזרים עם השורה
+  select d.token_uid, d.terminal_uid into r from platform_claim_due_renewals(now() + interval '2 days') d where d.clinic_id = (select clinic_id from t_c);
+  assert r.token_uid = 'tok_1' and r.terminal_uid = 'term_1', 'token and terminal returned';
+end $$;
+reset role;
+update platform_subscriptions set current_period_end = now() + interval '20 days', last_charge_attempt_at = null where clinic_id = (select clinic_id from t_c);
+select set_config('cleana.test_role', 'authenticated', true);
+do $$ declare v_failed boolean := false; begin
+  begin perform platform_claim_due_renewals(now()); exception when others then v_failed := true; end;
+  assert v_failed, 'admin must not claim renewals';
 end $$;
 
 -- 6. ביטול ע"י האדמין → בתוקף בסוף התקופה; ה-cron סוגר

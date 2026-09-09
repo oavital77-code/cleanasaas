@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { withCronAlert } from "@/lib/cron/guard";
+import { chargePlatformRenewals } from "@/lib/platform-billing";
+import { notifyPlatformPaymentOutcome } from "@/lib/platform-billing-emails";
 
 // כל שעה — ניקוי holds פגי תוקף של ססיות + סגירת ביטולים/פקיעות מנוי, וכן
 // פקיעת trial ל-suspended (כל הקליניקות, ר' spec §7/§14).
@@ -17,6 +19,17 @@ export const GET = withCronAlert("cleanup-holds", async () => {
     return NextResponse.json({ error: "TRIAL_EXPIRY_FAILED" }, { status: 500 });
   }
 
+  // חידושים: חיוב הכרטיסים השמורים שתקופתם נגמרה (וניסיון חוזר בחסד).
+  // כישלון של PayPlus כולו לא עוצר את שאר ה-cron — נספר, וננסה שוב מחר.
+  let renewals: Awaited<ReturnType<typeof chargePlatformRenewals>> | null = null;
+  try {
+    renewals = await chargePlatformRenewals(new Date(), {
+      onOutcome: (clinicId, outcome) => notifyPlatformPaymentOutcome({ clinicId, transactionUid: null }, outcome),
+    });
+  } catch (err) {
+    console.error("[cron:cleanup-holds] renewals failed", err);
+  }
+
   // מנויים ששולמו: ביטולים שהבשילו, חידושים שלא אושרו, חסד שנגמר
   // (ר' platform_billing_lifecycle במיגרציה 20260909000001).
   const { data: billing, error: billingError } = await supabase.rpc("platform_billing_lifecycle");
@@ -24,5 +37,5 @@ export const GET = withCronAlert("cleanup-holds", async () => {
     return NextResponse.json({ error: "BILLING_LIFECYCLE_FAILED" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, billing: billing?.[0] ?? null });
+  return NextResponse.json({ ok: true, renewals, billing: billing?.[0] ?? null });
 });

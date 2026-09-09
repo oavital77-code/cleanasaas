@@ -56,10 +56,17 @@
 `accept_therapist_invite` (לא רק ב-UI). `expire_trial_subscriptions` (cron)
 מעביר trial שפג ל-`suspended`.
 
-**✅ סליקה (9.9.2026, מיגרציה `20260909000001_platform_billing_payplus`):**
-PayPlus, דף תשלום מאוחסן עם הוראת קבע (`charge_method 3`). `/admin/billing`
+**✅ סליקה (9.9.2026, מיגרציות `20260909000001` … `20260909000004`):**
+PayPlus, דף תשלום מאוחסן שמחייב את החודש הראשון ושומר את הכרטיס כטוקן
+(`charge_method 1` + `create_token`). **חידושים שלנו, לא של PayPlus:** מודול
+"הוראות קבע" לא מופעל על המסוף, אז ה-cron (`cleanup-holds`) קורא ל-
+`platform_claim_due_renewals` (תופס שורות שתקופתן נגמרה, פעם ב-20 שעות) ומחייב
+כל טוקן ב-`Transactions/Charge` (`use_token`, עם `terminal_uid`/`cashier_uid`
+שנלכדו מה-callback של התשלום הראשון; `PAYPLUS_TERMINAL_UID`/`PAYPLUS_CASHIER_UID`
+דורסים). סירוב → חסד 7 ימים עם ניסיון חוזר יומי; `more_info` מוגבל ל-19 תווים
+ולכן הוא תווית — הזיהוי דרך `pending_page_request_uid`/הטוקן. `/admin/billing`
 (פעולות שרת: `startPlatformCheckoutAction` → `platform_start_checkout`;
-ביטול: עוצר ב-PayPlus ואז `platform_request_cancellation`). ה-callback
+ביטול: `platform_request_cancellation` בלבד — שורה מבוטלת לא נתפסת לחיוב). ה-callback
 (`/api/billing/payplus/callback`, ציבורי) מאמת כל עסקה מול
 `PaymentPages/ipn` ורק אז `platform_apply_payment` (service-role בלבד):
 `platform_payments` ייחודי לפי `transaction_uid` → כפילות = no-op; הצלחה

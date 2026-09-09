@@ -16,7 +16,7 @@ export async function notifyPlatformPaymentOutcome(
   if (outcome !== "activated" && outcome !== "payment_failed") return;
   try {
     const supabase = createAdminClient();
-    // ה-RPC מצא את הקליניקה גם בלי more_info (לפי דף התשלום / הוראת הקבע) ורשם
+    // ה-RPC מצא את הקליניקה גם בלי more_info (לפי דף התשלום / הטוקן) ורשם
     // אותה על העסקה — משם לוקחים אותה כשה-callback לא נשא אותה.
     const clinicId =
       ref.clinicId ??
