@@ -11,6 +11,11 @@
 -- (לא assert_service_or_admin): אדמין של קליניקה שיכול "להפעיל" תשלום לעצמו
 -- הוא בדיוק החור שאסור לפתוח. השאר — is_admin() על הקליניקה שלו בלבד.
 
+-- platform_audit_log.actor_id עדיין הצביע ל-auth.users — טבלה שלא מאוכלסת מאז
+-- המעבר ל-Clerk (ה-FKs של profiles ו-platform_admins הוסרו ב-20260905000007 /
+-- 20260906000001). המזהה הוא profiles.id (app_user_id()), כמו ב-audit_log.
+alter table platform_audit_log drop constraint if exists platform_audit_log_actor_id_fkey;
+
 alter table platform_subscriptions
   add column if not exists current_period_start     timestamptz,
   add column if not exists cancel_at_period_end     boolean not null default false,
