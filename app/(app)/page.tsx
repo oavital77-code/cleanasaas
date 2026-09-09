@@ -47,14 +47,14 @@ const CAPACITY = [
 ];
 
 // המחיר האחד, מאותו מקור כמו /admin/billing והחיוב עצמו (PLATFORM_PLAN_PRICE_ILS,
-// ברירת מחדל 209). תקופת הניסיון: signup_clinic נותן 14 יום — אם משנים שם,
-// לשנות גם כאן.
+// ברירת מחדל 209). תקופת הניסיון: signup_clinic נותן 30 יום (מיגרציה
+// 20260909000003) — אם משנים שם, לשנות גם כאן.
 // עמוד אנגלי/LTR — "₪209" ולא "209 ₪" של he-IL (ר' formatPriceIls(…, "en") ב-Cleana+).
 const PRICE = {
   amount: new Intl.NumberFormat("en-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 0 }).format(platformPlanPriceIls()),
   period: "month, VAT included",
 };
-const TRIAL_DAYS = 14;
+const TRIAL_DAYS = 30;
 
 /** מה כלול במסלול האחד — הצ'קליסט של כרטיס המחיר. */
 const INCLUDED = [
