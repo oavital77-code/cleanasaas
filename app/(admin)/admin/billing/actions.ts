@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { createPlatformCheckout, platformBillingAvailability } from "@/lib/platform-billing";
+import { PayPlusError } from "@/lib/payplus";
 import { normalizeLocale } from "@/lib/i18n";
 
 // פעולות שרת ולא route handlers: /api מוחרג מ-clerkMiddleware, ורק כאן יש
@@ -19,14 +20,23 @@ export async function startPlatformCheckoutAction() {
   const supabase = await createClient();
   const { data: clinic } = await supabase.from("clinics").select("name").eq("id", clinicId).single();
 
-  const checkout = await createPlatformCheckout(availability.cfg, {
-    clinicName: clinic?.name ?? "Cleana",
-    ownerName: profile.full_name,
-    ownerEmail: profile.email,
-    ownerPhone: profile.phone,
-    priceIls: availability.priceIls,
-    locale: normalizeLocale(profile.locale),
-  });
+  let checkout: Awaited<ReturnType<typeof createPlatformCheckout>>;
+  try {
+    checkout = await createPlatformCheckout(availability.cfg, {
+      clinicName: clinic?.name ?? "Cleana",
+      ownerName: profile.full_name,
+      ownerEmail: profile.email,
+      ownerPhone: profile.phone,
+      priceIls: availability.priceIls,
+      locale: normalizeLocale(profile.locale),
+    });
+  } catch (err) {
+    // הסיבה של PayPlus בשורה אחת (UID שגוי, מפתחות) בטוחה להצגה — והיא מה
+    // שהופך תקלת הגדרה לניתנת לאבחון מהמסך.
+    console.error("[platform-billing] checkout failed", err instanceof PayPlusError ? { status: err.status, body: err.body } : err);
+    const detail = err instanceof PayPlusError ? providerDetail(err) : "";
+    redirect(`/admin/billing?returned=error&detail=${encodeURIComponent(detail)}`);
+  }
 
   // is_admin() + הקליניקה של המשתמש נבדקים בתוך ה-RPC.
   const { error } = await supabase.rpc("platform_start_checkout", { p_page_request_uid: checkout.pageRequestUid });
@@ -51,4 +61,13 @@ export async function cancelPlatformSubscriptionAction() {
   const { error } = await supabase.rpc("platform_request_cancellation");
   if (error) redirect("/admin/billing?returned=error");
   revalidatePath("/admin/billing");
+}
+
+function providerDetail(error: PayPlusError): string {
+  const body = error.body as { results?: { description?: unknown; status?: unknown; code?: unknown }; message?: unknown } | string | null;
+  if (typeof body === "string") return `${error.status}: ${body.slice(0, 200)}`;
+  const parts = [body?.results?.status, body?.results?.code, body?.results?.description, body?.message].filter(
+    (p) => typeof p === "string" || typeof p === "number",
+  );
+  return `${error.status}${parts.length ? ": " + parts.join(" · ") : ""}`;
 }

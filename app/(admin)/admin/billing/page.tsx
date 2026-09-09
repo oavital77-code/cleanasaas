@@ -19,12 +19,12 @@ const STATUS_TONE: Record<string, string> = {
   refunded: "bg-subtle text-muted-foreground",
 };
 
-export default async function AdminBillingPage({ searchParams }: { searchParams: Promise<{ returned?: string }> }) {
+export default async function AdminBillingPage({ searchParams }: { searchParams: Promise<{ returned?: string; detail?: string }> }) {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
   const locale = normalizeLocale(profile.locale);
   const t = getAdminBillingDict(locale);
-  const { returned } = await searchParams;
+  const { returned, detail } = await searchParams;
 
   const [{ data: clinic }, { data: sub }, { data: payments }] = await Promise.all([
     supabase.from("clinics").select("name, status").eq("id", clinicId).single(),
@@ -74,6 +74,7 @@ export default async function AdminBillingPage({ searchParams }: { searchParams:
         {returned && (
           <p role="status" className="rounded-md border border-border bg-subtle px-4 py-3 text-sm">
             {t.returned[returned] ?? (returned === "not_configured" ? t.notConfigured : t.error)}
+            {detail && <span className="mt-1 block text-xs text-muted-foreground" dir="ltr">{detail.slice(0, 300)}</span>}
           </p>
         )}
 
