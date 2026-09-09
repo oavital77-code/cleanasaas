@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Building2, CalendarCheck2, ShieldCheck, TicketCheck, Users } from "lucide-react";
+import { Building2, CalendarCheck2, Check, ShieldCheck, TicketCheck, Users } from "lucide-react";
 import { getAuthState } from "@/lib/auth/guards";
 import { BrandBackdrop } from "@/components/brand-backdrop";
 import { Logo } from "@/components/logo";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
+import { platformPlanPriceIls } from "@/lib/platform-billing";
 
 // אנגלית/LTR — חריג מכוון, בדיוק כמו דף הבית של click-na (ר' ההערה שם:
 // "the app is Hebrew and right-to-left; this one page is not"). שאר
@@ -45,6 +46,27 @@ const CAPACITY = [
   { icon: ShieldCheck, label: "Full isolation between clinics" },
 ];
 
+// המחיר האחד, מאותו מקור כמו /admin/billing והחיוב עצמו (PLATFORM_PLAN_PRICE_ILS,
+// ברירת מחדל 209). תקופת הניסיון: signup_clinic נותן 14 יום — אם משנים שם,
+// לשנות גם כאן.
+// עמוד אנגלי/LTR — "₪209" ולא "209 ₪" של he-IL (ר' formatPriceIls(…, "en") ב-Cleana+).
+const PRICE = {
+  amount: new Intl.NumberFormat("en-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 0 }).format(platformPlanPriceIls()),
+  period: "month, VAT included",
+};
+const TRIAL_DAYS = 14;
+
+/** מה כלול במסלול האחד — הצ'קליסט של כרטיס המחיר. */
+const INCLUDED = [
+  "Unlimited branches, rooms, and therapists",
+  "One shared room calendar that never double-books",
+  "Every therapist books their own slot",
+  "Punch cards and monthly sessions, tracked against real payments",
+  "Payments in your own store, reconciled automatically",
+  "WhatsApp and email reminders",
+  "Full isolation between clinics — by design",
+];
+
 // כמו OMISSIONS ב-click-na: התועלת מנוסחת כמה שנעלם, לא כרשימת יכולות.
 const OMISSIONS = [
   "No spreadsheet to track hours and deposits.",
@@ -65,6 +87,10 @@ const FAQ = [
   {
     q: "How does payment work?",
     a: "Every payment — punch card or session — happens in your own store, and updates automatically the moment it's confirmed.",
+  },
+  {
+    q: "What does Cleana cost?",
+    a: `One plan, ${PRICE.amount} per month, VAT included, per clinic — however many branches, rooms, and therapists you run. The first ${TRIAL_DAYS} days are free with no card. Cancel any time from the admin panel; access continues to the end of the paid month.`,
   },
   {
     q: "How long does setup take?",
@@ -91,6 +117,9 @@ export default async function HomePage() {
             <Logo />
           </Link>
           <div className="flex items-center gap-4 text-sm">
+            <Link href="#pricing" className="hidden min-h-11 items-center text-muted-foreground hover:text-foreground sm:inline-flex">
+              Pricing
+            </Link>
             <Link href="/login" className="inline-flex min-h-11 items-center text-muted-foreground hover:text-foreground">
               Log in
             </Link>
@@ -121,7 +150,7 @@ export default async function HomePage() {
                 <Link href="/login">Log in</Link>
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Live in minutes. No installation.</p>
+            <p className="text-xs text-muted-foreground">Live in minutes. No installation. First {TRIAL_DAYS} days free.</p>
           </div>
         </section>
 
@@ -155,21 +184,64 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="border-t border-border/60">
-          <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-5 py-16 md:px-8 md:py-24 lg:py-32">
+        <section id="pricing" className="relative overflow-hidden border-t border-border/60">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-40 left-1/2 hidden h-[28rem] w-[44rem] -translate-x-1/2 rounded-full bg-violet-200/40 blur-3xl md:block"
+          />
+          <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center gap-10 px-5 py-16 md:px-8 md:py-24 lg:py-32">
             <div className="flex flex-col items-center gap-4 text-center">
-              <h2 className="text-3xl font-semibold sm:text-4xl">Managed, not manually managed.</h2>
+              <span className="kicker">The plan</span>
+              <h2 className="text-3xl font-semibold sm:text-4xl">One plan. The whole clinic in it.</h2>
               <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
-                Every clinic gets the full platform from day one — not a
-                partial version waiting on an upgrade.
+                Every clinic gets the full platform from day one — not a partial version
+                waiting on an upgrade. One price per clinic, whatever its size.
               </p>
+            </div>
+
+            {/* הכרטיס: מחיר אחד, נאמר פעם אחת, גדול; כל השאר תומך בו. */}
+            <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-violet-200 bg-card shadow-xl shadow-violet-500/5">
+              <div aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-500 via-violet-300 to-violet-500" />
+              <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+                <div className="flex flex-col items-center justify-center gap-5 border-b border-border/60 px-6 py-10 text-center md:items-start md:border-b-0 md:border-r md:px-10 md:text-left">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                    <Check className="size-3.5" aria-hidden />
+                    First {TRIAL_DAYS} days free · no card
+                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-muted-foreground">Cleana · per clinic</span>
+                    <p className="flex flex-wrap items-baseline justify-center gap-x-2 md:justify-start">
+                      <span className="text-5xl font-semibold tabular-nums tracking-tight md:text-6xl">{PRICE.amount}</span>
+                      <span className="text-sm text-muted-foreground">/ {PRICE.period}</span>
+                    </p>
+                  </div>
+                  <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
+                    One monthly payment after the free trial, however many branches, rooms,
+                    and therapists you run. Cancel any time from the admin panel.
+                  </p>
+                  <Button asChild size="lg" className="w-full font-medium md:w-auto">
+                    <Link href="/signup">Start free</Link>
+                  </Button>
+                </div>
+
+                <ul className="flex flex-col gap-3 px-6 py-10 md:px-10">
+                  {INCLUDED.map((line) => (
+                    <li key={line} className="flex items-start gap-3 text-sm leading-relaxed">
+                      <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+                        <Check className="size-3" aria-hidden />
+                      </span>
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             <ul className="mx-auto flex max-w-xl flex-col gap-3">
               {OMISSIONS.map((line) => (
                 <li
                   key={line}
-                  className="border-t border-border/60 pt-3 text-sm leading-relaxed text-muted-foreground first:border-t-0 first:pt-0"
+                  className="border-t border-border/60 pt-3 text-center text-sm leading-relaxed text-muted-foreground first:border-t-0 first:pt-0"
                 >
                   {line}
                 </li>
