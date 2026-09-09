@@ -71,7 +71,7 @@ begin
   end if;
 
   insert into platform_audit_log (actor_id, action, clinic_id, after)
-  values (auth.uid(), 'platform_checkout_started', v_clinic_id, jsonb_build_object('page_request_uid', p_page_request_uid));
+  values (app_user_id(), 'platform_checkout_started', v_clinic_id, jsonb_build_object('page_request_uid', p_page_request_uid));
 end;
 $$;
 
@@ -214,7 +214,7 @@ begin
   where clinic_id = v_clinic_id;
 
   insert into platform_audit_log (actor_id, action, clinic_id, after)
-  values (auth.uid(), 'platform_cancellation_requested', v_clinic_id,
+  values (app_user_id(), 'platform_cancellation_requested', v_clinic_id,
           jsonb_build_object('period_end', v_sub.current_period_end));
 end;
 $$;
