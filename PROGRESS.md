@@ -71,6 +71,14 @@ PayPlus, דף תשלום מאוחסן עם הוראת קבע (`charge_method 3`)
 (+ `lib/payplus/index.test.ts`). המתאם `lib/payplus` הועתק מ-Cleana+ — לשמור
 את השניים תואמים. **טרם נבדק מול סנדבוקס אמיתי של PayPlus** — שמות השדות
 אומתו מול אינטגרציות אמיתיות, לא מול התיעוד; הרצת סנדבוקס אחת סוגרת את זה.
+שתי המיגרציות (`…000001`, `…000002_platform_billing_grants_fix`) **הוחלו על
+ה-DB החי** (9.9.2026) ומטריצת ההרשאות אומתה שם: anon=false על כל 4 ה-RPCs,
+authenticated רק על checkout/cancellation, service_role על כולן. שלושה באגים
+שהבדיקה המקומית תפסה לפני הפרודקשן: (1) `clinics.status` נכתב תחת
+`cleana.trusted_write` (הטריגר `clinics_privilege_guard` החזיר אותו בשקט);
+(2) `actor_id` מ-`app_user_id()` ולא `auth.uid()` (עם sub של Clerk `auth.uid()`
+זורקת) + הסרת ה-FK הישן של `platform_audit_log.actor_id` ל-`auth.users`;
+(3) revoke מ-anon בלי revoke מ-public לא עושה כלום — פעם רביעית.
 
 **החלטת תמחור (8.9.2026):** מסלול בתשלום אחד — **₪209 לחודש כולל מע״מ** —
 אחרי תקופת ניסיון. **שים לב:** `signup_clinic` נותן כיום **14 ימי ניסיון**
