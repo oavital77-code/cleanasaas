@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { parseTransaction, payplusConfig, verifyCallbackSignature } from "@/lib/payplus";
+import { mergeVerifiedWithHints, parseTransaction, payplusConfig, verifyCallbackSignature } from "@/lib/payplus";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { applyPlatformPayment, verifyPlatformTransaction } from "@/lib/platform-billing";
 import { notifyPlatformPaymentOutcome } from "@/lib/platform-billing-emails";
 
@@ -17,6 +18,13 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const cfg = payplusConfig();
   if (!cfg) return NextResponse.json({ error: "BILLING_NOT_CONFIGURED" }, { status: 503 });
+
+  // כל גוף שמתקבל עולה שאילתה ל-PayPlus — מבול הוא החשבון שלהם והמכסה שלנו.
+  // PayPlus עצמה שולחת כמה ביום, ומנסה שוב אחר כך על 429.
+  const limit = checkRateLimit({ scope: "payplus-callback", identifier: clientIp(request.headers), limit: 120, windowMs: 60_000 });
+  if (!limit.ok) {
+    return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } });
+  }
 
   const rawBody = await request.text();
   const hash = request.headers.get("hash");
@@ -37,15 +45,12 @@ export async function POST(request: Request) {
   const verified = await verifyPlatformTransaction(hinted.transactionUid);
   if (!verified) return NextResponse.json({ ok: false, reason: "unverified" });
 
-  const transaction = {
-    ...verified.transaction,
-    moreInfo: verified.transaction.moreInfo ?? hinted.moreInfo,
-    pageRequestUid: verified.transaction.pageRequestUid ?? hinted.pageRequestUid,
-    recurringUid: verified.transaction.recurringUid ?? hinted.recurringUid,
-  };
+  // רק מה ש-PayPlus אישרה נחשב; הגוף משלים מזהים שהתשובה השמיטה, ואת מזהה
+  // הקליניקה — רק אם PayPlus חתמה על הגוף (ר' mergeVerifiedWithHints).
+  const transaction = mergeVerifiedWithHints(verified.transaction, hinted, { signed: hash !== null });
 
   const outcome = await applyPlatformPayment(transaction, verified.raw);
   // מייל לבעלי הקליניקה — אחרי ההחלטה, ולעולם לא מפיל אותה.
-  await notifyPlatformPaymentOutcome(transaction.moreInfo, outcome);
+  await notifyPlatformPaymentOutcome({ clinicId: transaction.moreInfo, transactionUid: transaction.transactionUid }, outcome);
   return NextResponse.json({ outcome });
 }

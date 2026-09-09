@@ -9,11 +9,21 @@ import type { ApplyOutcome } from "@/lib/platform-billing";
  * מודיע לאדמיני הקליניקה על תוצאת תשלום — אחרי שההחלטה כבר נרשמה ב-DB.
  * לעולם לא זורק: מייל שנכשל לא מבטל תשלום שהצליח.
  */
-export async function notifyPlatformPaymentOutcome(clinicId: string | null, outcome: ApplyOutcome): Promise<void> {
-  if (!clinicId) return;
+export async function notifyPlatformPaymentOutcome(
+  ref: { clinicId: string | null; transactionUid: string | null },
+  outcome: ApplyOutcome,
+): Promise<void> {
   if (outcome !== "activated" && outcome !== "payment_failed") return;
   try {
     const supabase = createAdminClient();
+    // ה-RPC מצא את הקליניקה גם בלי more_info (לפי דף התשלום / הוראת הקבע) ורשם
+    // אותה על העסקה — משם לוקחים אותה כשה-callback לא נשא אותה.
+    const clinicId =
+      ref.clinicId ??
+      (ref.transactionUid
+        ? (await supabase.from("platform_payments").select("clinic_id").eq("transaction_uid", ref.transactionUid).maybeSingle()).data?.clinic_id ?? null
+        : null);
+    if (!clinicId) return;
     const [{ data: clinic }, { data: sub }, { data: owner }, emails] = await Promise.all([
       supabase.from("clinics").select("name").eq("id", clinicId).maybeSingle(),
       supabase.from("platform_subscriptions").select("current_period_end").eq("clinic_id", clinicId).maybeSingle(),
