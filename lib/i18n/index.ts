@@ -265,6 +265,7 @@ const APP_SHELL_HE = {
     adminRooms: "סניפים וחדרים",
     adminReminders: "תזכורות",
     adminSettings: "הגדרות",
+    adminBilling: "מנוי ותשלום",
     adminReports: "דוחות",
     adminAudit: "יומן פעולות",
   },
@@ -293,6 +294,7 @@ const APP_SHELL_EN: typeof APP_SHELL_HE = {
     adminRooms: "Branches & Rooms",
     adminReminders: "Reminders",
     adminSettings: "Settings",
+    adminBilling: "Subscription",
     adminReports: "Reports",
     adminAudit: "Audit Log",
   },
@@ -401,4 +403,5 @@ export {
   getAdminSettingsDict,
   getAdminReportsDict,
   getAdminAuditDict,
+  getAdminBillingDict,
 } from "./admin";

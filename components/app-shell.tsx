@@ -17,6 +17,7 @@ import {
   ListChecks,
   Building2,
   Settings,
+  CreditCard,
   BarChart3,
   ScrollText,
   ArrowLeftRight,
@@ -63,6 +64,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/rooms", navKey: "adminRooms", icon: Building2 },
   { href: "/admin/reminders", navKey: "adminReminders", icon: MessageCircle },
   { href: "/admin/settings", navKey: "adminSettings", icon: Settings },
+  { href: "/admin/billing", navKey: "adminBilling", icon: CreditCard },
   { href: "/admin/reports", navKey: "adminReports", icon: BarChart3 },
   { href: "/admin/audit", navKey: "adminAudit", icon: ScrollText },
 ];

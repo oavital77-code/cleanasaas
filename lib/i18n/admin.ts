@@ -719,3 +719,98 @@ const AUDIT_EN: typeof AUDIT_HE = {
 export function getAdminAuditDict(locale: Locale) {
   return locale === "en" ? AUDIT_EN : AUDIT_HE;
 }
+
+// ---------------------------------------------------------------------------
+// /admin/billing — מנוי הפלטפורמה (PayPlus)
+// ---------------------------------------------------------------------------
+const BILLING_HE = {
+  title: "מנוי ותשלום",
+  planName: "Cleana",
+  perMonth: (price: string) => `${price} לחודש`,
+  inclVat: "כולל מע״מ",
+  notConfigured: "תשלומים עדיין לא זמינים. פנה/י אלינו.",
+  state: {
+    trialing: (days: number) => (days <= 0 ? "תקופת הניסיון הסתיימה" : days === 1 ? "ניסיון — נשאר יום אחד" : `ניסיון — נשארו ${days} ימים`),
+    trialingHint: "הפעלה עכשיו מחייבת היום ופותחת את כל המכסות. לא מחויב כלום לפני שתפעיל/י.",
+    active: (until: string) => `פעיל — החיוב הבא ב-${until}`,
+    activeHint: "כל היכולות, ללא הגבלת סניפים, חדרים או מטפלים.",
+    canceling: (until: string) => `בוטל — עובד עד ${until}`,
+    cancelingHint: "לא תחויב/י שוב. הפעלה מחדש פותחת מנוי חדש.",
+    pastDue: (days: number) => (days <= 0 ? "התשלום לא עבר — הקליניקה מושעית" : `התשלום לא עבר — הזמנות ייחסמו בעוד ${days} ימים`),
+    pastDueHint: "התורים הקיימים לא נמחקים. הפעלת המנוי מחזירה הכל מיד.",
+    suspended: "הקליניקה מושעית — נדרש מנוי פעיל",
+    suspendedHint: "הכניסה עובדת; הזמנות חדשות חסומות עד לתשלום. הכל שמור.",
+    canceled: "המנוי הסתיים",
+  },
+  included: ["סניפים, חדרים ומטפלים ללא הגבלה", "לוח מלא, ססיות וכרטיסיות", "תזכורות וואטסאפ ומייל", "חנות Woo לכל קליניקה", "דוחות ויומן פעולות"],
+  activate: "הפעלת מנוי",
+  reactivate: "הפעלה מחדש",
+  cancel: "ביטול מנוי",
+  cancelConfirm: "לבטל? המנוי ימשיך לעבוד עד סוף התקופה ששולמה, ולא תחויב/י שוב.",
+  confirmCancel: "כן, לבטל",
+  keep: "להשאיר",
+  securePayment: "התשלום מתבצע בדף מאובטח של PayPlus. Cleana לא רואה את פרטי הכרטיס.",
+  history: "תשלומים",
+  noHistory: "עדיין אין תשלומים.",
+  paymentStatus: { succeeded: "שולם", failed: "נכשל", refunded: "הוחזר" } as Record<string, string>,
+  returned: {
+    success: "תודה — התשלום עבר. המנוי מופעל; הדף יתעדכן בעוד רגע.",
+    failure: "התשלום לא עבר. לא חויבת. אפשר לנסות שוב.",
+    cancel: "התשלום בוטל. לא חויבת.",
+  } as Record<string, string>,
+  error: "משהו השתבש. נסה/י שוב.",
+  banner: {
+    trialing: (days: number) => (days <= 0 ? "תקופת הניסיון הסתיימה." : `נשארו ${days} ימים לתקופת הניסיון.`),
+    pastDue: "התשלום האחרון לא עבר.",
+    suspended: "הקליניקה מושעית עד להפעלת מנוי.",
+    cta: "מנוי ותשלום",
+  },
+};
+
+const BILLING_EN: typeof BILLING_HE = {
+  title: "Subscription",
+  planName: "Cleana",
+  perMonth: (price) => `${price} / month`,
+  inclVat: "VAT included",
+  notConfigured: "Payments are not available yet. Contact us.",
+  state: {
+    trialing: (days) => (days <= 0 ? "Trial ended" : days === 1 ? "Trial — 1 day left" : `Trial — ${days} days left`),
+    trialingHint: "Activate now to be charged today and lift every quota. Nothing is charged before you do.",
+    active: (until) => `Active — next charge on ${until}`,
+    activeHint: "Everything, with no limit on branches, rooms or therapists.",
+    canceling: (until) => `Cancelled — works until ${until}`,
+    cancelingHint: "You will not be charged again. Reactivating starts a new subscription.",
+    pastDue: (days) => (days <= 0 ? "Payment failed — the clinic is suspended" : `Payment failed — bookings lock in ${days} days`),
+    pastDueHint: "Existing bookings are not deleted. Activating the subscription restores everything at once.",
+    suspended: "The clinic is suspended — an active subscription is required",
+    suspendedHint: "Sign-in works; new bookings are blocked until payment. Everything is saved.",
+    canceled: "The subscription has ended",
+  },
+  included: ["Unlimited branches, rooms and therapists", "Full board, sessions and punch cards", "WhatsApp and email reminders", "A Woo store per clinic", "Reports and audit log"],
+  activate: "Activate subscription",
+  reactivate: "Reactivate",
+  cancel: "Cancel subscription",
+  cancelConfirm: "Cancel? The subscription keeps working until the end of the paid period, and you will not be charged again.",
+  confirmCancel: "Yes, cancel",
+  keep: "Keep it",
+  securePayment: "Payment is handled by PayPlus on a secure page. Cleana never sees your card details.",
+  history: "Payments",
+  noHistory: "No payments yet.",
+  paymentStatus: { succeeded: "Paid", failed: "Failed", refunded: "Refunded" },
+  returned: {
+    success: "Thank you — the payment went through. The subscription is being activated; this page updates in a moment.",
+    failure: "The payment did not go through. Nothing was charged. You can try again.",
+    cancel: "The payment was cancelled. Nothing was charged.",
+  },
+  error: "Something went wrong. Try again.",
+  banner: {
+    trialing: (days) => (days <= 0 ? "The trial has ended." : `${days} days left on the trial.`),
+    pastDue: "The last payment did not go through.",
+    suspended: "The clinic is suspended until a subscription is activated.",
+    cta: "Subscription",
+  },
+};
+
+export function getAdminBillingDict(locale: Locale) {
+  return locale === "en" ? BILLING_EN : BILLING_HE;
+}

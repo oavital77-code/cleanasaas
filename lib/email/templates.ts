@@ -463,3 +463,61 @@ export function therapistJoinedAdminEmail(params: { therapistName: string; role:
     `),
   };
 }
+
+// ═══ מנוי הפלטפורמה (PayPlus) — לבעלי/אדמיני הקליניקה ═══
+
+export function platformSubscriptionActivatedEmail(params: {
+  clinicName: string;
+  amount: number;
+  periodEnd: Date | null;
+  locale?: string | null;
+}): EmailContent {
+  const until = params.periodEnd ? formatDateHe(params.periodEnd) : null;
+  if (L(params.locale) === "he") {
+    return {
+      subject: `המנוי של ${params.clinicName} ב-Cleana פעיל`,
+      html: emailLayout(`
+      <p>התשלום על המנוי של <strong>${escapeHtml(params.clinicName)}</strong> עבר בהצלחה: ${formatCurrencyILS(params.amount)}.</p>
+      <p>${until ? `החיוב הבא יתבצע ב-${until}. ` : ""}אפשר לבטל בכל רגע מ"מנוי ותשלום" בפאנל הניהול — הביטול נכנס לתוקף בסוף התקופה ששולמה.</p>
+      <p>חשבונית/קבלה נשלחת בנפרד ממערכת הסליקה.</p>
+    `),
+    };
+  }
+  return {
+    subject: `${params.clinicName}'s Cleana subscription is active`,
+    html: emailLayout(
+      `
+      <p>The subscription payment for <strong>${escapeHtml(params.clinicName)}</strong> went through: ${formatCurrencyILS(params.amount)}.</p>
+      <p>${until ? `The next charge is on ${until}. ` : ""}You can cancel any time from "Subscription" in the admin panel — it takes effect at the end of the paid period.</p>
+      <p>The invoice/receipt is sent separately by the payment provider.</p>
+    `,
+      undefined,
+      "en",
+    ),
+  };
+}
+
+export function platformPaymentFailedEmail(params: { clinicName: string; graceDays: number; locale?: string | null }): EmailContent {
+  if (L(params.locale) === "he") {
+    return {
+      subject: `התשלום על המנוי של ${params.clinicName} לא עבר`,
+      html: emailLayout(`
+      <p>לא הצלחנו לחייב את המנוי של <strong>${escapeHtml(params.clinicName)}</strong> ב-Cleana.</p>
+      <p>הקליניקה ממשיכה לעבוד כרגיל עוד ${params.graceDays} ימים. אחר כך הזמנות חדשות ייחסמו עד שהתשלום יוסדר — התורים הקיימים לא נמחקים.</p>
+      <p>להסדרה: פאנל הניהול → "מנוי ותשלום" → "הפעלת מנוי".</p>
+    `),
+    };
+  }
+  return {
+    subject: `The subscription payment for ${params.clinicName} did not go through`,
+    html: emailLayout(
+      `
+      <p>We could not charge the Cleana subscription for <strong>${escapeHtml(params.clinicName)}</strong>.</p>
+      <p>The clinic keeps working for ${params.graceDays} more days. After that, new bookings are blocked until the payment is settled — existing bookings are not deleted.</p>
+      <p>To settle: admin panel → "Subscription" → "Activate subscription".</p>
+    `,
+      undefined,
+      "en",
+    ),
+  };
+}

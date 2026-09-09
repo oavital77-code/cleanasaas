@@ -723,6 +723,68 @@ export type Database = {
           },
         ]
       }
+      platform_payments: {
+        Row: {
+          amount: number
+          clinic_id: string
+          created_at: string
+          currency: string
+          id: string
+          page_request_uid: string | null
+          paid_at: string | null
+          period_end: string | null
+          period_start: string | null
+          provider: string
+          raw: Json | null
+          recurring_uid: string | null
+          status: string
+          status_code: string | null
+          transaction_uid: string
+        }
+        Insert: {
+          amount: number
+          clinic_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          page_request_uid?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          provider?: string
+          raw?: Json | null
+          recurring_uid?: string | null
+          status: string
+          status_code?: string | null
+          transaction_uid: string
+        }
+        Update: {
+          amount?: number
+          clinic_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          page_request_uid?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          provider?: string
+          raw?: Json | null
+          recurring_uid?: string | null
+          status?: string
+          status_code?: string | null
+          transaction_uid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_payments_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_plan_limits: {
         Row: {
           max_branches: number | null
@@ -747,6 +809,12 @@ export type Database = {
       platform_subscriptions: {
         Row: {
           clinic_id: string
+          cancel_at_period_end: boolean
+          current_period_start?: string | null
+          grace_ends_at?: string | null
+          payplus_customer_uid?: string | null
+          payplus_recurring_uid?: string | null
+          pending_page_request_uid?: string | null
           created_at: string | null
           current_period_end: string | null
           external_payment_id: string | null
@@ -756,6 +824,12 @@ export type Database = {
         }
         Insert: {
           clinic_id: string
+          cancel_at_period_end?: boolean
+          current_period_start?: string | null
+          grace_ends_at?: string | null
+          payplus_customer_uid?: string | null
+          payplus_recurring_uid?: string | null
+          pending_page_request_uid?: string | null
           created_at?: string | null
           current_period_end?: string | null
           external_payment_id?: string | null
@@ -765,6 +839,12 @@ export type Database = {
         }
         Update: {
           clinic_id?: string
+          cancel_at_period_end?: boolean
+          current_period_start?: string | null
+          grace_ends_at?: string | null
+          payplus_customer_uid?: string | null
+          payplus_recurring_uid?: string | null
+          pending_page_request_uid?: string | null
           created_at?: string | null
           current_period_end?: string | null
           external_payment_id?: string | null
@@ -1848,6 +1928,36 @@ export type Database = {
           p_reason?: string
           p_status: Database["public"]["Enums"]["clinic_status"]
         }
+        Returns: undefined
+      }
+      platform_apply_payment: {
+        Args: {
+          p_amount: number | null
+          p_clinic_id: string | null
+          p_customer_uid?: string | null
+          p_expected_amount: number | null
+          p_page_request_uid?: string | null
+          p_raw?: Json | null
+          p_recurring_uid?: string | null
+          p_status_code: string
+          p_transaction_uid: string
+        }
+        Returns: string
+      }
+      platform_billing_lifecycle: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          canceled: number
+          suspended: number
+          unconfirmed: number
+        }[]
+      }
+      platform_request_cancellation: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      platform_start_checkout: {
+        Args: { p_page_request_uid: string }
         Returns: undefined
       }
       superadmin_set_plan: {

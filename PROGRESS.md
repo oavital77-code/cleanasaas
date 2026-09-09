@@ -54,15 +54,31 @@
 `platform_plan_limits` (trial/basic/pro) + `platform_subscriptions` +
 `assert_within_plan_quota()` נאכף ב-`create_branch`/`create_room`/
 `accept_therapist_invite` (לא רק ב-UI). `expire_trial_subscriptions` (cron)
-מעביר trial שפג ל-`suspended`. **אין עדיין** אינטגרציית סליקה אמיתית
-(Stripe וכו') — הטבלאות/האכיפה קיימות, אבל אין checkout בפועל לתשלום
-הקליניקה עצמה על המנוי שלה.
+מעביר trial שפג ל-`suspended`.
+
+**✅ סליקה (9.9.2026, מיגרציה `20260909000001_platform_billing_payplus`):**
+PayPlus, דף תשלום מאוחסן עם הוראת קבע (`charge_method 3`). `/admin/billing`
+(פעולות שרת: `startPlatformCheckoutAction` → `platform_start_checkout`;
+ביטול: עוצר ב-PayPlus ואז `platform_request_cancellation`). ה-callback
+(`/api/billing/payplus/callback`, ציבורי) מאמת כל עסקה מול
+`PaymentPages/ipn` ורק אז `platform_apply_payment` (service-role בלבד):
+`platform_payments` ייחודי לפי `transaction_uid` → כפילות = no-op; הצלחה
+בסכום המנוי → `plan='pro'`, `status='active'`, חודש קדימה, הקליניקה חוזרת
+מ-`suspended`; חיוב שנכשל במנוי פעיל → `past_due` + 7 ימי חסד.
+`platform_billing_lifecycle` (ב-cron `cleanup-holds`): ביטולים שהבשילו,
+חידוש שלא אושר תוך יומיים → חסד, חסד שנגמר → השעיה. מיילים לאדמיני
+הקליניקה על הפעלה/כישלון. בדיקה: `supabase/tests/platform_billing_test.sql`
+(+ `lib/payplus/index.test.ts`). המתאם `lib/payplus` הועתק מ-Cleana+ — לשמור
+את השניים תואמים. **טרם נבדק מול סנדבוקס אמיתי של PayPlus** — שמות השדות
+אומתו מול אינטגרציות אמיתיות, לא מול התיעוד; הרצת סנדבוקס אחת סוגרת את זה.
 
 **החלטת תמחור (8.9.2026):** מסלול בתשלום אחד — **₪209 לחודש כולל מע״מ** —
-אחרי 30 ימי ניסיון. ה-limits של basic/pro נשארים כמנגנון אכיפה בלבד; לא
-מוצגים ללקוח כשני מסלולים. כשייבנה ה-checkout, לשימוש חוזר במתאם PayPlus של
-Cleana+ (`click-na/src/lib/payplus.ts`): דף תשלום מאוחסן עם הוראת קבע,
-אימות כל callback מול `PaymentPages/ipn`, אידמפוטנטיות לפי `transaction_uid`.
+אחרי תקופת ניסיון. **שים לב:** `signup_clinic` נותן כיום **14 ימי ניסיון**
+(`now() + interval '14 days'`), לא 30 — לשנות שם אם רוצים חודש כמו ב-Cleana+.
+ה-limits של basic/pro נשארים כמנגנון אכיפה בלבד; לא מוצגים ללקוח כשני מסלולים.
+ה-checkout נבנה (ר' "סליקה" למעלה) על המתאם של Cleana+ (`click-na/src/lib/payplus.ts`):
+דף תשלום מאוחסן עם הוראת קבע, אימות כל callback מול `PaymentPages/ipn`,
+אידמפוטנטיות לפי `transaction_uid`. המחיר: `PLATFORM_PLAN_PRICE_ILS` (ברירת מחדל 209).
 
 ## ✅ 6. RPCs נותרים + Superadmin
 
