@@ -68,6 +68,7 @@ function translateInviteError(code: string): string {
     INVITE_INVALID: "קישור ההזמנה לא תקף",
     PLAN_LIMIT_THERAPISTS: "הגיע למספר המטפלים המקסימלי בתוכנית של הקליניקה",
     ALREADY_REGISTERED: "כבר יש לך חשבון במערכת",
+    EMAIL_ALREADY_REGISTERED: "האימייל הזה כבר רשום לחשבון אחר — התחבר/י איתו, או פנה/י למנהל/ת הקליניקה",
   };
   for (const key of Object.keys(map)) {
     if (code.includes(key)) return map[key];

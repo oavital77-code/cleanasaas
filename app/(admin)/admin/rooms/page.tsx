@@ -5,24 +5,81 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addBranchAction, updateBranchAction, addRoomAction, updateRoomAction } from "./actions";
+import {
+  addBranchAction,
+  updateBranchAction,
+  addRoomAction,
+  updateRoomAction,
+  uploadRoomImageAction,
+  deleteRoomImageAction,
+  uploadClinicImageAction,
+  deleteClinicImageAction,
+} from "./actions";
 import { getAdminRoomsDict, normalizeLocale } from "@/lib/i18n";
+import { MAX_ROOM_IMAGES, publicImageUrl } from "@/lib/storage/images";
+import { X } from "lucide-react";
 
-export default async function AdminRoomsPage() {
+const ACCEPT = "image/jpeg,image/png,image/webp";
+
+export default async function AdminRoomsPage({ searchParams }: { searchParams: Promise<{ notice?: string }> }) {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
   const t = getAdminRoomsDict(normalizeLocale(profile.locale));
+  const { notice } = await searchParams;
+  const noticeText = notice ? t.imageNotices[notice] : undefined;
 
   const [{ data: clinic }, { data: branches }, { data: rooms }] = await Promise.all([
-    supabase.from("clinics").select("name").eq("id", clinicId).single(),
+    supabase.from("clinics").select("name, image_path").eq("id", clinicId).single(),
     supabase.from("branches").select("*").eq("clinic_id", clinicId).order("sort_order"),
     supabase.from("rooms").select("*").eq("clinic_id", clinicId).order("sort_order"),
   ]);
+
+  const clinicImageUrl = publicImageUrl(clinic?.image_path);
 
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
         <h1 className="text-2xl font-semibold">{t.title}</h1>
+
+        {noticeText && <p className="rounded-field bg-warning-bg px-3 py-2 text-sm text-warning-fg">{noticeText}</p>}
+
+        <Card className="shadow-e1">
+          <CardHeader>
+            <CardTitle className="text-base font-medium">{t.clinicImageTitle}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            {clinicImageUrl ? (
+              <div className="relative w-fit">
+                {/* eslint-disable-next-line @next/next/no-img-element -- Supabase Storage, בלי image optimizer */}
+                <img src={clinicImageUrl} alt={clinic?.name ?? ""} className="h-32 w-48 rounded-field object-cover shadow-e1" />
+                <form action={deleteClinicImageAction} className="absolute top-1 end-1">
+                  <button
+                    type="submit"
+                    title={t.removeImage}
+                    aria-label={t.removeImage}
+                    className="flex size-7 items-center justify-center rounded-full bg-surface/90 text-muted-foreground shadow-e1 hover:text-danger"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="flex h-32 w-48 items-center justify-center rounded-field bg-subtle text-xs text-muted-foreground">
+                {t.noImage}
+              </div>
+            )}
+            <form action={uploadClinicImageAction} className="flex flex-1 flex-col gap-2">
+              <Label htmlFor="clinic_image" className="text-xs">
+                {clinicImageUrl ? t.replaceImage : t.uploadImage}
+              </Label>
+              <input id="clinic_image" name="file" type="file" accept={ACCEPT} required className="text-sm" />
+              <p className="text-xs text-muted-foreground">{t.imageHint}</p>
+              <Button type="submit" size="sm" variant="outline" className="w-fit">
+                {t.upload}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
         {(branches ?? []).map((b) => (
           <Card key={b.id} className="shadow-e1">
@@ -56,8 +113,8 @@ export default async function AdminRoomsPage() {
                 {(rooms ?? [])
                   .filter((r) => r.branch_id === b.id)
                   .map((r) => (
+                    <div key={r.id} className="flex flex-col gap-3 rounded-field border border-border p-3">
                     <form
-                      key={r.id}
                       action={updateRoomAction}
                       className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
                     >
@@ -82,6 +139,41 @@ export default async function AdminRoomsPage() {
                         {t.save}
                       </Button>
                     </form>
+
+                    <div className="flex flex-wrap items-end gap-3">
+                      {(r.images ?? []).map((path) => {
+                        const url = publicImageUrl(path);
+                        if (!url) return null;
+                        return (
+                          <div key={path} className="relative">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- Supabase Storage, בלי image optimizer */}
+                            <img src={url} alt={r.name} className="h-20 w-28 rounded-field object-cover shadow-e1" />
+                            <form action={deleteRoomImageAction} className="absolute top-1 end-1">
+                              <input type="hidden" name="room_id" value={r.id} />
+                              <input type="hidden" name="path" value={path} />
+                              <button
+                                type="submit"
+                                title={t.removeImage}
+                                aria-label={t.removeImage}
+                                className="flex size-6 items-center justify-center rounded-full bg-surface/90 text-muted-foreground shadow-e1 hover:text-danger"
+                              >
+                                <X className="size-3" />
+                              </button>
+                            </form>
+                          </div>
+                        );
+                      })}
+                      {(r.images ?? []).length < MAX_ROOM_IMAGES && (
+                        <form action={uploadRoomImageAction} className="flex flex-wrap items-center gap-2">
+                          <input type="hidden" name="room_id" value={r.id} />
+                          <input name="file" type="file" accept={ACCEPT} required className="text-xs" aria-label={t.uploadImage} />
+                          <Button type="submit" size="sm" variant="ghost">
+                            {t.upload}
+                          </Button>
+                        </form>
+                      )}
+                    </div>
+                    </div>
                   ))}
               </div>
 

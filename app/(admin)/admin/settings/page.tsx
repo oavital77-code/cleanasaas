@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   updatePunchCardTierAction,
+  addPunchCardTierAction,
+  deletePunchCardTierAction,
+  toggleSessionsEnabledAction,
   updateSessionPricingAction,
   updatePaymentSettingsAction,
   updateClinicHoursAction,
@@ -15,18 +18,21 @@ import {
 import { WhatsAppTestButton } from "./whatsapp-test-button";
 import { suggestedMetaTemplateBody } from "@/lib/whatsapp";
 import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
+import { Trash2 } from "lucide-react";
 
-export default async function AdminSettingsPage() {
+export default async function AdminSettingsPage({ searchParams }: { searchParams: Promise<{ notice?: string }> }) {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
   const t = getAdminSettingsDict(normalizeLocale(profile.locale));
+  const { notice } = await searchParams;
+  const noticeText = notice ? t.tierNotices[notice] : undefined;
 
   const [{ data: tiers }, { data: settingsRows }, { data: paymentSettings }, { data: clinic }, { data: whatsapp }] =
     await Promise.all([
       supabase.from("punch_card_tiers").select("*").eq("clinic_id", clinicId).order("sort_order"),
       supabase.from("app_settings").select("key, value").eq("clinic_id", clinicId),
       supabase.from("clinic_payment_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
-      supabase.from("clinics").select("name, open_hour, close_hour").eq("id", clinicId).single(),
+      supabase.from("clinics").select("name, open_hour, close_hour, sessions_enabled").eq("id", clinicId).single(),
       // api_token הוא bytea מוצפן — נשלף רק כדי להציג "מוגדר"; לעולם לא מפוענח כאן.
       supabase
         .from("clinic_whatsapp_settings")
@@ -43,51 +49,134 @@ export default async function AdminSettingsPage() {
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
         <h1 className="text-2xl font-semibold">{t.title}</h1>
 
-        <Card className="shadow-e1">
+        <Card id="tiers" className="shadow-e1 scroll-mt-4">
           <CardHeader>
             <CardTitle className="text-base font-medium">{t.tiersTitle}</CardTitle>
+            <CardDescription>{t.tiersDescription}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            {noticeText && (
+              <p
+                className={`rounded-field px-3 py-2 text-sm ${
+                  notice === "tier_deleted" ? "bg-success-bg text-success-fg" : "bg-warning-bg text-warning-fg"
+                }`}
+              >
+                {noticeText}
+              </p>
+            )}
+
+            <div className="hidden text-xs text-muted-foreground sm:grid sm:grid-cols-[6rem_7rem_6rem_5rem_1fr] sm:gap-3">
+              <span>{t.tierHoursLabel}</span>
+              <span>{t.pricePerHour}</span>
+              <span>{t.depositHours}</span>
+              <span>{t.tierActive}</span>
+              <span />
+            </div>
             <div className="flex flex-col gap-2">
+              {(tiers ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t.noTiers}</p>}
               {(tiers ?? []).map((tier) => (
-                <form
-                  key={tier.id}
-                  action={updatePunchCardTierAction}
-                  className="flex flex-col gap-3 border-b border-border pb-3 last:border-0 sm:flex-row sm:flex-wrap sm:items-end"
-                >
-                  <input type="hidden" name="id" value={tier.id} />
-                  <span className="text-sm text-muted-foreground sm:w-16 sm:pb-2">{t.tierHours(tier.hours)}</span>
+                <div key={tier.id} className="flex flex-col gap-2 border-b border-border pb-3 last:border-0 sm:flex-row sm:items-end sm:gap-3">
+                  <form
+                    id={`tier-${tier.id}`}
+                    action={updatePunchCardTierAction}
+                    className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-[6rem_7rem_6rem_5rem_auto] sm:items-end"
+                  >
+                    <input type="hidden" name="id" value={tier.id} />
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs sm:hidden">{t.tierHoursLabel}</Label>
+                      <Input name="hours" type="number" min={1} max={1000} defaultValue={tier.hours} required />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs sm:hidden">{t.pricePerHour}</Label>
+                      <Input name="price_per_hour" type="number" step="0.01" min={0} defaultValue={tier.price_per_hour} required />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs sm:hidden">{t.depositHours}</Label>
+                      <Input name="deposit_hours" type="number" min={0} defaultValue={tier.deposit_hours} />
+                    </div>
+                    <label className="flex items-center gap-2 pb-2 text-sm">
+                      <input type="checkbox" name="active" defaultChecked={tier.active ?? true} className="size-4 accent-violet-500" />
+                      <span className="sm:hidden">{t.tierActive}</span>
+                    </label>
+                    <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
+                      <Button type="submit" size="sm" variant="outline" className="flex-1 sm:flex-none">
+                        {t.save}
+                      </Button>
+                      <Button
+                        type="submit"
+                        size="sm"
+                        variant="ghost"
+                        formAction={deletePunchCardTierAction}
+                        className="text-muted-foreground hover:text-danger"
+                        title={t.deleteTier}
+                        aria-label={t.deleteTier}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              ))}
+            </div>
+
+            <form
+              action={addPunchCardTierAction}
+              className="grid grid-cols-2 gap-3 border-t border-border pt-4 sm:grid-cols-[6rem_7rem_6rem_auto] sm:items-end"
+            >
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">{t.tierHoursLabel}</Label>
+                <Input name="hours" type="number" min={1} max={1000} placeholder="10" required />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">{t.pricePerHour}</Label>
+                <Input name="price_per_hour" type="number" step="0.01" min={0} placeholder="55" required />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">{t.depositHours}</Label>
+                <Input name="deposit_hours" type="number" min={0} defaultValue={0} />
+              </div>
+              <Button type="submit" size="sm" className="col-span-2 sm:col-span-1">
+                {t.addTier}
+              </Button>
+            </form>
+            <p className="text-xs text-muted-foreground">{t.tiersPaymentNote}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-e1">
+          <CardHeader>
+            <CardTitle className="text-base font-medium">{t.sessionModelTitle}</CardTitle>
+            <CardDescription>{t.sessionModelDescription}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <form action={toggleSessionsEnabledAction} className="flex flex-wrap items-center gap-3">
+              <input type="hidden" name="sessions_enabled" value={clinic?.sessions_enabled ? "off" : "on"} />
+              <Button type="submit" size="sm" variant={clinic?.sessions_enabled ? "outline" : "default"}>
+                {clinic?.sessions_enabled ? t.sessionsDisable : t.sessionsEnable}
+              </Button>
+              <span className={`text-sm ${clinic?.sessions_enabled ? "text-success" : "text-muted-foreground"}`}>
+                {clinic?.sessions_enabled ? t.sessionsOn : t.sessionsOff}
+              </span>
+            </form>
+
+            {clinic?.sessions_enabled && (
+              <div className="border-t border-border pt-4">
+                <h3 className="mb-3 text-sm font-medium">{t.sessionPricingTitle}</h3>
+                <form action={updateSessionPricingAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                   <div className="flex flex-col gap-1">
-                    <Label className="text-xs">{t.pricePerHour}</Label>
-                    <Input name="price_per_hour" type="number" step="0.01" defaultValue={tier.price_per_hour} className="w-full sm:w-28" />
+                    <Label className="text-xs">{t.sessionBaseHours}</Label>
+                    <Input name="session_base_hours" type="number" defaultValue={Number(settings.session_base_hours ?? 5)} className="w-full sm:w-24" />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label className="text-xs">{t.depositHours}</Label>
-                    <Input name="deposit_hours" type="number" defaultValue={tier.deposit_hours} className="w-full sm:w-24" />
+                    <Label className="text-xs">{t.sessionBasePrice}</Label>
+                    <Input name="session_base_price" type="number" defaultValue={Number(settings.session_base_price ?? 600)} className="w-full sm:w-28" />
                   </div>
                   <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
                     {t.save}
                   </Button>
                 </form>
-              ))}
-            </div>
-
-            <div className="border-t border-border pt-4">
-              <h3 className="mb-3 text-sm font-medium">{t.sessionPricingTitle}</h3>
-              <form action={updateSessionPricingAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-                <div className="flex flex-col gap-1">
-                  <Label className="text-xs">{t.sessionBaseHours}</Label>
-                  <Input name="session_base_hours" type="number" defaultValue={Number(settings.session_base_hours ?? 5)} className="w-full sm:w-24" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label className="text-xs">{t.sessionBasePrice}</Label>
-                  <Input name="session_base_price" type="number" defaultValue={Number(settings.session_base_price ?? 600)} className="w-full sm:w-28" />
-                </div>
-                <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
-                  {t.save}
-                </Button>
-              </form>
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -12,6 +12,7 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 import { AssignForm } from "./assign-form";
 import { RoomBlocks } from "./room-blocks";
 import { AdminSlotGrid, type AdminCellState, type GridColumn } from "./admin-slot-grid";
+import { publicImageUrl } from "@/lib/storage/images";
 import { type Locale, dateFnsLocale, getAdminBoardDict, getCommonDict, getScheduleDict, normalizeLocale } from "@/lib/i18n";
 
 type View = "day" | "week" | "month";
@@ -37,7 +38,7 @@ export default async function AdminBoardPage({
 
   const [{ data: clinic }, { data: rooms }, { data: users }, { data: upcomingBlocks }] = await Promise.all([
     supabase.from("clinics").select("name, timezone, open_hour, close_hour").eq("id", clinicId).single(),
-    supabase.from("rooms").select("id, name").eq("clinic_id", clinicId).eq("active", true).order("sort_order"),
+    supabase.from("rooms").select("id, name, images").eq("clinic_id", clinicId).eq("active", true).order("sort_order"),
     supabase.from("profiles").select("id, full_name").eq("clinic_id", clinicId).eq("status", "active").order("full_name"),
     supabase
       .from("room_blocks")
@@ -238,7 +239,7 @@ async function DayView({
   date: string;
   today: string;
   timezone: string;
-  rooms: { id: string; name: string }[];
+  rooms: { id: string; name: string; images?: string[] | null }[];
   clinicId: string;
   users: { id: string; full_name: string }[];
   openHour: number;
@@ -292,7 +293,7 @@ async function DayView({
         <CardContent className="p-0">
           <AdminSlotGrid
             slots={slots}
-            columns={rooms.map((r): GridColumn => ({ key: r.id, roomId: r.id, date, header: r.name }))}
+            columns={rooms.map((r): GridColumn => ({ key: r.id, roomId: r.id, date, header: r.name, imageUrl: publicImageUrl(r.images?.[0]) }))}
             cells={buildAdminCellStates(
               rooms.map((r) => ({ roomId: r.id, date })),
               slots,

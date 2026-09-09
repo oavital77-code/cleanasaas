@@ -460,6 +460,7 @@ export type Database = {
           close_hour: number
           created_at: string | null
           id: string
+          image_path: string | null
           name: string
           open_hour: number
           published: boolean
@@ -472,6 +473,7 @@ export type Database = {
           close_hour?: number
           created_at?: string | null
           id?: string
+          image_path?: string | null
           name: string
           open_hour?: number
           published?: boolean
@@ -484,6 +486,7 @@ export type Database = {
           close_hour?: number
           created_at?: string | null
           id?: string
+          image_path?: string | null
           name?: string
           open_hour?: number
           published?: boolean
@@ -805,55 +808,55 @@ export type Database = {
       }
       platform_subscriptions: {
         Row: {
-          clinic_id: string
           cancel_at_period_end: boolean
-          current_period_start?: string | null
-          grace_ends_at?: string | null
-          payplus_customer_uid?: string | null
-          payplus_token_uid?: string | null
-          payplus_terminal_uid?: string | null
-          payplus_cashier_uid?: string | null
-          last_charge_attempt_at?: string | null
-          pending_page_request_uid?: string | null
+          clinic_id: string
           created_at: string | null
           current_period_end: string | null
+          current_period_start: string | null
           external_payment_id: string | null
+          grace_ends_at: string | null
+          last_charge_attempt_at: string | null
+          payplus_cashier_uid: string | null
+          payplus_customer_uid: string | null
+          payplus_terminal_uid: string | null
+          payplus_token_uid: string | null
+          pending_page_request_uid: string | null
           plan: string
           status: string
           updated_at: string | null
         }
         Insert: {
-          clinic_id: string
           cancel_at_period_end?: boolean
-          current_period_start?: string | null
-          grace_ends_at?: string | null
-          payplus_customer_uid?: string | null
-          payplus_token_uid?: string | null
-          payplus_terminal_uid?: string | null
-          payplus_cashier_uid?: string | null
-          last_charge_attempt_at?: string | null
-          pending_page_request_uid?: string | null
+          clinic_id: string
           created_at?: string | null
           current_period_end?: string | null
+          current_period_start?: string | null
           external_payment_id?: string | null
+          grace_ends_at?: string | null
+          last_charge_attempt_at?: string | null
+          payplus_cashier_uid?: string | null
+          payplus_customer_uid?: string | null
+          payplus_terminal_uid?: string | null
+          payplus_token_uid?: string | null
+          pending_page_request_uid?: string | null
           plan?: string
           status?: string
           updated_at?: string | null
         }
         Update: {
-          clinic_id?: string
           cancel_at_period_end?: boolean
-          current_period_start?: string | null
-          grace_ends_at?: string | null
-          payplus_customer_uid?: string | null
-          payplus_token_uid?: string | null
-          payplus_terminal_uid?: string | null
-          payplus_cashier_uid?: string | null
-          last_charge_attempt_at?: string | null
-          pending_page_request_uid?: string | null
+          clinic_id?: string
           created_at?: string | null
           current_period_end?: string | null
+          current_period_start?: string | null
           external_payment_id?: string | null
+          grace_ends_at?: string | null
+          last_charge_attempt_at?: string | null
+          payplus_cashier_uid?: string | null
+          payplus_customer_uid?: string | null
+          payplus_terminal_uid?: string | null
+          payplus_token_uid?: string | null
+          pending_page_request_uid?: string | null
           plan?: string
           status?: string
           updated_at?: string | null
@@ -1578,6 +1581,7 @@ export type Database = {
         Args: { p_subscription_id: string }
         Returns: undefined
       }
+      admin_import_therapists: { Args: { p_rows: Json }; Returns: Json }
       admin_issue_punch_card: {
         Args: {
           p_amount_total?: number
@@ -1852,6 +1856,45 @@ export type Database = {
         Args: { p_horizon_days: number; p_subscription_id: string }
         Returns: undefined
       }
+      platform_apply_payment: {
+        Args: {
+          p_amount: number | null
+          p_clinic_id: string | null
+          p_customer_uid?: string | null
+          p_expected_amount: number | null
+          p_page_request_uid?: string | null
+          p_raw?: Json | null
+          p_token_uid?: string | null
+          p_terminal_uid?: string | null
+          p_cashier_uid?: string | null
+          p_status_code: string
+          p_transaction_uid: string
+        }
+        Returns: string
+      }
+      platform_billing_lifecycle: {
+        Args: never
+        Returns: {
+          canceled: number
+          suspended: number
+          unconfirmed: number
+        }[]
+      }
+      platform_claim_due_renewals: {
+        Args: { p_now?: string }
+        Returns: {
+          cashier_uid: string
+          clinic_id: string
+          customer_uid: string
+          terminal_uid: string
+          token_uid: string
+        }[]
+      }
+      platform_request_cancellation: { Args: never; Returns: undefined }
+      platform_start_checkout: {
+        Args: { p_page_request_uid: string }
+        Returns: undefined
+      }
       preview_overrun: {
         Args: { p_booking_id: string; p_minutes: number }
         Returns: {
@@ -1934,48 +1977,6 @@ export type Database = {
           p_reason?: string
           p_status: Database["public"]["Enums"]["clinic_status"]
         }
-        Returns: undefined
-      }
-      platform_apply_payment: {
-        Args: {
-          p_amount: number | null
-          p_clinic_id: string | null
-          p_customer_uid?: string | null
-          p_expected_amount: number | null
-          p_page_request_uid?: string | null
-          p_raw?: Json | null
-          p_token_uid?: string | null
-          p_terminal_uid?: string | null
-          p_cashier_uid?: string | null
-          p_status_code: string
-          p_transaction_uid: string
-        }
-        Returns: string
-      }
-      platform_claim_due_renewals: {
-        Args: { p_now?: string }
-        Returns: {
-          clinic_id: string
-          token_uid: string | null
-          customer_uid: string | null
-          terminal_uid: string | null
-          cashier_uid: string | null
-        }[]
-      }
-      platform_billing_lifecycle: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          canceled: number
-          suspended: number
-          unconfirmed: number
-        }[]
-      }
-      platform_request_cancellation: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      platform_start_checkout: {
-        Args: { p_page_request_uid: string }
         Returns: undefined
       }
       superadmin_set_plan: {

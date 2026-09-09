@@ -131,6 +131,8 @@ const THERAPISTS_HE = {
   inviteActive: "פעיל",
   revokeInviteTitle: "ביטול קישור",
   clearUsedInvites: "ניקוי קישורים שנוצלו / פג תוקפם",
+  importFromFile: "ייבוא מקובץ Excel / CSV",
+  pendingSignup: "טרם נרשם/ה",
 };
 
 const THERAPISTS_EN: typeof THERAPISTS_HE = {
@@ -156,6 +158,8 @@ const THERAPISTS_EN: typeof THERAPISTS_HE = {
   inviteActive: "Active",
   revokeInviteTitle: "Revoke link",
   clearUsedInvites: "Clear used / expired links",
+  importFromFile: "Import from Excel / CSV",
+  pendingSignup: "Not signed up yet",
 };
 
 export function getAdminTherapistsDict(locale: Locale) {
@@ -429,6 +433,18 @@ const ROOMS_HE = {
   addBranchTitle: "הוספת סניף",
   branchName: "שם הסניף",
   addBranch: "הוספת סניף",
+  clinicImageTitle: "תמונת הקליניקה",
+  noImage: "אין תמונה",
+  uploadImage: "העלאת תמונה",
+  replaceImage: "החלפת תמונה",
+  removeImage: "הסרת תמונה",
+  upload: "העלאה",
+  imageHint: "JPG / PNG / WebP עד 5MB. מוצגת למטפלים/ות בדף ההצטרפות ובמסך הבית.",
+  imageNotices: {
+    image_invalid: "הקובץ לא התקבל — JPG / PNG / WebP עד 5MB בלבד.",
+    image_limit: "הגעתם למספר התמונות המקסימלי לחדר.",
+    image_failed: "ההעלאה נכשלה — נסו שוב.",
+  } as Record<string, string>,
 };
 
 const ROOMS_EN: typeof ROOMS_HE = {
@@ -445,6 +461,18 @@ const ROOMS_EN: typeof ROOMS_HE = {
   addBranchTitle: "Add branch",
   branchName: "Branch name",
   addBranch: "Add branch",
+  clinicImageTitle: "Clinic image",
+  noImage: "No image",
+  uploadImage: "Upload image",
+  replaceImage: "Replace image",
+  removeImage: "Remove image",
+  upload: "Upload",
+  imageHint: "JPG / PNG / WebP up to 5MB. Shown to therapists on the join page and the home screen.",
+  imageNotices: {
+    image_invalid: "File not accepted — JPG / PNG / WebP up to 5MB only.",
+    image_limit: "This room already has the maximum number of images.",
+    image_failed: "Upload failed — please try again.",
+  },
 };
 
 export function getAdminRoomsDict(locale: Locale) {
@@ -457,11 +485,34 @@ export function getAdminRoomsDict(locale: Locale) {
 const SETTINGS_HE = {
   title: "הגדרות",
   tiersTitle: "מדרגות כרטיסייה",
+  tiersDescription:
+    "אתם קובעים את הכרטיסיות שנמכרות אצלכם: כמה שעות בכל אחת, מחיר לשעה (לפני מע\"מ) ופיקדון בשעות (0 = ללא). אפשר להוסיף ולהסיר שורות בחופשיות.",
   tierHours: (n: number) => `${n} שעות`,
+  tierHoursLabel: "שעות",
   pricePerHour: "₪/שעה",
   depositHours: "פיקדון (שעות)",
+  tierActive: "פעילה",
+  addTier: "הוספת כרטיסייה",
+  deleteTier: "הסרת כרטיסייה",
+  noTiers: "אין עדיין כרטיסיות — הוסיפו את הראשונה למטה.",
+  tiersPaymentNote:
+    "אותן מדרגות משמשות את כל דרכי התשלום: החנות (WooCommerce — מיפוי מוצר→מדרגה), הנפקה ידנית מכרטיס המטפל/ת (מזומן / ביט / העברה) והתצוגה למטפלים/ות. כרטיסייה לא פעילה מוסתרת מכולם אבל כרטיסיות שכבר נרכשו ממנה ממשיכות לעבוד.",
+  tierNotices: {
+    tier_invalid: "ערכים לא תקינים — שעות 1–1000, מחיר ≥ 0, פיקדון בין 0 לשעות הכרטיסייה.",
+    tier_hours_taken: "כבר קיימת כרטיסייה עם מספר השעות הזה.",
+    tier_error: "השמירה נכשלה — נסו שוב.",
+    tier_deleted: "הכרטיסייה הוסרה.",
+    tier_deactivated_in_use: "כבר נרכשו כרטיסיות מהמדרגה הזו (או שהיא ממופה למוצר בחנות) — לכן היא הושבתה במקום להימחק.",
+  } as Record<string, string>,
   save: "שמירה",
-  sessionPricingTitle: "ססיה (מנוי חודשי קבוע)",
+  sessionModelTitle: "מודל ססיה (מנוי חודשי)",
+  sessionModelDescription:
+    "אופציונלי. ססיה = משבצת שבועית קבועה (אותו חדר, אותו יום ושעה) בתשלום חודשי קבוע. אם אצלכם עובדים רק בכרטיסיות — כבו, והמטפלים/ות לא יראו את האפשרות בכלל.",
+  sessionsEnable: "הפעלת מודל ססיה",
+  sessionsDisable: "כיבוי מודל ססיה",
+  sessionsOn: "פעיל — מטפלים/ות יכולים/ות לבקש ססיה",
+  sessionsOff: "כבוי — כרטיסיות בלבד",
+  sessionPricingTitle: "תמחור ססיה",
   sessionBaseHours: "שעות שבועיות קבועות",
   sessionBasePrice: "מחיר חודשי (₪)",
   hoursTitle: "שעות פעילות",
@@ -499,11 +550,34 @@ const SETTINGS_HE = {
 const SETTINGS_EN: typeof SETTINGS_HE = {
   title: "Settings",
   tiersTitle: "Punch card tiers",
+  tiersDescription:
+    "You define the punch cards you sell: hours per card, price per hour (before VAT) and a deposit in hours (0 = none). Add and remove rows freely.",
   tierHours: (n) => `${n} hours`,
+  tierHoursLabel: "Hours",
   pricePerHour: "₪/hour",
   depositHours: "Deposit (hours)",
+  tierActive: "Active",
+  addTier: "Add punch card",
+  deleteTier: "Remove punch card",
+  noTiers: "No punch cards yet — add the first one below.",
+  tiersPaymentNote:
+    "The same tiers serve every payment route: the store (WooCommerce — product→tier mapping), manual issuance from the therapist's card (cash / Bit / bank transfer) and what therapists see. An inactive tier is hidden from everyone, but cards already bought from it keep working.",
+  tierNotices: {
+    tier_invalid: "Invalid values — hours 1–1000, price ≥ 0, deposit between 0 and the card's hours.",
+    tier_hours_taken: "A punch card with that number of hours already exists.",
+    tier_error: "Saving failed — please try again.",
+    tier_deleted: "Punch card removed.",
+    tier_deactivated_in_use: "Cards were already bought from this tier (or it is mapped to a store product) — so it was deactivated instead of deleted.",
+  },
   save: "Save",
-  sessionPricingTitle: "Session (fixed monthly subscription)",
+  sessionModelTitle: "Session model (monthly subscription)",
+  sessionModelDescription:
+    "Optional. A session is a fixed weekly slot (same room, same day and hour) for a fixed monthly fee. If you only work with punch cards, turn it off and therapists won't see the option at all.",
+  sessionsEnable: "Enable session model",
+  sessionsDisable: "Disable session model",
+  sessionsOn: "On — therapists can request a session",
+  sessionsOff: "Off — punch cards only",
+  sessionPricingTitle: "Session pricing",
   sessionBaseHours: "Fixed weekly hours",
   sessionBasePrice: "Monthly price (₪)",
   hoursTitle: "Operating hours",
@@ -589,6 +663,154 @@ export function getAdminRemindersDict(locale: Locale) {
 }
 
 // ---------------------------------------------------------------------------
+// /admin/therapists/import — ייבוא מ-Excel/CSV
+// ---------------------------------------------------------------------------
+const IMPORT_HE = {
+  title: "ייבוא מטפלים/ות מקובץ",
+  backToTherapists: "→ חזרה למטפלים",
+  formatTitle: "איך לסדר את הקובץ",
+  formatDescription:
+    "קובץ Excel (‎.xlsx) או CSV. השורה הראשונה היא כותרות, ומתחתיה שורה לכל מטפל/ת. סדר העמודות לא משנה — אנחנו מזהים לפי הכותרת (עברית או אנגלית). עמודות נוספות פשוט לא נקראות.",
+  steps: [
+    "הורידו את התבנית למטה (או פתחו גיליון חדש עם אותן כותרות).",
+    "מלאו שורה לכל מטפל/ת: שם מלא, טלפון נייד ואימייל — חובה. שעות ומקצוע — רשות.",
+    "שמרו כ-Excel (‎.xlsx) או CSV, העלו כאן ובדקו את התצוגה המקדימה לפני האישור.",
+  ],
+  columnNotes: [
+    "טלפון: נייד ישראלי בכל פורמט (052-1234567, 0521234567, +972521234567). זה המספר שישמש לתזכורות WhatsApp.",
+    "אימייל: חייב להיות זה שהמטפל/ת יירשם/תירשם איתו — לפיו החשבון מתחבר לפרופיל בכניסה הראשונה.",
+    "שעות: יתרת כרטיסייה קיימת (למשל מהמערכת הקודמת). ריק או 0 = בלי כרטיסייה. נרשמת בלי תשלום, כמו קליטה של יתרה משולמת.",
+    "אימייל שכבר קיים אצלכם מדולג (אפשר להעלות את אותו קובץ שוב בלי לפחד). טלפון כפול או אימייל שרשום בקליניקה אחרת — שגיאה על השורה בלבד.",
+  ],
+  downloadTemplate: "הורדת תבנית (CSV)",
+  uploadTitle: "העלאת הקובץ",
+  uploadDescription: "קודם תצוגה מקדימה — כלום לא נשמר עד שתאשרו.",
+  fileLabel: "קובץ ‎.xlsx או ‎.csv (עד 2MB, עד 500 שורות)",
+  previewButton: "בדיקת הקובץ",
+  reading: "קורא את הקובץ…",
+  previewSummary: (total: number, valid: number) => `${total} שורות, ${valid} תקינות`,
+  colStatus: "בדיקה",
+  rowOk: "תקין",
+  rowErrors: {
+    NAME_REQUIRED: "חסר שם",
+    PHONE_INVALID: "טלפון לא תקין",
+    EMAIL_INVALID: "אימייל לא תקין",
+    HOURS_INVALID: "שעות לא תקינות (0–1000)",
+    DUPLICATE_IN_FILE: "כפול בקובץ",
+  } as Record<string, string>,
+  fields: {
+    full_name: "שם מלא",
+    phone: "טלפון",
+    email: "אימייל",
+    hours: "שעות",
+    profession: "מקצוע",
+  } as Record<string, string>,
+  confirmImport: (n: number) => `ייבוא ${n} מטפלים/ות`,
+  importing: "מייבא…",
+  chooseAnotherFile: "בחירת קובץ אחר",
+  invalidRowsSkipped: "שורות עם שגיאה לא ייובאו — תקנו בקובץ והעלו שוב, או המשיכו בלעדיהן.",
+  doneSummary: (inserted: number, skipped: number) =>
+    `הייבוא הושלם: ${inserted} נוספו${skipped > 0 ? `, ${skipped} דולגו (כבר קיימים)` : ""}.`,
+  doneErrorsTitle: (n: number) => `${n} שורות לא יובאו:`,
+  doneNextSteps: "המטפלים/ות מופיעים/ות עכשיו ברשימה. כדי שיוכלו להיכנס — שלחו להם/ן את קישור ההצטרפות; הרשמה עם אותו אימייל מתחברת אוטומטית לפרופיל שיובא (כולל השעות).",
+  importAnother: "ייבוא קובץ נוסף",
+  afterTitle: "ואחרי הייבוא?",
+  afterDescription:
+    "כל מטפל/ת נרשם/ת פעם אחת דרך קישור ההצטרפות של הקליניקה עם האימייל שבקובץ — ומקבל/ת מיד את הפרופיל והיתרה שיובאו. לא צריך להזמין כל אחד/ת בנפרד.",
+  afterNotPublished: "הקליניקה סגורה להרשמה — פתחו אותה במסך המטפלים כדי שהקישור יעבוד.",
+  errNoFile: "לא נבחר קובץ.",
+  errFileTooLarge: "הקובץ גדול מדי (עד 2MB).",
+  errUnsupportedType: "סוג קובץ לא נתמך — ‎.xlsx או ‎.csv בלבד.",
+  errUnreadable: "לא הצלחנו לקרוא את הקובץ. נסו לשמור מחדש כ-Excel (‎.xlsx) או CSV UTF-8.",
+  errEmptyFile: "הקובץ ריק.",
+  errMissingColumns: (cols: string) => `חסרות עמודות חובה: ${cols}. בדקו שהשורה הראשונה מכילה את הכותרות.`,
+  errTooManyRows: (max: number) => `יותר מ-${max} שורות — פצלו לכמה קבצים.`,
+  errNothingToImport: "אין שורות תקינות לייבוא.",
+  errImportFailed: "הייבוא נכשל — נסו שוב.",
+  lineLabel: (n: number) => `שורה ${n}`,
+  rpcErrors: {
+    INVALID_INPUT: "נתונים לא תקינים",
+    EMAIL_IN_OTHER_CLINIC: "האימייל רשום בקליניקה אחרת",
+    PHONE_EXISTS: "הטלפון כבר קיים אצלכם",
+    PLAN_LIMIT_THERAPISTS: "הגעתם למספר המטפלים המקסימלי בתוכנית",
+  } as Record<string, string>,
+};
+
+const IMPORT_EN: typeof IMPORT_HE = {
+  title: "Import therapists from a file",
+  backToTherapists: "← Back to therapists",
+  formatTitle: "How to lay out the file",
+  formatDescription:
+    "An Excel (.xlsx) or CSV file. The first row holds the headers, then one row per therapist. Column order doesn't matter — we match by header (Hebrew or English). Extra columns are simply ignored.",
+  steps: [
+    "Download the template below (or open a new sheet with the same headers).",
+    "Fill one row per therapist: full name, mobile phone and email are required. Hours and profession are optional.",
+    "Save as Excel (.xlsx) or CSV, upload it here and check the preview before confirming.",
+  ],
+  columnNotes: [
+    "Phone: an Israeli mobile in any format (052-1234567, 0521234567, +972521234567). This is the number used for WhatsApp reminders.",
+    "Email: must be the one the therapist will sign up with — it links the account to the profile on first login.",
+    "Hours: an existing punch card balance (e.g. from your previous system). Blank or 0 = no card. Recorded without a payment, like onboarding a prepaid balance.",
+    "An email that already exists in your clinic is skipped (re-uploading the same file is safe). A duplicate phone or an email registered in another clinic errors on that row only.",
+  ],
+  downloadTemplate: "Download template (CSV)",
+  uploadTitle: "Upload the file",
+  uploadDescription: "Preview first — nothing is saved until you confirm.",
+  fileLabel: ".xlsx or .csv file (up to 2MB, up to 500 rows)",
+  previewButton: "Check file",
+  reading: "Reading file…",
+  previewSummary: (total, valid) => `${total} rows, ${valid} valid`,
+  colStatus: "Check",
+  rowOk: "OK",
+  rowErrors: {
+    NAME_REQUIRED: "Name missing",
+    PHONE_INVALID: "Invalid phone",
+    EMAIL_INVALID: "Invalid email",
+    HOURS_INVALID: "Invalid hours (0–1000)",
+    DUPLICATE_IN_FILE: "Duplicate in file",
+  },
+  fields: {
+    full_name: "Full name",
+    phone: "Phone",
+    email: "Email",
+    hours: "Hours",
+    profession: "Profession",
+  },
+  confirmImport: (n) => `Import ${n} therapists`,
+  importing: "Importing…",
+  chooseAnotherFile: "Choose another file",
+  invalidRowsSkipped: "Rows with errors won't be imported — fix them in the file and re-upload, or continue without them.",
+  doneSummary: (inserted, skipped) => `Import complete: ${inserted} added${skipped > 0 ? `, ${skipped} skipped (already exist)` : ""}.`,
+  doneErrorsTitle: (n) => `${n} rows were not imported:`,
+  doneNextSteps: "The therapists now appear in the list. To let them sign in, send them the clinic join link; signing up with the same email links automatically to the imported profile (including hours).",
+  importAnother: "Import another file",
+  afterTitle: "What happens next?",
+  afterDescription:
+    "Each therapist signs up once through the clinic join link using the email from the file — and immediately gets the imported profile and balance. No need to invite each one separately.",
+  afterNotPublished: "The clinic is closed for registration — open it on the Therapists screen so the link works.",
+  errNoFile: "No file selected.",
+  errFileTooLarge: "File too large (up to 2MB).",
+  errUnsupportedType: "Unsupported file type — .xlsx or .csv only.",
+  errUnreadable: "We couldn't read the file. Try saving it again as Excel (.xlsx) or CSV UTF-8.",
+  errEmptyFile: "The file is empty.",
+  errMissingColumns: (cols) => `Required columns missing: ${cols}. Make sure the first row holds the headers.`,
+  errTooManyRows: (max) => `More than ${max} rows — split into several files.`,
+  errNothingToImport: "No valid rows to import.",
+  errImportFailed: "Import failed — please try again.",
+  lineLabel: (n) => `Row ${n}`,
+  rpcErrors: {
+    INVALID_INPUT: "Invalid data",
+    EMAIL_IN_OTHER_CLINIC: "Email is registered in another clinic",
+    PHONE_EXISTS: "Phone already exists in your clinic",
+    PLAN_LIMIT_THERAPISTS: "Therapist limit of your plan reached",
+  },
+};
+
+export function getAdminImportDict(locale: Locale) {
+  return locale === "en" ? IMPORT_EN : IMPORT_HE;
+}
+
+// ---------------------------------------------------------------------------
 // /admin/reports
 // ---------------------------------------------------------------------------
 const REPORTS_HE = {
@@ -663,6 +885,9 @@ const AUDIT_HE = {
     room_block_deleted: "חסימת חדר הוסרה",
     booking_marked_completed: "הזמנה סומנה כהושלמה",
     booking_marked_no_show: "הזמנה סומנה — לא הגיע/ה",
+    therapist_imported: "מטפל/ת יובא/ה מקובץ",
+    punch_card_imported: "כרטיסייה יובאה מקובץ (יתרה קיימת)",
+    pre_registered_profile_linked: "פרופיל שיובא מראש קושר לחשבון",
   } as Record<string, string>,
 };
 
@@ -713,6 +938,9 @@ const AUDIT_EN: typeof AUDIT_HE = {
     room_block_deleted: "Room block removed",
     booking_marked_completed: "Booking marked completed",
     booking_marked_no_show: "Booking marked no-show",
+    therapist_imported: "Therapist imported from file",
+    punch_card_imported: "Punch card imported from file (existing balance)",
+    pre_registered_profile_linked: "Pre-imported profile linked to account",
   },
 };
 

@@ -4,6 +4,7 @@ import { getAuthState } from "@/lib/auth/guards";
 import { JoinSignupForm } from "./join-signup-form";
 import { AuthShell } from "@/components/auth-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { publicImageUrl } from "@/lib/storage/images";
 
 // קישור הצטרפות פומבי וקבוע — CLAUDE.md/משוב משתמש: admin מפרסם קישור אחד
 // לקליניקה שלו/ה (ר' migration 20260905000001), במקום ליצור טוקן חד-פעמי
@@ -19,7 +20,7 @@ export default async function JoinPage({ params }: { params: Promise<{ slug: str
   if (userId) redirect("/");
 
   const admin = createAdminClient();
-  const { data: clinic } = await admin.from("clinics").select("name, published, status").eq("slug", slug).maybeSingle();
+  const { data: clinic } = await admin.from("clinics").select("name, published, status, image_path").eq("slug", slug).maybeSingle();
 
   if (!clinic || !clinic.published || clinic.status === "suspended") {
     return (
@@ -36,10 +37,16 @@ export default async function JoinPage({ params }: { params: Promise<{ slug: str
     );
   }
 
+  const clinicImageUrl = publicImageUrl(clinic.image_path);
+
   return (
     <AuthShell>
       <Card className="shadow-e2">
         <CardHeader className="text-center">
+          {clinicImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage, בלי image optimizer
+            <img src={clinicImageUrl} alt={clinic.name} className="mx-auto mb-2 h-28 w-full max-w-xs rounded-field object-cover shadow-e1" />
+          )}
           <CardTitle className="text-xl">הצטרפות ל{clinic.name}</CardTitle>
           <CardDescription>יצירת חשבון מטפל/ת בקליניקה</CardDescription>
         </CardHeader>

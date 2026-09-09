@@ -32,6 +32,8 @@ export type GridColumn = {
   date: string;
   header: string;
   headerHref?: string;
+  // תמונת החדר (הראשונה מ-rooms.images) — מוצגת מעל השם בכותרת העמודה.
+  imageUrl?: string | null;
 };
 
 export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: GridColumn[]; cells: CellState[][] }) {
@@ -115,6 +117,10 @@ export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: 
               <th className={`${STICKY_CORNER} w-16 p-2 text-xs font-normal text-muted-foreground`}>{t.hourColumn}</th>
               {columns.map((col) => (
                 <th key={col.key} className={`${STICKY_HEAD} p-2 text-center font-medium`}>
+                  {col.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage, בלי image optimizer
+                    <img src={col.imageUrl} alt="" className="mx-auto mb-1 h-8 w-12 rounded object-cover" />
+                  )}
                   {col.header}
                 </th>
               ))}

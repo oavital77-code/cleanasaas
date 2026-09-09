@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { X } from "lucide-react";
+import { X, Upload } from "lucide-react";
 import { createInviteAction, toggleClinicPublishedAction, revokeInviteAction, clearUsedInvitesAction } from "./actions";
 import { getAdminTherapistsDict, getCommonDict, normalizeLocale } from "@/lib/i18n";
 
@@ -24,7 +24,7 @@ export default async function TherapistsPage() {
 
   const [{ data: clinic }, { data: profiles }, { data: cards }, { data: invites }] = await Promise.all([
     supabase.from("clinics").select("name, slug, published").eq("id", clinicId).single(),
-    supabase.from("profiles").select("id, full_name, phone, email, role, status").eq("clinic_id", clinicId).order("full_name"),
+    supabase.from("profiles").select("id, full_name, phone, email, role, status, clerk_user_id").eq("clinic_id", clinicId).order("full_name"),
     supabase.from("punch_cards").select("user_id, hours_remaining").eq("clinic_id", clinicId).eq("active", true),
     supabase
       .from("clinic_invites")
@@ -45,7 +45,15 @@ export default async function TherapistsPage() {
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-        <h1 className="text-2xl font-semibold">{t.title}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold">{t.title}</h1>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/therapists/import">
+              <Upload className="size-4" />
+              {t.importFromFile}
+            </Link>
+          </Button>
+        </div>
 
         <Card className="shadow-e1">
           <CardHeader>
@@ -102,6 +110,11 @@ export default async function TherapistsPage() {
                       <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${STATUS_TONE[p.status] ?? "bg-subtle"}`}>
                         {c.profileStatus[p.status] ?? p.status}
                       </span>
+                      {!p.clerk_user_id && (
+                        <span className="ms-1 rounded-pill bg-warning-bg px-2 py-0.5 text-xs text-warning-fg" title={t.pendingSignup}>
+                          {t.pendingSignup}
+                        </span>
+                      )}
                     </td>
                     <td className="tabular-nums hidden p-3 sm:table-cell">{hoursByUser.get(p.id) ?? 0}</td>
                   </tr>

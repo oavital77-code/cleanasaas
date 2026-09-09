@@ -6,6 +6,7 @@ import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
 import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES, DAY_START_HOUR, DAY_END_HOUR } from "@/lib/calendar";
 import { BookingForm } from "./booking-form";
 import { SlotGrid, type CellState, type GridColumn } from "./slot-grid";
+import { publicImageUrl } from "@/lib/storage/images";
 import { AppShell } from "@/components/app-shell";
 import { RealtimeAvailabilityRefresh } from "@/components/realtime-availability-refresh";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +39,7 @@ export default async function SchedulePage({
   const c = getCommonDict(locale);
 
   const [{ data: rooms }, { data: clinic }] = await Promise.all([
-    supabase.from("rooms").select("id, name").eq("active", true).order("sort_order"),
+    supabase.from("rooms").select("id, name, images").eq("active", true).order("sort_order"),
     supabase.from("clinics").select("name, timezone, open_hour, close_hour").eq("id", profile.clinic_id).single(),
   ]);
 
@@ -183,7 +184,7 @@ async function DayView({
   date: string;
   today: string;
   timezone: string;
-  rooms: { id: string; name: string }[];
+  rooms: { id: string; name: string; images?: string[] | null }[];
   userId: string;
   now: Date;
   openHour: number;
@@ -227,7 +228,7 @@ async function DayView({
         <CardContent className="p-0">
           <SlotGrid
             slots={slots}
-            columns={rooms.map((r): GridColumn => ({ key: r.id, roomId: r.id, date, header: r.name }))}
+            columns={rooms.map((r): GridColumn => ({ key: r.id, roomId: r.id, date, header: r.name, imageUrl: publicImageUrl(r.images?.[0]) }))}
             cells={buildCellStates(
               rooms.map((r) => ({ roomId: r.id, date })),
               slots,

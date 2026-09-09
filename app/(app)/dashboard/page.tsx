@@ -4,6 +4,7 @@ import { formatDateTimeHe } from "@/lib/time";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDashboardDict, normalizeLocale } from "@/lib/i18n";
+import { publicImageUrl } from "@/lib/storage/images";
 
 // "הבית" של מטפל/ת מחובר/ת — הועבר מ-"/" (ר' app/(app)/page.tsx) כי אותה
 // כתובת שימשה גם לדף הנחיתה הציבורי וגם למסך הזה, מה שהקשה על אבחון
@@ -14,7 +15,7 @@ export default async function DashboardPage() {
   const supabase = await createClient();
 
   const [{ data: clinic }, { data: cards }, { data: nextBooking }] = await Promise.all([
-    supabase.from("clinics").select("name").eq("id", profile.clinic_id).single(),
+    supabase.from("clinics").select("name, image_path").eq("id", profile.clinic_id).single(),
     supabase.from("punch_cards").select("hours_remaining").eq("user_id", userId).eq("active", true),
     supabase
       .from("bookings")
@@ -31,13 +32,20 @@ export default async function DashboardPage() {
   const isAdmin = profile.role === "owner" || profile.role === "admin";
   const locale = normalizeLocale(profile.locale);
   const t = getDashboardDict(locale);
+  const clinicImageUrl = publicImageUrl(clinic?.image_path);
 
   return (
     <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale} isAdmin={isAdmin}>
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-semibold">{t.greeting(profile.full_name)}</h1>
-          <p className="text-muted-foreground">{clinic?.name}</p>
+        <div className="flex items-center gap-4">
+          {clinicImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage, בלי image optimizer
+            <img src={clinicImageUrl} alt={clinic?.name ?? ""} className="size-16 shrink-0 rounded-field object-cover shadow-e1" />
+          )}
+          <div>
+            <h1 className="text-2xl font-semibold">{t.greeting(profile.full_name)}</h1>
+            <p className="text-muted-foreground">{clinic?.name}</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

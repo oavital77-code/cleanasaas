@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireClinicAdmin } from "@/lib/auth/guards";
@@ -12,22 +13,114 @@ import { formatDateHe, formatTimeHe, DEFAULT_TIMEZONE } from "@/lib/time";
 // punch_card_tiers/app_settings, לא RPC — אינן בין הטבלאות שדורשות RPC) +
 // חלק ב' (שיטת תשלום, clinic_payment_settings, סוד מוגן ב-RLS).
 
+// עורך מדרגות מלא (בקשת המשתמש/ת 09/09): הוספה/הסרה/עריכת שעות, מחיר,
+// פיקדון והפעלה — מנהל/ת הקליניקה מגדיר/ה מה שרוצה. המדרגות משמשות את כל
+// מסלולי התשלום: חנות Woo (woo_product_tiers ממפה מוצר→מדרגה), הנפקה
+// ידנית (admin_issue_punch_card: מזומן/ביט/העברה) והצעות מחיר למטפל/ת.
+// שגיאות (שעות כפולות, מדרגה בשימוש) חוזרות כ-?notice= כי הטפסים הם
+// server actions רגילים בלי state — הדף מציג את ההודעה.
+function tierRedirect(notice?: string): never {
+  redirect(notice ? `/admin/settings?notice=${notice}#tiers` : "/admin/settings#tiers");
+}
+
+function parseTierFields(formData: FormData) {
+  const hours = Number(formData.get("hours"));
+  const pricePerHour = Number(formData.get("price_per_hour"));
+  const depositHours = Number(formData.get("deposit_hours"));
+  const valid =
+    Number.isInteger(hours) && hours >= 1 && hours <= 1000 &&
+    Number.isFinite(pricePerHour) && pricePerHour >= 0 &&
+    Number.isInteger(depositHours) && depositHours >= 0 && depositHours <= hours;
+  return { hours, pricePerHour, depositHours, valid };
+}
+
 export async function updatePunchCardTierAction(formData: FormData) {
   const { clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
 
   const id = String(formData.get("id") ?? "");
-  const pricePerHour = Number(formData.get("price_per_hour"));
-  const depositHours = Number(formData.get("deposit_hours"));
-  if (!id || !Number.isFinite(pricePerHour)) return;
+  const { hours, pricePerHour, depositHours, valid } = parseTierFields(formData);
+  if (!id || !valid) tierRedirect("tier_invalid");
 
-  await supabase
+  const { error } = await supabase
     .from("punch_card_tiers")
-    .update({ price_per_hour: pricePerHour, deposit_hours: Number.isFinite(depositHours) ? depositHours : 0 })
+    .update({ hours, price_per_hour: pricePerHour, deposit_hours: depositHours, active: formData.get("active") === "on" })
     .eq("id", id)
     .eq("clinic_id", clinicId);
+  if (error) tierRedirect(error.code === "23505" ? "tier_hours_taken" : "tier_error");
 
   revalidatePath("/admin/settings");
+  tierRedirect();
+}
+
+export async function addPunchCardTierAction(formData: FormData) {
+  const { clinicId } = await requireClinicAdmin();
+  const supabase = await createClient();
+
+  const { hours, pricePerHour, depositHours, valid } = parseTierFields(formData);
+  if (!valid) tierRedirect("tier_invalid");
+
+  const { data: last } = await supabase
+    .from("punch_card_tiers")
+    .select("sort_order")
+    .eq("clinic_id", clinicId)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = await supabase.from("punch_card_tiers").insert({
+    clinic_id: clinicId,
+    hours,
+    price_per_hour: pricePerHour,
+    deposit_hours: depositHours,
+    active: true,
+    sort_order: (last?.sort_order ?? -1) + 1,
+  });
+  if (error) tierRedirect(error.code === "23505" ? "tier_hours_taken" : "tier_error");
+
+  revalidatePath("/admin/settings");
+  tierRedirect();
+}
+
+// מחיקה — רק כשאין כרטיסיות על המדרגה (FK RESTRICT מ-punch_cards.tier_id)
+// ואין מיפוי מוצר Woo אליה. אחרת: השבתה (active=false) — המדרגה נעלמת
+// מהמטפלים/ות ומההנפקה הידנית, אבל ההיסטוריה של הכרטיסיות נשמרת.
+export async function deletePunchCardTierAction(formData: FormData) {
+  const { clinicId } = await requireClinicAdmin();
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  if (!id) tierRedirect("tier_invalid");
+
+  const [{ count: cards }, { count: wooMappings }] = await Promise.all([
+    supabase.from("punch_cards").select("id", { count: "exact", head: true }).eq("tier_id", id),
+    supabase.from("woo_product_tiers").select("tier_id", { count: "exact", head: true }).eq("tier_id", id),
+  ]);
+
+  if ((cards ?? 0) > 0 || (wooMappings ?? 0) > 0) {
+    await supabase.from("punch_card_tiers").update({ active: false }).eq("id", id).eq("clinic_id", clinicId);
+    revalidatePath("/admin/settings");
+    tierRedirect("tier_deactivated_in_use");
+  }
+
+  const { error } = await supabase.from("punch_card_tiers").delete().eq("id", id).eq("clinic_id", clinicId);
+  if (error) tierRedirect("tier_error");
+
+  revalidatePath("/admin/settings");
+  tierRedirect("tier_deleted");
+}
+
+// מודל ססיה (מנוי חודשי) הוא אופציונלי לקליניקה — אותו דגל בדיוק
+// (clinics.sessions_enabled) שה-onboarding מציב, ו-request_session בודק
+// (SESSIONS_NOT_ENABLED). כשכבוי: המטפלים/ות לא רואים/ות בקשת ססיה,
+// ומחירי הססיה מוסתרים כאן.
+export async function toggleSessionsEnabledAction(formData: FormData) {
+  const { clinicId } = await requireClinicAdmin();
+  const supabase = await createClient();
+  const enabled = formData.get("sessions_enabled") === "on";
+
+  await supabase.from("clinics").update({ sessions_enabled: enabled }).eq("id", clinicId);
+  revalidatePath("/admin/settings");
+  revalidatePath("/sessions");
 }
 
 export async function updateSessionPricingAction(formData: FormData) {

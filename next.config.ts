@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // העלאת תמונות (חדרים/קליניקה) דרך server actions — ברירת המחדל היא 1MB,
+  // התמונות מוגבלות ל-5MB ב-lib/storage/images.ts וב-bucket עצמו.
+  experimental: {
+    serverActions: { bodySizeLimit: "6mb" },
+  },
   // כותרות אבטחה — Next לא מוסיף אותן מעצמו.
   async headers() {
     return [
