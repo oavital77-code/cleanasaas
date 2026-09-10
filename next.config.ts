@@ -2,10 +2,15 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  // העלאת תמונות (חדרים/קליניקה) דרך server actions — ברירת המחדל היא 1MB,
-  // התמונות מוגבלות ל-5MB ב-lib/storage/images.ts וב-bucket עצמו.
+  // ייבוא מטפלים/ות מ-Excel/CSV עובר כ-FormData ל-Server Action (עד 2MB,
+  // נאכף גם בדפדפן וגם בפעולה). ברירת המחדל של Next היא 1MB — קטנה מדי.
+  //
+  // 🔴 אין להעלות כאן את הערך כדי לתמוך בקבצים גדולים: ל-Vercel יש תקרה
+  // קשיחה של ~4.5MB לגוף בקשה, שנאכפת לפני שהפעולה רצה ולא ניתנת להגדרה.
+  // תמונות עולות לכן ישירות מהדפדפן ל-Supabase Storage (signed upload URL,
+  // ר' lib/storage/images.ts) ולא דרך Server Action.
   experimental: {
-    serverActions: { bodySizeLimit: "6mb" },
+    serverActions: { bodySizeLimit: "3mb" },
   },
   // כותרות אבטחה — Next לא מוסיף אותן מעצמו.
   async headers() {

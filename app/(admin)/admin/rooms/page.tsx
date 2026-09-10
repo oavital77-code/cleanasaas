@@ -10,16 +10,13 @@ import {
   updateBranchAction,
   addRoomAction,
   updateRoomAction,
-  uploadRoomImageAction,
   deleteRoomImageAction,
-  uploadClinicImageAction,
   deleteClinicImageAction,
 } from "./actions";
+import { ImageUpload } from "./image-upload";
 import { getAdminRoomsDict, normalizeLocale } from "@/lib/i18n";
 import { MAX_ROOM_IMAGES, publicImageUrl } from "@/lib/storage/images";
 import { X } from "lucide-react";
-
-const ACCEPT = "image/jpeg,image/png,image/webp";
 
 export default async function AdminRoomsPage({ searchParams }: { searchParams: Promise<{ notice?: string }> }) {
   const { profile, clinicId } = await requireClinicAdmin();
@@ -68,16 +65,11 @@ export default async function AdminRoomsPage({ searchParams }: { searchParams: P
                 {t.noImage}
               </div>
             )}
-            <form action={uploadClinicImageAction} className="flex flex-1 flex-col gap-2">
-              <Label htmlFor="clinic_image" className="text-xs">
-                {clinicImageUrl ? t.replaceImage : t.uploadImage}
-              </Label>
-              <input id="clinic_image" name="file" type="file" accept={ACCEPT} required className="text-sm" />
+            <div className="flex flex-1 flex-col gap-2">
+              <Label className="text-xs">{clinicImageUrl ? t.replaceImage : t.uploadImage}</Label>
+              <ImageUpload />
               <p className="text-xs text-muted-foreground">{t.imageHint}</p>
-              <Button type="submit" size="sm" variant="outline" className="w-fit">
-                {t.upload}
-              </Button>
-            </form>
+            </div>
           </CardContent>
         </Card>
 
@@ -163,15 +155,7 @@ export default async function AdminRoomsPage({ searchParams }: { searchParams: P
                           </div>
                         );
                       })}
-                      {(r.images ?? []).length < MAX_ROOM_IMAGES && (
-                        <form action={uploadRoomImageAction} className="flex flex-wrap items-center gap-2">
-                          <input type="hidden" name="room_id" value={r.id} />
-                          <input name="file" type="file" accept={ACCEPT} required className="text-xs" aria-label={t.uploadImage} />
-                          <Button type="submit" size="sm" variant="ghost">
-                            {t.upload}
-                          </Button>
-                        </form>
-                      )}
+                      {(r.images ?? []).length < MAX_ROOM_IMAGES && <ImageUpload roomId={r.id} compact />}
                     </div>
                     </div>
                   ))}

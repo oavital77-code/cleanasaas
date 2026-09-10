@@ -9,7 +9,9 @@ import {
   IMAGE_BUCKET,
   MAX_ROOM_IMAGES,
   clinicImagePath,
-  imageExtensionFor,
+  isClinicImagePath,
+  isImageExt,
+  isRoomImagePath,
   pathBelongsToClinic,
   roomImagePath,
 } from "@/lib/storage/images";
@@ -78,46 +80,54 @@ export async function updateRoomAction(formData: FormData) {
 }
 
 // ---------------------------------------------------------------------------
-// תמונות (בקשת המשתמש/ת 09/09) — ר' lib/storage/images.ts.
-// ה-storage נכתב דרך service role אחרי requireClinicAdmin (הנתיב נבנה
-// מ-clinicId של ה-guard, לא מהטופס), וה-DB (rooms.images / clinics.image_path)
-// דרך ה-client הרגיל תחת RLS. הודעות שגיאה חוזרות כ-?notice= כמו ב-settings.
+// תמונות — ר' lib/storage/images.ts להסבר המלא על הזרימה.
+//
+// 🔴 הקובץ עצמו לא עובר כאן. הדפדפן מכווץ, מבקש signed upload URL (הפעולות
+// הראשונות למטה — בלי גוף כבד), מעלה ישירות ל-Supabase, ואז שולח את הנתיב
+// בלבד ל-attach*. זה מה שתיקן את ה-"server-side exception" בהעלאה מהנייד:
+// גוף בקשה לפונקציית Vercel מוגבל ל-~4.5MB ונדחה לפני שהפעולה רצה.
 // ---------------------------------------------------------------------------
-function roomsRedirect(notice?: string): never {
-  redirect(notice ? `/admin/rooms?notice=${notice}` : "/admin/rooms");
+
+export type UploadTicket = { path: string; token: string; error?: never } | { error: string; path?: never; token?: never };
+
+async function signedUploadTicket(path: string): Promise<UploadTicket> {
+  const { data, error } = await createAdminClient().storage.from(IMAGE_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) return { error: "UPLOAD_URL_FAILED" };
+  return { path: data.path, token: data.token };
 }
 
-async function uploadImage(path: string, file: File): Promise<boolean> {
-  const admin = createAdminClient();
-  const { error } = await admin.storage
-    .from(IMAGE_BUCKET)
-    .upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: false });
-  return !error;
-}
-
-export async function uploadRoomImageAction(formData: FormData) {
+export async function createRoomImageUploadUrlAction(roomId: string, ext: string): Promise<UploadTicket> {
   const { clinicId } = await requireClinicAdmin();
+  if (!isImageExt(ext)) return { error: "IMAGE_INVALID" };
+
   const supabase = await createClient();
-  const roomId = String(formData.get("room_id") ?? "");
-  const file = formData.get("file");
-  if (!roomId || !(file instanceof File)) roomsRedirect("image_invalid");
-
-  const ext = imageExtensionFor(file);
-  if (!ext) roomsRedirect("image_invalid");
-
   const { data: room } = await supabase.from("rooms").select("images").eq("id", roomId).eq("clinic_id", clinicId).maybeSingle();
-  if (!room) roomsRedirect("image_invalid");
+  if (!room) return { error: "IMAGE_INVALID" };
+  if ((room.images ?? []).length >= MAX_ROOM_IMAGES) return { error: "IMAGE_LIMIT" };
+
+  return signedUploadTicket(roomImagePath(clinicId, roomId, ext));
+}
+
+// נקרא אחרי שההעלאה הישירה הצליחה. הנתיב נבדק מול הקליניקה **והחדר** — הוא
+// חוזר מהלקוח, אז לא סומכים עליו: רק נתיב שאנחנו בעצמנו היינו מייצרים.
+export async function attachRoomImageAction(roomId: string, path: string): Promise<{ error?: string }> {
+  const { clinicId } = await requireClinicAdmin();
+  if (!isRoomImagePath(path, clinicId, roomId)) return { error: "IMAGE_INVALID" };
+
+  const supabase = await createClient();
+  const { data: room } = await supabase.from("rooms").select("images").eq("id", roomId).eq("clinic_id", clinicId).maybeSingle();
+  if (!room) return { error: "IMAGE_INVALID" };
   const images = room.images ?? [];
-  if (images.length >= MAX_ROOM_IMAGES) roomsRedirect("image_limit");
+  if (images.includes(path)) return {};
+  if (images.length >= MAX_ROOM_IMAGES) return { error: "IMAGE_LIMIT" };
 
-  const path = roomImagePath(clinicId, roomId, ext);
-  if (!(await uploadImage(path, file))) roomsRedirect("image_failed");
+  const { error } = await supabase.from("rooms").update({ images: [...images, path] }).eq("id", roomId).eq("clinic_id", clinicId);
+  if (error) return { error: "IMAGE_FAILED" };
 
-  await supabase.from("rooms").update({ images: [...images, path] }).eq("id", roomId).eq("clinic_id", clinicId);
   revalidatePath("/admin/rooms");
   revalidatePath("/schedule");
   revalidatePath("/admin/board");
-  roomsRedirect();
+  return {};
 }
 
 export async function deleteRoomImageAction(formData: FormData) {
@@ -125,7 +135,7 @@ export async function deleteRoomImageAction(formData: FormData) {
   const supabase = await createClient();
   const roomId = String(formData.get("room_id") ?? "");
   const path = String(formData.get("path") ?? "");
-  if (!roomId || !path || !pathBelongsToClinic(path, clinicId)) roomsRedirect("image_invalid");
+  if (!roomId || !isRoomImagePath(path, clinicId, roomId)) roomsRedirect("image_invalid");
 
   const { data: room } = await supabase.from("rooms").select("images").eq("id", roomId).eq("clinic_id", clinicId).maybeSingle();
   if (!room) roomsRedirect("image_invalid");
@@ -142,24 +152,28 @@ export async function deleteRoomImageAction(formData: FormData) {
   roomsRedirect();
 }
 
-export async function uploadClinicImageAction(formData: FormData) {
+export async function createClinicImageUploadUrlAction(ext: string): Promise<UploadTicket> {
   const { clinicId } = await requireClinicAdmin();
+  if (!isImageExt(ext)) return { error: "IMAGE_INVALID" };
+  return signedUploadTicket(clinicImagePath(clinicId, ext));
+}
+
+export async function attachClinicImageAction(path: string): Promise<{ error?: string }> {
+  const { clinicId } = await requireClinicAdmin();
+  if (!isClinicImagePath(path, clinicId)) return { error: "IMAGE_INVALID" };
+
   const supabase = await createClient();
-  const file = formData.get("file");
-  if (!(file instanceof File)) roomsRedirect("image_invalid");
-  const ext = imageExtensionFor(file);
-  if (!ext) roomsRedirect("image_invalid");
-
   const { data: clinic } = await supabase.from("clinics").select("image_path").eq("id", clinicId).single();
-  const path = clinicImagePath(clinicId, ext);
-  if (!(await uploadImage(path, file))) roomsRedirect("image_failed");
+  const { error } = await supabase.from("clinics").update({ image_path: path }).eq("id", clinicId);
+  if (error) return { error: "IMAGE_FAILED" };
 
-  await supabase.from("clinics").update({ image_path: path }).eq("id", clinicId);
-  if (clinic?.image_path && pathBelongsToClinic(clinic.image_path, clinicId)) {
+  // התמונה הקודמת נמחקת רק אחרי שהחדשה נשמרה — כך שכשל באמצע לא משאיר
+  // קליניקה בלי תמונה בכלל.
+  if (clinic?.image_path && clinic.image_path !== path && pathBelongsToClinic(clinic.image_path, clinicId)) {
     await createAdminClient().storage.from(IMAGE_BUCKET).remove([clinic.image_path]);
   }
   revalidatePath("/", "layout");
-  roomsRedirect();
+  return {};
 }
 
 export async function deleteClinicImageAction() {
@@ -172,4 +186,8 @@ export async function deleteClinicImageAction() {
   }
   revalidatePath("/", "layout");
   roomsRedirect();
+}
+
+function roomsRedirect(notice?: string): never {
+  redirect(notice ? `/admin/rooms?notice=${notice}` : "/admin/rooms");
 }

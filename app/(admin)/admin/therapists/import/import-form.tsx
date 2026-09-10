@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -10,10 +10,16 @@ import { confirmImportAction, previewImportAction, type ImportPreviewState } fro
 
 const initialState: ImportPreviewState = { step: "upload" };
 
+// 🔴 נבדק בדפדפן לפני השליחה: גוף בקשה לפונקציית Vercel חסום ב-~4.5MB
+// והבקשה נדחית **לפני** שה-Server Action רץ — כלומר שגיאת שרת סתומה במקום
+// הודעה. הקובץ ממילא מוגבל ל-2MB בפעולה עצמה (ר' actions.ts).
+const MAX_FILE_BYTES = 2 * 1024 * 1024;
+
 export function ImportForm() {
   const t = getAdminImportDict(useLocale());
   const [preview, previewAction, previewPending] = useActionState(previewImportAction, initialState);
   const [confirm, confirmAction, confirmPending] = useActionState(confirmImportAction, initialState);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   // שני מצבים נפרדים: preview מחזיק את השורות; confirm מחזיק תוצאה (done)
   // או שגיאת אישור שמוצגת מעל הטבלה.
@@ -110,10 +116,28 @@ export function ImportForm() {
 
   return (
     <form action={previewAction} className="flex flex-col gap-3">
-      {state.error && <p className="rounded-field bg-danger-bg px-3 py-2 text-sm text-danger">{state.error}</p>}
+      {(fileError ?? state.error) && (
+        <p className="rounded-field bg-danger-bg px-3 py-2 text-sm text-danger">{fileError ?? state.error}</p>
+      )}
       <Label htmlFor="import_file">{t.fileLabel}</Label>
-      <input id="import_file" name="file" type="file" accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required className="text-sm" />
-      <Button type="submit" disabled={previewPending} className="w-fit">
+      <input
+        id="import_file"
+        name="file"
+        type="file"
+        accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        required
+        className="text-sm"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && file.size > MAX_FILE_BYTES) {
+            setFileError(t.errFileTooLarge);
+            e.target.value = "";
+          } else {
+            setFileError(null);
+          }
+        }}
+      />
+      <Button type="submit" disabled={previewPending || fileError !== null} className="w-fit">
         {previewPending ? t.reading : t.previewButton}
       </Button>
     </form>
