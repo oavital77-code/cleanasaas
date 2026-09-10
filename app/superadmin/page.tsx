@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthState } from "@/lib/auth/guards";
@@ -37,7 +38,12 @@ export default async function SuperadminPage() {
     <div className="flex flex-1 flex-col">
       <AppHeader isSuperadmin />
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6 sm:p-8">
-        <h1 className="text-2xl font-semibold">קליניקות</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold">קליניקות</h1>
+          <Link href="/superadmin/owner" className="text-sm text-violet-600 hover:underline">
+            דשבורד בעלים: רוכשים ומדרגות רכישה
+          </Link>
+        </div>
 
         {error ? (
           <p className="text-destructive">שגיאה בטעינת רשימת הקליניקות: {error.message}</p>
