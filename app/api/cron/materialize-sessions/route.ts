@@ -11,6 +11,9 @@ import { getAdminEmails } from "@/lib/email/recipients";
 // (action='session_materialization_job_error', clinic_id של אותה קליניקה).
 // אחרי הריצה סורקים שורות audit_log חדשות מהריצה הזו בלבד (startedAt) ושולחים
 // התראה לאדמיני *אותה* קליניקה בלבד — לא לכל הקליניקות (חוק #3 ב-CLAUDE.md).
+// המקסימום שכל תוכנית של Vercel מקבלת בלי לשבור את ה-build ב-Hobby; להעלות ב-Pro.
+export const maxDuration = 60;
+
 export const GET = withCronAlert("materialize-sessions", async () => {
   const supabase = createAdminClient();
   const startedAt = new Date().toISOString();

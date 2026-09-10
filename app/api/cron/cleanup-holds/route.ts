@@ -6,6 +6,9 @@ import { notifyPlatformPaymentOutcome } from "@/lib/platform-billing-emails";
 
 // כל שעה — ניקוי holds פגי תוקף של ססיות + סגירת ביטולים/פקיעות מנוי, וכן
 // פקיעת trial ל-suspended (כל הקליניקות, ר' spec §7/§14).
+// המקסימום שכל תוכנית של Vercel מקבלת בלי לשבור את ה-build ב-Hobby; להעלות ב-Pro.
+export const maxDuration = 60;
+
 export const GET = withCronAlert("cleanup-holds", async () => {
   const supabase = createAdminClient();
 

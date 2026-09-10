@@ -11,6 +11,9 @@ import { sendWhatsAppReminders } from "@/lib/whatsapp/reminders";
 // + כרטיסייה פגה + חידוש ססיה קרב (7 ימים מראש, למטפל/ת ולאדמיני הקליניקה
 // שלו/ה), כל הקליניקות. כל התראה מסומנת עם *_sent_at/*_notified_at כדי
 // שלא תישלח שוב בכל ריצה.
+// המקסימום שכל תוכנית של Vercel מקבלת בלי לשבור את ה-build ב-Hobby; להעלות ב-Pro.
+export const maxDuration = 60;
+
 export const GET = withCronAlert("send-reminders", async () => {
   const supabase = createAdminClient();
   const now = new Date();
