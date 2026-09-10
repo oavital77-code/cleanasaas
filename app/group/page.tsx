@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { GridPaper, TrustRow } from "@/components/landing";
 import { CLEANA_PLUS_URL, CLEANA_URL } from "@/lib/hosts";
 
 // אנגלית/LTR — כמו דף הבית הציבורי (ר' app/(app)/page.tsx) וכמו החריג
@@ -41,49 +42,68 @@ const VALUES = [
 export default function GroupPage() {
   return (
     <div dir="ltr" className="flex flex-1 flex-col bg-white text-neutral-900">
-      <header className="border-b border-neutral-200 px-5 py-5 md:px-8">
-        <div className="mx-auto flex w-full max-w-5xl items-center">
-          <span className="text-lg font-semibold tracking-tight">CleanaGroup</span>
+      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/80 px-5 py-4 backdrop-blur-sm md:px-8">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
+          <span className="text-lg font-bold tracking-tight">CleanaGroup</span>
+          <div className="flex items-center gap-2">
+            <a href={CLEANA_URL} className="inline-flex h-11 items-center rounded-2xl px-4 text-sm font-semibold text-neutral-600 hover:text-neutral-900">
+              Cleana
+            </a>
+            <a
+              href={CLEANA_PLUS_URL}
+              className="inline-flex h-11 items-center rounded-2xl px-4 text-sm font-semibold text-neutral-600 hover:text-neutral-900"
+            >
+              Cleana+
+            </a>
+          </div>
         </div>
       </header>
 
       <main className="flex flex-1 flex-col">
-        <section className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 px-5 py-16 text-center md:px-8 md:py-24">
-          <span className="text-xs font-semibold tracking-wide text-neutral-500">
-            ONE GROUP, TWO PRACTICE TOOLS
-          </span>
-          <h1 className="text-4xl font-semibold text-balance sm:text-5xl">
-            A holistic answer for clinics and independent practitioners.
-          </h1>
-          <p className="max-w-xl text-lg leading-relaxed text-neutral-600">
-            CleanaGroup builds the scheduling and management systems behind
-            the practice — one for clinics that rent rooms to many
-            therapists, one for therapists managing their own clients.
-          </p>
+        <section className="relative overflow-hidden">
+          <GridPaper />
+          <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center gap-7 px-5 py-16 text-center md:px-8 md:py-24">
+            <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-semibold tracking-wide text-neutral-600 shadow-sm">
+              <Sparkles className="size-3.5" aria-hidden />
+              One group, two practice tools
+            </span>
+            <h1 className="text-[2.6rem] leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+              The systems behind the practice.
+              <br />
+              <span className="text-violet-500">For clinics</span> and <span style={{ color: "#C6723A" }}>for practitioners.</span>
+            </h1>
+            <p className="max-w-xl text-lg leading-relaxed text-neutral-600">
+              CleanaGroup builds the scheduling and management systems behind the practice — one for clinics that
+              rent rooms to many therapists, one for therapists managing their own clients.
+            </p>
+            <TrustRow items={["No card required", "Live in minutes", "Cancel any time"]} />
+          </div>
         </section>
 
-        <section className="border-t border-neutral-200 px-5 py-16 md:px-8 md:py-24">
-          <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
+        <section className="px-5 pb-16 md:px-8 md:pb-24">
+          <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
             {/* Cleana — סגול, הטוקנים האמיתיים מ-globals.css של cleanasaas */}
-            <div className="flex flex-col gap-6 rounded-2xl border border-violet-200 bg-violet-50 p-8">
+            <div className="relative flex flex-col gap-6 overflow-hidden rounded-3xl border border-violet-200 bg-white p-8 shadow-2xl shadow-violet-500/10">
+              <div aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-500 via-violet-300 to-violet-500" />
               <div className="flex items-center gap-3">
-                <svg width="40" height="40" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                <svg width="44" height="44" viewBox="0 0 100 100" fill="none" aria-hidden="true">
                   <rect x="4" y="4" width="92" height="92" rx="24" fill="#7A5AF8" />
                   <circle cx="50" cy="50" r="24" fill="none" stroke="white" strokeWidth="7" />
                 </svg>
                 <div>
                   <p className="text-xs font-semibold tracking-wide text-violet-600">FOR CLINIC OWNERS</p>
-                  <h2 className="text-2xl font-semibold text-neutral-900">Cleana</h2>
+                  <h2 className="text-2xl font-bold text-neutral-900">Cleana</h2>
                 </div>
               </div>
               <p className="text-neutral-700">
-                Room scheduling, punch cards, and sessions for clinics with
-                multiple branches and therapists.
+                Room scheduling, punch cards, and sessions for clinics with multiple branches and therapists.
               </p>
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-3">
                 {CLEANA_POINTS.map((point) => (
-                  <li key={point} className="flex items-center gap-2 text-sm text-neutral-700">
-                    <Check className="size-4 shrink-0 text-violet-600" />
+                  <li key={point} className="flex items-center gap-3 text-sm text-neutral-700">
+                    <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-600">
+                      <Check className="size-3" strokeWidth={3} aria-hidden />
+                    </span>
                     {point}
                   </li>
                 ))}
@@ -92,18 +112,20 @@ export default function GroupPage() {
                   (rewrite ב-middleware), וקישור יחסי היה מוביל לעצמו. */}
               <a
                 href={CLEANA_URL}
-                className="mt-auto inline-flex h-11 items-center justify-center rounded-lg bg-violet-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-violet-600"
+                className="mt-auto inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-violet-500 px-6 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-colors hover:bg-violet-600"
               >
                 Visit Cleana
+                <ArrowRight className="size-4" aria-hidden />
               </a>
             </div>
 
             {/* Cleana+ — טרקוטה/זהב, hex מחושב מ-HSL האמיתי ב-click-na
                 (src/app/globals.css: --primary 24 55% 50%, --accent 41 71% 46%,
                 --background 37 59% 90%) — לא נוגעים בריפו עצמו, רק מייצגים אותו. */}
-            <div className="flex flex-col gap-6 rounded-2xl border p-8" style={{ borderColor: "#E3C9A6", backgroundColor: "#F4E9D6" }}>
+            <div className="relative flex flex-col gap-6 overflow-hidden rounded-3xl border bg-white p-8 shadow-2xl" style={{ borderColor: "#E3C9A6", boxShadow: "0 25px 50px -12px rgba(198,114,58,0.12)" }}>
+              <div aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: "linear-gradient(to right, #C6723A, #C99422, #C6723A)" }} />
               <div className="flex items-center gap-3">
-                <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true">
+                <svg width="44" height="44" viewBox="0 0 32 32" aria-hidden="true">
                   <rect width="32" height="32" rx="9" fill="#C6723A" />
                   <circle cx="16" cy="16" r="7.25" fill="none" stroke="#F4E9D6" strokeWidth="3" />
                 </svg>
@@ -111,40 +133,43 @@ export default function GroupPage() {
                   <p className="text-xs font-semibold tracking-wide" style={{ color: "#8E4A1A" }}>
                     FOR INDEPENDENT THERAPISTS
                   </p>
-                  <h2 className="text-2xl font-semibold text-neutral-900">
+                  <h2 className="text-2xl font-bold text-neutral-900">
                     Cleana<span style={{ color: "#C99422" }}>+</span>
                   </h2>
                 </div>
               </div>
               <p className="text-neutral-700">
-                A booking link your clients understand, and a calendar that
-                never double-books — for practitioners running their own
-                practice.
+                A booking link your clients understand, and a calendar that never double-books — for
+                practitioners running their own practice.
               </p>
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-3">
                 {CLEANA_PLUS_POINTS.map((point) => (
-                  <li key={point} className="flex items-center gap-2 text-sm text-neutral-700">
-                    <Check className="size-4 shrink-0" style={{ color: "#C6723A" }} />
+                  <li key={point} className="flex items-center gap-3 text-sm text-neutral-700">
+                    <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: "#F4E9D6", color: "#8E4A1A" }}>
+                      <Check className="size-3" strokeWidth={3} aria-hidden />
+                    </span>
                     {point}
                   </li>
                 ))}
               </ul>
               <a
                 href={CLEANA_PLUS_URL}
-                className="mt-auto inline-flex h-11 items-center justify-center rounded-lg px-5 text-sm font-semibold text-white transition-colors"
-                style={{ backgroundColor: "#C6723A" }}
+                className="mt-auto inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: "#C6723A", boxShadow: "0 10px 15px -3px rgba(198,114,58,0.25)" }}
               >
                 Visit Cleana+
+                <ArrowRight className="size-4" aria-hidden />
               </a>
             </div>
           </div>
         </section>
 
         <section className="border-t border-neutral-200 px-5 py-16 md:px-8 md:py-24">
-          <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-8 md:grid-cols-3">
-            {VALUES.map((v) => (
-              <div key={v.title} className="flex flex-col gap-2">
-                <p className="font-medium text-neutral-900">{v.title}</p>
+          <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
+            {VALUES.map((v, i) => (
+              <div key={v.title} className="flex flex-col gap-3 rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm md:p-7">
+                <span className="text-2xl font-bold tabular-nums text-neutral-300">{String(i + 1).padStart(2, "0")}</span>
+                <p className="text-lg font-bold text-neutral-900">{v.title}</p>
                 <p className="text-sm leading-relaxed text-neutral-600">{v.body}</p>
               </div>
             ))}
