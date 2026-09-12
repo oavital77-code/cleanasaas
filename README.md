@@ -8,20 +8,28 @@
 הזה הוא **בנייה חדשה לגמרי**, לא fork, לפי המפרט שהתקבל
 (`SAASMIGRATIONSPEC.md` — לא נכלל בריפו, שמור אצל מי שהזמין את הפיתוח).
 
+**להרצה, לתפעול ולתיקון תקלות — [`docs/HANDBOOK.md`](docs/HANDBOOK.md).**
+לדיווח על פגיעת אבטחה — [`SECURITY.md`](SECURITY.md). לתנאי השימוש בקוד — [`LICENSE`](LICENSE).
+
 **לפני כל משימה: קראו את `PROGRESS.md`** — מה בנוי, מה נבדק, ומה עדיין
 נותר, לפי סדר העבודה שהמפרט עצמו ממליץ עליו.
 
 ## Stack
 
-זהה למקור: Next.js 15 (App Router) + TypeScript, Supabase (Postgres,
-Auth, RLS), Tailwind + shadcn/ui (RTL), Vercel + Vercel Cron, WooCommerce
-(פר-קליניקה), Resend (טרם חובר).
+Next.js 15 (App Router) + TypeScript, Supabase (Postgres + RLS),
+Tailwind + shadcn/ui (RTL), Vercel `fra1` + Vercel Cron, WooCommerce
+(פר-קליניקה), Resend, Sentry, ו-PayPlus לחיוב הפלטפורמה עצמה.
+
+**הזהות היא Clerk, לא Supabase Auth.** המערכת עברה, וזו המלכודת הנפוצה
+ביותר כאן: `auth.uid()` **זורקת** בפונקציות ה-DB, כי ה-`sub` של Clerk הוא
+מחרוזת ולא uuid. כל פונקציה חדשה חייבת להשתמש ב-`app_user_id()`.
+ר' פרק 5 ב-[`docs/HANDBOOK.md`](docs/HANDBOOK.md).
 
 ## עקרון־על
 
 כל שורה בכל טבלה עסקית שייכת לקליניקה אחת (`clinic_id`). ה-`clinic_id`
-**תמיד** נגזר בצד השרת מ-`auth.uid()` → `profiles.clinic_id` — אף פעם לא
-מתקבל כפרמטר מהלקוח. ר' `CLAUDE.md` לחוקי הברזל המלאים (חלקם עדיין תקפים
+**תמיד** נגזר בצד השרת מזהות המשתמש (`app_user_id()` → `profiles.clinic_id`)
+— אף פעם לא מתקבל כפרמטר מהלקוח. ר' `CLAUDE.md` לחוקי הברזל המלאים (חלקם עדיין תקפים
 כמו שהם מהמערכת המקורית: RPC בלבד לזרימות עסקיות, מניעת חפיפה ברמת ה-DB,
 FIFO על כרטיסיות, מטפל לא רואה מטפל אחר).
 
@@ -55,6 +63,6 @@ lib/
   time/       מקבל timezone כפרמטר (per-clinic, לא hardcoded)
   woo/        process-order/rest-client/verify/poll — הכל clinic-scoped
 supabase/
-  migrations/   סכמה + RLS + ~35 RPCs, ממוספר כרונולוגית
+  migrations/   סכמה + RLS + ~60 RPCs, ממוספר כרונולוגית
   tests/        harness replay מקומי + isolation smoke test (שתי קליניקות)
 ```
