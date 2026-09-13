@@ -452,8 +452,10 @@ definer` בלי בדיקת `clinic_id`? (2) האם הקוד קיבל `clinic_id`
 1. `gitleaks git --config .gitleaks.toml --redact .` — נקי. זו הבדיקה
    שלא ניתן לבטל אחר כך: קומיט שפורסם, פורסם.
 2. `git ls-files | grep '\.env'` מחזיר רק `.env.example`.
-3. Settings → Code security: להפעיל **Private vulnerability reporting**,
-   **Dependabot alerts**, ו-**Secret scanning + push protection**.
+3. Settings → Advanced Security: להפעיל **Private vulnerability reporting**,
+   **Dependabot alerts**, **Secret scanning + push protection**, ו-**Code
+   scanning**. ל-CodeQL עדיף **default setup** — GitHub מתחזק אותו ואין קובץ
+   workflow שיכול להירקב. זו הסיבה שאין כאן workflow משלנו ל-CodeQL.
 4. Branch protection על `main`: לדרוש ש-CI יעבור.
 
 שימו לב במיוחד: `supabase/migrations/` הופך לקריא לכולם, כלומר **מדיניות
