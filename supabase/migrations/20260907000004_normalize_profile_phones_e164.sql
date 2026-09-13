@@ -2,7 +2,7 @@
 -- (signup / join / invite), למרות ש-toE164Israel קיים ב-lib/phone.ts (ושימש
 -- רק את Woo). תוצאות בפועל (סקירה 07/09, צילום מסך של המשתמש):
 --   • קישורי wa.me/Meta נכשלו — WhatsApp מפרש ספרות בלי קידומת מדינה
---     כ-username ("@0526760560 isn't on WhatsApp").
+--     כ-username ("@0525550123 isn't on WhatsApp").
 --   • שיוך רכישות Woo לפי טלפון (process-order משווה E.164 מול profiles.phone)
 --     לא היה מוצא התאמה לעולם.
 -- מכאן: שלושת הטפסים מנרמלים ל-E.164 לפני ה-RPC (ודוחים מספר לא תקין),

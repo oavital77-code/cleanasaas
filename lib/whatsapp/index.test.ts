@@ -20,9 +20,9 @@ describe("toWhatsAppDigits / buildWaMeLink", () => {
   });
 
   it("מנרמל פורמט מקומי ישראלי (05…) לבינלאומי — אחרת WhatsApp מפרש כ-username", () => {
-    expect(toWhatsAppDigits("0526760560")).toBe("972526760560");
-    expect(toWhatsAppDigits("052-676-0560")).toBe("972526760560");
-    expect(toWhatsAppDigits("972526760560")).toBe("972526760560");
+    expect(toWhatsAppDigits("0525550123")).toBe("972525550123");
+    expect(toWhatsAppDigits("052-555-0123")).toBe("972525550123");
+    expect(toWhatsAppDigits("972525550123")).toBe("972525550123");
   });
 
   it("מספר לא-ישראלי עובר כספרות בלבד", () => {

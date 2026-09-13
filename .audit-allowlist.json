@@ -1,0 +1,14 @@
+[
+  {
+    "advisory": "GHSA-6g55-p6wh-862q",
+    "package": "postcss",
+    "reason": "postcss is vendored inside next@15 and is used at build time to process our own stylesheets. The arbitrary-file-read needs an attacker-controlled sourceMappingURL in a CSS file, and every CSS file here is ours — no user input reaches postcss. The only fix npm offers is next@16, a major upgrade that is its own piece of work.",
+    "reviewBy": "2026-12-01"
+  },
+  {
+    "advisory": "GHSA-r28c-9q8g-f849",
+    "package": "postcss",
+    "reason": "Same vendored postcss inside next@15, same build-time-only reach, same sourceMappingURL precondition. Tracked together with GHSA-6g55-p6wh-862q and closed by the same next@16 upgrade.",
+    "reviewBy": "2026-12-01"
+  }
+]

@@ -72,7 +72,7 @@ function cellText(v: unknown): string {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-// מספר טלפון מתא Excel לפעמים מגיע כמספר (האפס המוביל נבלע: 526760560) —
+// מספר טלפון מתא Excel לפעמים מגיע כמספר (האפס המוביל נבלע: 525550123) —
 // toE164Israel מטפל בזה (מקבל 5XXXXXXXX). מספרים לא-ישראליים כרגע נדחים,
 // בדיוק כמו בטופס ההרשמה (lib/phone.ts).
 export function parseTherapistRows(rows: unknown[][]): ImportParseResult {

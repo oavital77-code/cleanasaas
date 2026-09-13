@@ -21,13 +21,13 @@ describe("parseTherapistRows", () => {
   it("מנרמל טלפון ל-E.164 (גם מספר Excel בלי אפס מוביל), אימייל ל-lowercase, שעות ריקות = 0", () => {
     const res = parseTherapistRows([
       ["שם מלא", "טלפון", "אימייל", "שעות"],
-      ["דנה", 526760560, "Dana@Example.com", ""],
+      ["דנה", 525550123, "Dana@Example.com", ""],
       ["יוסי", "052-111-2222", "yossi@example.com", "12.5"],
     ]);
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.validCount).toBe(2);
-    expect(res.rows[0]).toMatchObject({ line: 2, phone: "+972526760560", email: "dana@example.com", hours: 0, errors: [] });
+    expect(res.rows[0]).toMatchObject({ line: 2, phone: "+972525550123", email: "dana@example.com", hours: 0, errors: [] });
     expect(res.rows[1]).toMatchObject({ line: 3, phone: "+972521112222", hours: 12.5 });
   });
 
