@@ -1,14 +1,24 @@
 # בדיקת הסכמה מקומית (בלי פרויקט Supabase)
 
-`local_shim.sql` יוצר את החלקים המינימליים מ-`auth`/`storage` שה-migrations
-תלויות בהם (auth.users/auth.uid()/auth.role(), storage.buckets/objects,
-publication), כולל roles `anon`/`authenticated`/`service_role` עם ה-GRANTs
-שסופאבייס נותנת כברירת מחדל (RLS, לא GRANT, הוא מה שאמור להגביל).
+`local_shim.sql` יוצר את החלקים המינימליים מ-`auth`/`storage`/`vault` שה-migrations
+תלויות בהם (auth.users/auth.uid()/auth.role()/**auth.jwt()**, storage.buckets/objects,
+publication, **pgcrypto ב-`extensions`** ו-**Vault** עבור הצפנת סודות ה-Woo), כולל
+roles `anon`/`authenticated`/`service_role` עם ה-GRANTs שסופאבייס נותנת כברירת
+מחדל (RLS, לא GRANT, הוא מה שאמור להגביל).
+
+פקודה אחת מקימה בסיס נקי, מריצה שים + כל המיגרציות + כל בדיקות ה-SQL, ומוחקת:
+
+```bash
+supabase/tests/run.sh          # KEEP=1 משאיר את הבסיס לבדיקה ידנית
+```
+
+או ידנית:
 
 ```bash
 createdb cleanasaas_test
 psql -d cleanasaas_test -f supabase/tests/local_shim.sql
 for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -d cleanasaas_test -f "$f"; done
+psql -d cleanasaas_test -f supabase/tests/local_shim.sql   # GRANTs לטבלאות שנוספו
 psql -d cleanasaas_test -f supabase/tests/isolation_test.sql
 ```
 
