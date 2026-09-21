@@ -21,7 +21,7 @@ import { cancelBookingAction, createBookingAction } from "./actions";
 // בדיוק כמו cleana.co.il, בלי טופס נפרד לכל חצי שעה.
 export type CellState =
   | { status: "past" }
-  | { status: "mine"; bookingId: string; cancellable: boolean }
+  | { status: "mine"; bookingId: string; cancellable: boolean; past?: boolean }
   | { status: "taken" }
   | { status: "blocked" }
   | { status: "available" };
@@ -141,7 +141,7 @@ export function SlotGrid({ slots, columns, cells }: { slots: string[]; columns: 
                     return (
                       <td key={col.key} className={CELL_TD}>
                         <div
-                          className={`flex ${CELL_HEIGHT} items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700`}
+                          className={`flex ${CELL_HEIGHT} items-center justify-between gap-1 rounded-field bg-violet-100 px-2 text-xs text-violet-700 ${cell.past ? "opacity-60" : ""}`}
                         >
                           <span className="min-w-0 truncate">{t.mine}</span>
                           {cell.cancellable && (

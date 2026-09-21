@@ -261,12 +261,16 @@ function buildCellStates(
     slots.map((slot) => {
       const slotStart = zonedDateTimeToUtc(col.date, slot, timezone);
       const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60_000);
-      if (slotEnd <= now) return { status: "past" };
 
+      // A booking that already happened is still yours. It was painted as an
+      // empty past cell, while the month view — which does not know about
+      // "past" — kept its dot; the two disagreed about the same row.
       const mine = myBookings.find(
         (b) => b.room_id === col.roomId && new Date(b.starts_at) < slotEnd && new Date(b.ends_at) > slotStart,
       );
-      if (mine) return { status: "mine", bookingId: mine.id, cancellable: mine.source !== "session" };
+      const past = slotEnd <= now;
+      if (mine) return { status: "mine", bookingId: mine.id, cancellable: !past && mine.source !== "session", past };
+      if (past) return { status: "past" };
 
       const overlap = availability.find(
         (a) =>
