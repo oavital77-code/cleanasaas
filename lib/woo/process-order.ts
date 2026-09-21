@@ -190,11 +190,15 @@ async function activateSessionFromWooOrder(
     profile = data;
   }
   if (!profile && params.email) {
+    // 🔴 לא ilike: `%` ו-`_` בכתובת שמגיעה מההזמנה הם תווים כלליים, ולכן
+    // `a_b@x.com` התאים גם ל-`axb@x.com` ו-`%@x.com` לכולם באותה קליניקה.
+    // email_lower היא עמודה מחושבת (20260921000002) — התאמה מדויקת, בלי
+    // רגישות לרישיות; params.email כבר מגיע ב-lowercase.
     const { data } = await supabase
       .from("profiles")
       .select("id, email, locale")
       .eq("clinic_id", clinicId)
-      .ilike("email", params.email)
+      .eq("email_lower", params.email)
       .maybeSingle();
     profile = data;
   }

@@ -897,6 +897,7 @@ export type Database = {
           created_at: string | null
           door_code: string | null
           email: string
+          email_lower: string | null
           full_name: string
           ics_token: string | null
           id: string
@@ -1687,6 +1688,7 @@ export type Database = {
           created_at: string | null
           door_code: string | null
           email: string
+          email_lower: string | null
           full_name: string
           ics_token: string | null
           id: string
@@ -1839,6 +1841,7 @@ export type Database = {
           created_at: string | null
           door_code: string | null
           email: string
+          email_lower: string | null
           full_name: string
           ics_token: string | null
           id: string
