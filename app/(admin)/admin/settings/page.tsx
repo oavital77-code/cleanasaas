@@ -26,7 +26,10 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
   const supabase = await createClient();
   const t = getAdminSettingsDict(normalizeLocale(profile.locale));
   const { notice } = await searchParams;
+  // ההודעה מוצגת ליד הטופס ששלח אותה: tier_* בכרטיסיות, pricing_* במודל הססיה.
   const noticeText = notice ? t.tierNotices[notice] : undefined;
+  const tierNotice = notice?.startsWith("tier_") ? noticeText : undefined;
+  const pricingNotice = notice?.startsWith("pricing_") ? noticeText : undefined;
 
   const [{ data: tiers }, { data: settingsRows }, { data: paymentSettings }, { data: clinic }, { data: whatsapp }] =
     await Promise.all([
@@ -60,13 +63,13 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
             <CardDescription>{t.tiersDescription}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            {noticeText && (
+            {tierNotice && (
               <p
                 className={`rounded-field px-3 py-2 text-sm ${
                   notice === "tier_deleted" ? "bg-success-bg text-success-fg" : "bg-warning-bg text-warning-fg"
                 }`}
               >
-                {noticeText}
+                {tierNotice}
               </p>
             )}
 
@@ -148,12 +151,21 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
           </CardContent>
         </Card>
 
-        <Card className="shadow-e1">
+        <Card id="sessions" className="shadow-e1 scroll-mt-4">
           <CardHeader>
             <CardTitle className="text-base font-medium">{t.sessionModelTitle}</CardTitle>
             <CardDescription>{t.sessionModelDescription}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            {pricingNotice && (
+              <p
+                className={`rounded-field px-3 py-2 text-sm ${
+                  notice === "pricing_saved" ? "bg-success-bg text-success-fg" : "bg-warning-bg text-warning-fg"
+                }`}
+              >
+                {pricingNotice}
+              </p>
+            )}
             <form action={toggleSessionsEnabledAction} className="flex flex-wrap items-center gap-3">
               <input type="hidden" name="sessions_enabled" value={clinic?.sessions_enabled ? "off" : "on"} />
               <Button type="submit" size="sm" variant={clinic?.sessions_enabled ? "outline" : "default"}>
@@ -170,11 +182,11 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
                 <form action={updateSessionPricingAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs">{t.sessionBaseHours}</Label>
-                    <Input name="session_base_hours" type="number" defaultValue={Number(settings.session_base_hours ?? 5)} className="w-full sm:w-24" />
+                    <Input name="session_base_hours" type="number" min={1} max={1000} step={1} required defaultValue={Number(settings.session_base_hours ?? 5)} className="w-full sm:w-24" />
                   </div>
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs">{t.sessionBasePrice}</Label>
-                    <Input name="session_base_price" type="number" defaultValue={Number(settings.session_base_price ?? 600)} className="w-full sm:w-28" />
+                    <Input name="session_base_price" type="number" min={0} step="0.01" required defaultValue={Number(settings.session_base_price ?? 600)} className="w-full sm:w-28" />
                   </div>
                   <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
                     {t.save}

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
+import { parseSessionPricing } from "@/lib/session-pricing";
 import { sendWhatsAppReminderTemplate } from "@/lib/whatsapp";
 import { formatDateHe, formatTimeHe, DEFAULT_TIMEZONE } from "@/lib/time";
 import { materializeHolidayBlocks } from "@/lib/holiday-blocks";
@@ -128,10 +129,15 @@ export async function updateSessionPricingAction(formData: FormData) {
   const { clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
 
-  const basePrice = Number(formData.get("session_base_price"));
-  const baseHours = Number(formData.get("session_base_hours"));
+  // אותה תבנית כמו מדרגות הכרטיסייה: ערך לא תקין חוזר כ-?notice= ולא נשמר.
+  const parsed = parseSessionPricing({
+    baseHours: formData.get("session_base_hours"),
+    basePrice: formData.get("session_base_price"),
+  });
+  if (!parsed.ok) redirect("/admin/settings?notice=pricing_invalid#sessions");
+  const { baseHours, basePrice } = parsed.value;
 
-  await supabase
+  const { error } = await supabase
     .from("app_settings")
     .upsert(
       [
@@ -142,6 +148,7 @@ export async function updateSessionPricingAction(formData: FormData) {
     );
 
   revalidatePath("/admin/settings");
+  redirect(error ? "/admin/settings?notice=pricing_error#sessions" : "/admin/settings?notice=pricing_saved#sessions");
 }
 
 // clinics.open_hour/close_hour — לא ברשימת הכתיבה-הישירה-האסורה של
