@@ -444,6 +444,7 @@ async function MonthView({
   const weeks = monthGrid(date);
   const rangeStart = zonedDateTimeToUtc(weeks[0][0], "00:00", timezone);
   const rangeEnd = zonedDateTimeToUtc(addDays(weeks[weeks.length - 1][6], 1), "00:00", timezone);
+  const monthHolidays = holidaysByDate(yearsBetween(weeks[0][0], weeks[weeks.length - 1][6]));
 
   const { data: bookings } = await supabase
     .from("bookings")
@@ -497,6 +498,11 @@ async function MonthView({
                           } ${!inMonth ? "opacity-40" : ""}`}
                         >
                           <span className="tabular-nums text-xs font-medium">{d.slice(8, 10)}</span>
+                          {monthHolidays.has(d) && (
+                            <span className="truncate text-[10px] leading-tight text-violet-600">
+                              {c.holidays[monthHolidays.get(d)!.key as keyof typeof c.holidays]}
+                            </span>
+                          )}
                           {count > 0 && <span className="text-[10px] text-muted-foreground">{t.bookingsCount(count)}</span>}
                         </Link>
                       </td>

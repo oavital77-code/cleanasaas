@@ -406,6 +406,7 @@ async function MonthView({
   const weeks = monthGrid(date);
   const gridStart = weeks[0][0];
   const gridEnd = addDays(weeks[weeks.length - 1][6], 1);
+  const monthHolidays = holidaysByDate(yearsBetween(gridStart, gridEnd));
   const rangeStart = zonedDateTimeToUtc(gridStart, "00:00", timezone);
   const rangeEnd = zonedDateTimeToUtc(gridEnd, "00:00", timezone);
 
@@ -474,6 +475,11 @@ async function MonthView({
                           } ${!inMonth ? "opacity-40" : ""}`}
                         >
                           <span className="tabular-nums text-xs font-medium">{d.slice(8, 10)}</span>
+                          {monthHolidays.has(d) && (
+                            <span className="truncate text-[10px] leading-tight text-violet-600">
+                              {c.holidays[monthHolidays.get(d)!.key as keyof typeof c.holidays]}
+                            </span>
+                          )}
                           <div className="flex flex-wrap gap-1">
                             {isMine && <span className="size-1.5 rounded-full bg-violet-500" title={t.youHaveBooking} />}
                             {count > 0 && <span className="text-[10px] text-muted-foreground">{count}</span>}
