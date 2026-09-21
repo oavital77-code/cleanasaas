@@ -87,8 +87,14 @@ npm run dev                    # http://localhost:3000
 
 **בדיקה בלי פרויקט Supabase.** יש רתמה מקומית מלאה — ר'
 [`supabase/tests/README.md`](../supabase/tests/README.md). `local_shim.sql`
-מדמה את מה ש-Supabase מספק (סכמות `auth`, `app_user_id()`), וכך
-`isolation_test.sql` ו-`platform_billing_test.sql` רצים מול Postgres רגיל.
+מדמה את מה ש-Supabase מספק (סכמות `auth`/`storage`/`vault`, `auth.jwt()`,
+pgcrypto), וכך `identity_test.sql`, `isolation_test.sql` ו-
+`platform_billing_test.sql` רצים מול Postgres רגיל. פקודה אחת מקימה בסיס
+נקי, מריצה את כל המיגרציות ואת כל הבדיקות:
+
+```bash
+supabase/tests/run.sh
+```
 
 פקודות:
 
