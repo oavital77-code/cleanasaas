@@ -29,6 +29,20 @@ export const PLATFORM_PLAN_DEFAULT_PRICE_ILS = 209;
 /** מה ש-PayPlus מציגה כ-more_info (עד 19 תווים — תווית, לא מזהה). */
 export const CHECKOUT_REFERENCE = "Cleana monthly";
 
+/**
+ * מזהה קליניקה מתוך more_info — אם בכלל.
+ *
+ * 🔴 more_info מוגבל ל-19 תווים אצל PayPlus, ולכן הוא נושא את CHECKOUT_REFERENCE
+ * (תווית) ולא uuid. ה-callback העביר אותו כ-clinicId, וכך גם דילג על ה-fallback
+ * שמוצא את הקליניקה לפי transaction_uid (notifyPlatformPaymentOutcome) וגם שלח
+ * "Cleana monthly" לשאילתות .eq("id", ...) על עמודות uuid — כלומר מיילי ההפעלה
+ * והכישלון פשוט לא נשלחו. כל ערך שאינו בצורת uuid הוא תווית, ולא מזהה.
+ */
+export function clinicIdFromMoreInfo(moreInfo: string | null | undefined): string | null {
+  const value = (moreInfo ?? "").trim();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) ? value : null;
+}
+
 export function platformPlanPriceIls(env: Record<string, string | undefined> = process.env): number {
   const raw = env.PLATFORM_PLAN_PRICE_ILS;
   const n = raw ? Number(raw) : NaN;

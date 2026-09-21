@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { mergeVerifiedWithHints, parseTransaction, payplusConfig, verifyCallbackSignature } from "@/lib/payplus";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
-import { applyPlatformPayment, verifyPlatformTransaction } from "@/lib/platform-billing";
+import { applyPlatformPayment, clinicIdFromMoreInfo, verifyPlatformTransaction } from "@/lib/platform-billing";
 import { notifyPlatformPaymentOutcome } from "@/lib/platform-billing-emails";
 
 export const dynamic = "force-dynamic";
@@ -50,8 +50,13 @@ export async function POST(request: Request) {
   const transaction = mergeVerifiedWithHints(verified.transaction, hinted, { signed: hash !== null });
 
   const outcome = await applyPlatformPayment(transaction, verified.raw);
-  // מייל לבעלי הקליניקה — אחרי ההחלטה, ולעולם לא מפיל אותה.
-  await notifyPlatformPaymentOutcome({ clinicId: transaction.moreInfo, transactionUid: transaction.transactionUid }, outcome);
+  // מייל לבעלי הקליניקה — אחרי ההחלטה, ולעולם לא מפיל אותה. more_info הוא
+  // תווית ("Cleana monthly"), לא מזהה, ולכן כמעט תמיד null כאן — וה-fallback
+  // מוצא את הקליניקה לפי transaction_uid, מהשורה ש-platform_apply_payment רשם.
+  await notifyPlatformPaymentOutcome(
+    { clinicId: clinicIdFromMoreInfo(transaction.moreInfo), transactionUid: transaction.transactionUid },
+    outcome,
+  );
   return NextResponse.json({ outcome });
 }
 
