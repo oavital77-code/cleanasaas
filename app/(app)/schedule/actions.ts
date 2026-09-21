@@ -8,6 +8,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { bookingConfirmedEmail, bookingCancelledEmail } from "@/lib/email/templates";
 import { generateSingleEventIcs } from "@/lib/ics";
 import { getCommonDict, getScheduleDict, normalizeLocale, translateRpcError } from "@/lib/i18n";
+import { parseBookingInput } from "@/lib/booking-input";
 
 export type BookingState = { error?: string; success?: boolean };
 
@@ -24,14 +25,17 @@ export async function createBookingAction(_prevState: BookingState, formData: Fo
   const supabase = await createClient();
   const { profile } = await getAuthState();
   const locale = normalizeLocale(profile?.locale);
-  const roomId = String(formData.get("room_id") ?? "");
-  const date = String(formData.get("date") ?? "");
-  const startTime = String(formData.get("start_time") ?? "");
-  const durationHours = Number(formData.get("duration_hours") ?? 1);
-
-  if (!roomId || !date || !startTime) {
-    return { error: getCommonDict(locale).fillAllFields };
+  const input = parseBookingInput({
+    roomId: formData.get("room_id"),
+    date: formData.get("date"),
+    startTime: formData.get("start_time"),
+    durationHours: formData.get("duration_hours"),
+  });
+  if (!input.ok) {
+    const c = getCommonDict(locale);
+    return { error: input.reason === "missing" ? c.fillAllFields : c.invalidDetails };
   }
+  const { roomId, date, startTime, durationHours } = input.value;
 
   const timezone = await getClinicTimezone(supabase);
   const startsAt = zonedDateTimeToUtc(date, startTime, timezone);

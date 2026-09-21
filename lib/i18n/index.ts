@@ -77,6 +77,7 @@ const COMMON_HE = {
   noRoomsYet: "אין עדיין חדרים פעילים בקליניקה.",
   sending: "שולח/ת…",
   fillAllFields: "נא למלא את כל השדות",
+  invalidDetails: "הפרטים שנשלחו אינם תקינים",
   role: { owner: "בעלים", admin: "אדמין/ית", therapist: "מטפל/ת" } as Record<string, string>,
   profileStatus: {
     active: "פעיל",
@@ -177,6 +178,7 @@ const COMMON_EN: typeof COMMON_HE = {
   noRoomsYet: "No active rooms in the clinic yet.",
   sending: "Sending…",
   fillAllFields: "Please fill in all fields",
+  invalidDetails: "Those details aren't valid",
   role: { owner: "Owner", admin: "Admin", therapist: "Therapist" },
   profileStatus: { active: "Active", suspended: "Suspended", archived: "Archived" },
   bookingStatus: {

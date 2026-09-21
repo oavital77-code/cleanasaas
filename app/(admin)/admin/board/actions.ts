@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { zonedDateTimeToUtc, DEFAULT_TIMEZONE } from "@/lib/time";
 import { getAdminBoardDict, getCommonDict, normalizeLocale, translateRpcError } from "@/lib/i18n";
+import { parseBookingInput } from "@/lib/booking-input";
 
 export type RoomBlockState = { error?: string };
 
@@ -73,12 +74,17 @@ export async function adminAssignBookingAction(_prev: AssignState, formData: For
   const t = getAdminBoardDict(locale);
 
   const userId = String(formData.get("user_id") ?? "");
-  const roomId = String(formData.get("room_id") ?? "");
-  const date = String(formData.get("date") ?? "");
-  const startTime = String(formData.get("start_time") ?? "");
-  const durationHours = Number(formData.get("duration_hours") ?? 1);
   const note = String(formData.get("note") ?? "");
-  if (!userId || !roomId || !date || !startTime) return { error: getCommonDict(locale).fillAllFields };
+  const input = parseBookingInput({
+    roomId: formData.get("room_id"),
+    date: formData.get("date"),
+    startTime: formData.get("start_time"),
+    durationHours: formData.get("duration_hours"),
+  });
+  const c = getCommonDict(locale);
+  if (!userId) return { error: c.fillAllFields };
+  if (!input.ok) return { error: input.reason === "missing" ? c.fillAllFields : c.invalidDetails };
+  const { roomId, date, startTime, durationHours } = input.value;
 
   const { data: clinic } = await supabase.from("clinics").select("timezone").eq("id", clinicId).maybeSingle();
   const timezone = clinic?.timezone ?? DEFAULT_TIMEZONE;
