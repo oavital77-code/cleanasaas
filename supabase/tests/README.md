@@ -18,7 +18,6 @@ supabase/tests/run.sh          # KEEP=1 משאיר את הבסיס לבדיקה 
 createdb cleanasaas_test
 psql -d cleanasaas_test -f supabase/tests/local_shim.sql
 for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -d cleanasaas_test -f "$f"; done
-psql -d cleanasaas_test -f supabase/tests/local_shim.sql   # GRANTs לטבלאות שנוספו
 psql -d cleanasaas_test -f supabase/tests/isolation_test.sql
 ```
 

@@ -20,9 +20,10 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   "${PSQL[@]}" -f "$f"
 done
 
-# מיגרציות מאוחרות יוצרות טבלאות חדשות; ה-GRANTs של סופאבייס חלים עליהן
-# אוטומטית בפרודקשן, וכאן צריך להריץ שוב את אותו בלוק.
-"${PSQL[@]}" -f "$ROOT/supabase/tests/local_shim.sql"
+# אין הרצה שנייה של השים: ה-`alter default privileges` שבו כבר מכסה כל טבלה
+# שמיגרציה יוצרת אחריו, והרצה שנייה הייתה מחזירה `grant execute on all
+# functions` — כלומר מבטלת את ה-revoke שמיגרציות עושות בכוונה על פונקציות
+# של service_role בלבד. identity_test.sql הוא מה שתופס את זה.
 
 for t in "$ROOT"/supabase/tests/*_test.sql; do
   echo "== $(basename "$t")"
