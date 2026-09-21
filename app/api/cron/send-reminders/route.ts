@@ -49,6 +49,7 @@ export const GET = withCronAlert("send-reminders", async () => {
       branchName: branch?.name ?? "",
       startsAt: new Date(b.starts_at),
       accessStart,
+      now,
       locale: profile.locale,
     });
     const result = await sendEmail({ to: profile.email, subject, html });

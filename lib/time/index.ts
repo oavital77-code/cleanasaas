@@ -47,6 +47,28 @@ export function zonedDateTimeToUtc(dateStr: string, timeStr: string, timezone: s
   return fromZonedTime(`${dateStr}T${timeStr}:00`, timezone);
 }
 
+export type ReminderLead = "soon" | "today" | "tomorrow" | "later";
+
+/** מתחת לזה, "היום" כבר לא תזכורת — זה "עוד מעט". */
+const REMINDER_SOON_MS = 3 * 60 * 60_000;
+
+/**
+ * איך לתאר ביושר הזמנה שעליה שולחים תזכורת.
+ *
+ * ה-cron היומי מושך את כל 24 השעות הקרובות, ולכן בכל בוקר הוא כולל גם
+ * הזמנות של אותו יום עצמו — לקרוא להן "מחר" היה גם לא נכון וגם חסר תועלת
+ * כתזכורת. השוואת היום נעשית באזור הזמן של הקליניקה, לא של השרת: 21:30
+ * UTC הוא כבר מחר בירושלים.
+ */
+export function reminderLead(startsAt: Date, now: Date, timezone: string = DEFAULT_TIMEZONE): ReminderLead {
+  if (startsAt.getTime() - now.getTime() <= REMINDER_SOON_MS) return "soon";
+  const day = (d: Date) => formatInTimeZone(d, timezone, "yyyy-MM-dd");
+  const startDay = day(startsAt);
+  if (startDay === day(now)) return "today";
+  if (startDay === day(new Date(now.getTime() + 86_400_000))) return "tomorrow";
+  return "later";
+}
+
 /** "עכשיו פחות X ימים", כ-ISO — עזר ל-queries. */
 export function isoDaysAgo(days: number): string {
   return new Date(Date.now() - days * 86_400_000).toISOString();

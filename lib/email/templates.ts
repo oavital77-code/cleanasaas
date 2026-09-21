@@ -1,6 +1,6 @@
 import "server-only";
 import { emailLayout, emailButton, escapeHtml } from "./layout";
-import { formatDateHe, formatTimeHe, formatCurrencyILS, DEFAULT_TIMEZONE } from "@/lib/time";
+import { formatDateHe, formatTimeHe, formatCurrencyILS, reminderLead, DEFAULT_TIMEZONE } from "@/lib/time";
 import { type Locale, normalizeLocale } from "@/lib/i18n";
 
 export interface EmailContent {
@@ -370,29 +370,35 @@ export function bookingReminderEmail(params: {
   branchName: string;
   startsAt: Date;
   accessStart: Date;
+  /** רגע השליחה — קובע אם ההזמנה היא "מחר", "היום" או "עוד מעט". */
+  now: Date;
   timezone?: string;
   locale?: string | null;
 }): EmailContent {
   const tz = params.timezone ?? DEFAULT_TIMEZONE;
   const room = `${escapeHtml(params.roomName)} · ${escapeHtml(params.branchName)}`;
+  const lead = reminderLead(params.startsAt, params.now, tz);
+  const when = `${formatDateHe(params.startsAt, tz)}, ${formatTimeHe(params.startsAt, tz)}`;
   if (L(params.locale) === "he") {
+    const whenWord = { soon: "עוד מעט", today: "היום", tomorrow: "מחר", later: formatDateHe(params.startsAt, tz) }[lead];
     return {
-      subject: `תזכורת — הזמנה מחר ב-${params.roomName}`,
+      subject: `תזכורת — הזמנה ${whenWord} ב-${params.roomName}`,
       html: emailLayout(`
-      <p>תזכורת להזמנה שלך מחר:</p>
+      <p>תזכורת להזמנה שלך ${whenWord}:</p>
       <p style="font-weight:700;">${room}</p>
-      <p>${formatDateHe(params.startsAt, tz)}, ${formatTimeHe(params.startsAt, tz)}</p>
+      <p>${when}</p>
       <p style="color:#6b7288;">🔑 כניסה בפועל: ${formatTimeHe(params.accessStart, tz)}</p>
     `),
     };
   }
+  const whenWord = { soon: "shortly", today: "today", tomorrow: "tomorrow", later: `on ${formatDateHe(params.startsAt, tz)}` }[lead];
   return {
-    subject: `Reminder — booking tomorrow at ${params.roomName}`,
+    subject: `Reminder — booking ${whenWord} at ${params.roomName}`,
     html: emailLayout(
       `
-      <p>A reminder of your booking tomorrow:</p>
+      <p>A reminder of your booking ${whenWord}:</p>
       <p style="font-weight:700;">${room}</p>
-      <p>${formatDateHe(params.startsAt, tz)}, ${formatTimeHe(params.startsAt, tz)}</p>
+      <p>${when}</p>
       <p style="color:#6b7288;">🔑 Access from ${formatTimeHe(params.accessStart, tz)}</p>
     `,
       undefined,
