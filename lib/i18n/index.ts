@@ -57,6 +57,12 @@ export function dateFnsLocale(locale: Locale) {
 // ---------------------------------------------------------------------------
 const COMMON_HE = {
   weekdaysShort: ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"],
+  holidays: {
+    roshHashana: "ראש השנה", erevRoshHashana: "ערב ראש השנה", yomKippur: "יום כיפור", erevYomKippur: "ערב יום כיפור",
+    sukkot: "סוכות", erevSukkot: "ערב סוכות", cholHamoedSukkot: "חול המועד סוכות", hoshanaRaba: "הושענא רבה", shminiAtzeret: "שמחת תורה",
+    pesach: "פסח", erevPesach: "ערב פסח", cholHamoedPesach: "חול המועד פסח", erevShviiPesach: "ערב שביעי של פסח", shviiPesach: "שביעי של פסח",
+    yomHazikaron: "יום הזיכרון", yomHaatzmaut: "יום העצמאות", erevShavuot: "ערב שבועות", shavuot: "שבועות",
+  },
   weekdaysLong: ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"],
   /** "יום ראשון" בעברית, "Sunday" באנגלית — הקידומת "יום" קיימת רק בעברית. */
   weekdayWithPrefix: (i: number) => `יום ${COMMON_HE.weekdaysLong[i]}`,
@@ -152,6 +158,12 @@ const COMMON_HE = {
 
 const COMMON_EN: typeof COMMON_HE = {
   weekdaysShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  holidays: {
+    roshHashana: "Rosh Hashana", erevRoshHashana: "Erev Rosh Hashana", yomKippur: "Yom Kippur", erevYomKippur: "Erev Yom Kippur",
+    sukkot: "Sukkot", erevSukkot: "Erev Sukkot", cholHamoedSukkot: "Chol HaMoed Sukkot", hoshanaRaba: "Hoshana Raba", shminiAtzeret: "Shmini Atzeret",
+    pesach: "Pesach", erevPesach: "Erev Pesach", cholHamoedPesach: "Chol HaMoed Pesach", erevShviiPesach: "Erev 7th of Pesach", shviiPesach: "7th of Pesach",
+    yomHazikaron: "Memorial Day", yomHaatzmaut: "Independence Day", erevShavuot: "Erev Shavuot", shavuot: "Shavuot",
+  },
   weekdaysLong: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
   weekdayWithPrefix: (i) => COMMON_EN.weekdaysLong[i],
   save: "Save",

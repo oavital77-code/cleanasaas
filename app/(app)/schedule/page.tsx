@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatInTimeZone } from "date-fns-tz";
 import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
 import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES, DAY_START_HOUR, DAY_END_HOUR } from "@/lib/calendar";
+import { holidaysByDate, yearsBetween } from "@/lib/holidays";
 import { BookingForm } from "./booking-form";
 import { SlotGrid, type CellState, type GridColumn } from "./slot-grid";
 import { publicImageUrl } from "@/lib/storage/images";
@@ -306,6 +307,7 @@ async function WeekView({
   const supabase = await createClient();
   const c = getCommonDict(locale);
   const days = weekDays(date);
+  const holidayNames = holidaysByDate(yearsBetween(days[0], days[6]));
   const weekStart = days[0];
   const weekEnd = addDays(days[6], 1);
   const rangeStart = zonedDateTimeToUtc(weekStart, "00:00", timezone);
@@ -367,7 +369,7 @@ async function WeekView({
                 key: d,
                 roomId: selectedRoomId,
                 date: d,
-                header: `${c.weekdaysShort[i]} · ${d.slice(8, 10)}/${d.slice(5, 7)}`,
+                header: `${c.weekdaysShort[i]} · ${d.slice(8, 10)}/${d.slice(5, 7)}${holidayNames.has(d) ? ` · ${c.holidays[holidayNames.get(d)!.key as keyof typeof c.holidays]}` : ""}`,
               }),
             )}
             cells={buildCellStates(

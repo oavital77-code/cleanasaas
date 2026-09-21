@@ -1229,3 +1229,5 @@ token, template_name/lang חוזרים מפוענחים ל-service_role); שור
 4. חיבור endpoint ה-webhook (`user.deleted`) בדשבורד של Clerk —
    `app/api/webhooks/clerk/route.ts` קיים וב-build, אבל Clerk לא שולח
    אליו כלום עד שמגדירים Endpoint + `CLERK_WEBHOOK_SIGNING_SECRET`.
+
+- **2026-09-21 — חגי ישראל.** מתגים על `clinics`, חסימות חדר אוטומטיות דרך `materialize_holiday_blocks` (מיידי + לילי), שם החג בכותרות השבוע. ר' HANDBOOK. דורש הרצת המיגרציה `20260921000001_israeli_holidays.sql`.

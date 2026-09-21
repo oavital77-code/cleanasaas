@@ -13,6 +13,7 @@ import {
   updateSessionPricingAction,
   updatePaymentSettingsAction,
   updateClinicHoursAction,
+  updateHolidayPolicyAction,
   updateWhatsAppSettingsAction,
 } from "./actions";
 import { WhatsAppTestButton } from "./whatsapp-test-button";
@@ -32,7 +33,11 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
       supabase.from("punch_card_tiers").select("*").eq("clinic_id", clinicId).order("sort_order"),
       supabase.from("app_settings").select("key, value").eq("clinic_id", clinicId),
       supabase.from("clinic_payment_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
-      supabase.from("clinics").select("name, open_hour, close_hour, sessions_enabled").eq("id", clinicId).single(),
+      supabase
+        .from("clinics")
+        .select("name, open_hour, close_hour, sessions_enabled, block_holidays, block_holiday_eves, block_chol_hamoed")
+        .eq("id", clinicId)
+        .single(),
       // api_token הוא bytea מוצפן — נשלף רק כדי להציג "מוגדר"; לעולם לא מפוענח כאן.
       supabase
         .from("clinic_whatsapp_settings")
@@ -216,6 +221,33 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
                 />
               </div>
               <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
+                {t.save}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-e1">
+          <CardHeader>
+            <CardTitle className="text-base font-medium">{t.holidaysTitle}</CardTitle>
+            <CardDescription>{t.holidaysDescription}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={updateHolidayPolicyAction} className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="block_holidays" defaultChecked={clinic?.block_holidays ?? true} className="size-4 accent-violet-500" />
+                {t.blockHolidays}
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="block_holiday_eves" defaultChecked={clinic?.block_holiday_eves ?? false} className="size-4 accent-violet-500" />
+                {t.blockHolidayEves}
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="block_chol_hamoed" defaultChecked={clinic?.block_chol_hamoed ?? false} className="size-4 accent-violet-500" />
+                {t.blockCholHamoed}
+              </label>
+              <p className="text-xs text-muted-foreground">{t.holidaysNote}</p>
+              <Button type="submit" size="sm" className="w-fit">
                 {t.save}
               </Button>
             </form>

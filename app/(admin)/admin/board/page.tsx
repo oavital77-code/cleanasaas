@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatInTimeZone } from "date-fns-tz";
 import { DEFAULT_TIMEZONE, zonedDateTimeToUtc } from "@/lib/time";
 import { addDays, weekDays, monthGrid, isSameMonth, startOfWeek, buildDaySlots, SLOT_MINUTES, DAY_START_HOUR, DAY_END_HOUR } from "@/lib/calendar";
+import { holidaysByDate, yearsBetween } from "@/lib/holidays";
 import { AppShell } from "@/components/app-shell";
 import { RealtimeAvailabilityRefresh } from "@/components/realtime-availability-refresh";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,7 +55,7 @@ export default async function AdminBoardPage({
     id: b.id,
     roomName: (b.rooms as { name?: string } | null)?.name ?? "",
     label: `${formatInTimeZone(new Date(b.starts_at), timezone, "dd/MM/yyyy HH:mm")} – ${formatInTimeZone(new Date(b.ends_at), timezone, "dd/MM/yyyy HH:mm")}`,
-    reason: b.reason,
+    reason: blockReasonLabel(b.reason, c),
   }));
   const openHour = clinic?.open_hour ?? DAY_START_HOUR;
   const closeHour = clinic?.close_hour ?? DAY_END_HOUR;
@@ -196,6 +197,12 @@ type BookingRow = {
 };
 type BlockRow = { id: string; room_id: string; starts_at: string; ends_at: string; reason: string };
 
+/** 'holiday:yomKippur' is a tag for the machine; the person gets the name. */
+function blockReasonLabel(reason: string, c: ReturnType<typeof getCommonDict>) {
+  const key = reason.startsWith("holiday:") ? reason.slice("holiday:".length) : null;
+  return key && key in c.holidays ? c.holidays[key as keyof typeof c.holidays] : reason;
+}
+
 // מקביל ל-buildCellStates ב-/schedule, בשביל AdminSlotGrid — עמודה = חדר
 // (DayView) או יום (WeekView), בדיוק כמו בצד המטפל/ת.
 function buildAdminCellStates(
@@ -204,6 +211,7 @@ function buildAdminCellStates(
   timezone: string,
   bookings: BookingRow[],
   blocks: BlockRow[],
+  labelReason: (reason: string) => string = (reason) => reason,
 ): AdminCellState[][] {
   return columns.map((col) =>
     slots.map((slot) => {
@@ -218,7 +226,7 @@ function buildAdminCellStates(
       const block = blocks.find(
         (b) => b.room_id === col.roomId && new Date(b.starts_at) < slotEnd && new Date(b.ends_at) > slotStart,
       );
-      if (block) return { status: "blocked", reason: block.reason };
+      if (block) return { status: "blocked", reason: labelReason(block.reason) };
 
       return { status: "available" };
     }),
@@ -300,6 +308,7 @@ async function DayView({
               timezone,
               (bookings ?? []) as BookingRow[],
               (blocks ?? []) as BlockRow[],
+              (reason) => blockReasonLabel(reason, getCommonDict(locale)),
             )}
             users={users}
           />
@@ -335,6 +344,7 @@ async function WeekView({
   const supabase = await createClient();
   const c = getCommonDict(locale);
   const days = weekDays(date);
+  const holidayNames = holidaysByDate(yearsBetween(days[0], days[6]));
   const rangeStart = zonedDateTimeToUtc(days[0], "00:00", timezone);
   const rangeEnd = zonedDateTimeToUtc(addDays(days[6], 1), "00:00", timezone);
 
@@ -396,7 +406,7 @@ async function WeekView({
                 key: d,
                 roomId: selectedRoomId,
                 date: d,
-                header: `${c.weekdaysShort[i]} · ${d.slice(8, 10)}/${d.slice(5, 7)}`,
+                header: `${c.weekdaysShort[i]} · ${d.slice(8, 10)}/${d.slice(5, 7)}${holidayNames.has(d) ? ` · ${c.holidays[holidayNames.get(d)!.key as keyof typeof c.holidays]}` : ""}`,
               }),
             )}
             cells={buildAdminCellStates(
@@ -405,6 +415,7 @@ async function WeekView({
               timezone,
               (bookings ?? []) as BookingRow[],
               (blocks ?? []) as BlockRow[],
+              (reason) => blockReasonLabel(reason, getCommonDict(locale)),
             )}
             users={users}
           />

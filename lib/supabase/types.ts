@@ -457,6 +457,9 @@ export type Database = {
       }
       clinics: {
         Row: {
+          block_chol_hamoed: boolean
+          block_holiday_eves: boolean
+          block_holidays: boolean
           close_hour: number
           created_at: string | null
           id: string
@@ -470,6 +473,9 @@ export type Database = {
           timezone: string
         }
         Insert: {
+          block_chol_hamoed?: boolean
+          block_holiday_eves?: boolean
+          block_holidays?: boolean
           close_hour?: number
           created_at?: string | null
           id?: string
@@ -483,6 +489,9 @@ export type Database = {
           timezone?: string
         }
         Update: {
+          block_chol_hamoed?: boolean
+          block_holiday_eves?: boolean
+          block_holidays?: boolean
           close_hour?: number
           created_at?: string | null
           id?: string
@@ -1850,6 +1859,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      materialize_holiday_blocks: {
+        Args: { p_clinic_id: string; p_ends: string[]; p_reasons: string[]; p_starts: string[] }
+        Returns: { inserted: number; deleted: number }[]
       }
       materialize_session_bookings: { Args: never; Returns: undefined }
       materialize_subscription_bookings: {

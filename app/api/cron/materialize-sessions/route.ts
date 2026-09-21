@@ -4,6 +4,7 @@ import { withCronAlert } from "@/lib/cron/guard";
 import { sendEmail } from "@/lib/email/resend";
 import { materializationConflictAdminEmail } from "@/lib/email/templates";
 import { getAdminEmails } from "@/lib/email/recipients";
+import { materializeHolidayBlocksForAllClinics } from "@/lib/holiday-blocks";
 
 // יומי 03:00 — materialize_session_bookings(), רולינג 90 יום, כל הקליניקות.
 // הלולאה עצמה (per-clinic try/catch) חיה בתוך ה-RPC — ר' migration ה-sessions.
@@ -44,5 +45,8 @@ export const GET = withCronAlert("materialize-sessions", async () => {
     if (result.ok) conflictsNotified++;
   }
 
-  return NextResponse.json({ ok: true, conflicts: conflicts?.length ?? 0, conflictsNotified });
+  // חגי ישראל → חסימות חדר, לכל קליניקה לפי המתגים שלה. ר' lib/holiday-blocks.ts.
+  const holidays = await materializeHolidayBlocksForAllClinics(supabase);
+
+  return NextResponse.json({ ok: true, conflicts: conflicts?.length ?? 0, conflictsNotified, holidays });
 });

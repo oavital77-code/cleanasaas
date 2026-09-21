@@ -8,6 +8,7 @@ import { requireClinicAdmin } from "@/lib/auth/guards";
 import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
 import { sendWhatsAppReminderTemplate } from "@/lib/whatsapp";
 import { formatDateHe, formatTimeHe, DEFAULT_TIMEZONE } from "@/lib/time";
+import { materializeHolidayBlocks } from "@/lib/holiday-blocks";
 
 // SAASMIGRATIONSPEC §6: מסך "תשלומים וכרטיסיות" — חלק א' (מחירים, ישירות על
 // punch_card_tiers/app_settings, לא RPC — אינן בין הטבלאות שדורשות RPC) +
@@ -157,6 +158,30 @@ export async function updateClinicHoursAction(formData: FormData) {
   if (openHour < 0 || openHour >= 24 || closeHour <= openHour || closeHour > 24) return;
 
   await supabase.from("clinics").update({ open_hour: openHour, close_hour: closeHour }).eq("id", clinicId);
+  revalidatePath("/admin/settings");
+  revalidatePath("/schedule");
+  revalidatePath("/admin/board");
+}
+
+// חגי ישראל: שלושה מתגים על clinics, והחסימות עצמן נוצרות מיד (לא רק
+// בלילה) דרך אותה RPC שה-cron מריץ — עם service role, כי ה-RPC סגורה
+// למשתמשים. ה-clinic_id מגיע מ-requireClinicAdmin, לא מהטופס.
+export async function updateHolidayPolicyAction(formData: FormData) {
+  const { clinicId } = await requireClinicAdmin();
+  const supabase = await createClient();
+
+  const policy = {
+    block_holidays: formData.get("block_holidays") === "on",
+    block_holiday_eves: formData.get("block_holiday_eves") === "on",
+    block_chol_hamoed: formData.get("block_chol_hamoed") === "on",
+  };
+  const { error } = await supabase.from("clinics").update(policy).eq("id", clinicId);
+  if (error) return;
+
+  const admin = createAdminClient();
+  const { data: clinic } = await admin.from("clinics").select("id, timezone").eq("id", clinicId).single();
+  if (clinic) await materializeHolidayBlocks(admin, { ...clinic, ...policy });
+
   revalidatePath("/admin/settings");
   revalidatePath("/schedule");
   revalidatePath("/admin/board");
