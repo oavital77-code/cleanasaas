@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { formatDateHe, formatTimeHe, DEFAULT_TIMEZONE } from "@/lib/time";
+import { mapWithConcurrency } from "@/lib/concurrency";
 import { sendWhatsAppReminderTemplate } from "./index";
 
 // שלב ה-WhatsApp של cron התזכורות (app/api/cron/send-reminders) — Meta Cloud
@@ -14,6 +15,12 @@ import { sendWhatsAppReminderTemplate } from "./index";
 // באותה עמודה ולא יישלח שוב.
 //
 // 🔴 רץ עם service role — חוצה קליניקות; כל query מסונן clinic_id.
+/** כמו במקטעי המייל של אותו cron: עבודה חסומה לכל ריצה, והשאר לריצה הבאה. */
+const BATCH = 250;
+const SEND_CONCURRENCY = 5;
+
+const unique = (values: (string | null)[]): string[] => [...new Set(values.filter((v): v is string => !!v))];
+
 export async function sendWhatsAppReminders(
   supabase: SupabaseClient<Database>,
   now: Date,
@@ -49,26 +56,42 @@ async function sendForClinic(supabase: SupabaseClient<Database>, clinicId: strin
   const timezone = clinic.timezone ?? DEFAULT_TIMEZONE;
   const windowEnd = new Date(now.getTime() + creds.hours_before * 60 * 60_000).toISOString();
 
-  const { data: bookings } = await supabase
+  const { data: bookingRows } = await supabase
     .from("bookings")
     .select("id, user_id, room_id, starts_at")
     .eq("clinic_id", clinicId)
     .eq("status", "confirmed")
     .is("whatsapp_reminder_sent_at", null)
     .gt("starts_at", now.toISOString())
-    .lte("starts_at", windowEnd);
+    .lte("starts_at", windowEnd)
+    .order("starts_at")
+    .limit(BATCH);
 
-  for (const b of bookings ?? []) {
-    const [{ data: profile }, { data: room }] = await Promise.all([
-      supabase.from("profiles").select("full_name, phone, whatsapp_reminders").eq("id", b.user_id).maybeSingle(),
-      supabase.from("rooms").select("name, branch_id").eq("id", b.room_id).maybeSingle(),
-    ]);
-    if (!profile?.phone || !room) continue;
+  const bookings = bookingRows ?? [];
+  if (bookings.length === 0) return result;
+
+  // שאילתה אחת לכל טבלה למקטע, לא אחת לכל הזמנה.
+  const [{ data: profileRows }, { data: roomRows }] = await Promise.all([
+    supabase.from("profiles").select("id, full_name, phone, whatsapp_reminders").in("id", unique(bookings.map((b) => b.user_id))),
+    supabase.from("rooms").select("id, name, branch_id").in("id", unique(bookings.map((b) => b.room_id))),
+  ]);
+  const profiles = new Map((profileRows ?? []).map((p) => [p.id, p]));
+  const rooms = new Map((roomRows ?? []).map((r) => [r.id, r]));
+  const branchIds = unique([...rooms.values()].map((r) => r.branch_id));
+  const { data: branchRows } = branchIds.length > 0
+    ? await supabase.from("branches").select("id, name").in("id", branchIds)
+    : { data: [] as { id: string; name: string }[] };
+  const branches = new Map((branchRows ?? []).map((b) => [b.id, b]));
+
+  await mapWithConcurrency(bookings, SEND_CONCURRENCY, async (b) => {
+    const profile = profiles.get(b.user_id);
+    const room = rooms.get(b.room_id);
+    if (!profile?.phone || !room) return;
     if (!profile.whatsapp_reminders) {
       result.skippedOptOut++;
-      continue;
+      return;
     }
-    const { data: branch } = await supabase.from("branches").select("name").eq("id", room.branch_id).maybeSingle();
+    const branch = branches.get(room.branch_id);
 
     const startsAt = new Date(b.starts_at);
     const send = await sendWhatsAppReminderTemplate(
@@ -113,7 +136,7 @@ async function sendForClinic(supabase: SupabaseClient<Database>, clinicId: strin
       });
       result.failed++;
     }
-  }
+  });
 
   return result;
 }
