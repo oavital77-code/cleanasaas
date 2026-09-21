@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pageAll } from "@/lib/supabase/page-all";
 
 /**
  * מה שדשבורד הבעלים מציג: מי נרשם, מי משלם, מה נכנס — משני המוצרים.
@@ -51,24 +52,46 @@ export async function fetchCleanasStats(): Promise<ProductResult> {
   const now = new Date();
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 
+  // כל אחת מאלה גדלה עם הזמן, ו-PostgREST חותך ב-db-max-rows בלי לומר כלום —
+  // ובתשלומים זה אומר סכום הכנסות שקטן מהאמת. pageAll מביא הכול, ונכשל בקול.
   const [clinicsRes, subsRes, ownersRes, seatsRes, paymentsRes] = await Promise.all([
-    supabase.from("clinics").select("id, name, status, created_at").order("created_at", { ascending: false }).limit(1000),
-    supabase.from("platform_subscriptions").select("clinic_id, plan, status, current_period_start, current_period_end, grace_ends_at, cancel_at_period_end"),
-    supabase.from("profiles").select("clinic_id, email, full_name").eq("role", "owner"),
-    supabase.from("profiles").select("clinic_id").eq("status", "active"),
-    supabase.from("platform_payments").select("clinic_id, amount, paid_at, status").eq("status", "succeeded").order("paid_at", { ascending: false }),
+    pageAll((from, to) =>
+      supabase.from("clinics").select("id, name, status, created_at").order("created_at", { ascending: false }).range(from, to),
+    ),
+    pageAll((from, to) =>
+      supabase
+        .from("platform_subscriptions")
+        .select("clinic_id, plan, status, current_period_start, current_period_end, grace_ends_at, cancel_at_period_end")
+        .order("clinic_id")
+        .range(from, to),
+    ),
+    pageAll((from, to) =>
+      supabase.from("profiles").select("clinic_id, email, full_name").eq("role", "owner").order("clinic_id").range(from, to),
+    ),
+    pageAll((from, to) => supabase.from("profiles").select("clinic_id").eq("status", "active").order("clinic_id").range(from, to)),
+    pageAll((from, to) =>
+      supabase
+        .from("platform_payments")
+        .select("clinic_id, amount, paid_at, status")
+        .eq("status", "succeeded")
+        .order("paid_at", { ascending: false })
+        .range(from, to),
+    ),
   ]);
-  const failed = [clinicsRes, subsRes, ownersRes, seatsRes, paymentsRes].find((r) => r.error);
-  if (failed?.error) return { ok: false, reason: failed.error.message };
+  if (!clinicsRes.ok) return { ok: false, reason: clinicsRes.reason };
+  if (!subsRes.ok) return { ok: false, reason: subsRes.reason };
+  if (!ownersRes.ok) return { ok: false, reason: ownersRes.reason };
+  if (!seatsRes.ok) return { ok: false, reason: seatsRes.reason };
+  if (!paymentsRes.ok) return { ok: false, reason: paymentsRes.reason };
 
-  const subs = new Map((subsRes.data ?? []).map((s) => [s.clinic_id, s]));
-  const owners = new Map((ownersRes.data ?? []).map((p) => [p.clinic_id, p]));
+  const subs = new Map(subsRes.rows.map((s) => [s.clinic_id, s]));
+  const owners = new Map(ownersRes.rows.map((p) => [p.clinic_id, p]));
   const seats = new Map<string, number>();
-  for (const p of seatsRes.data ?? []) seats.set(p.clinic_id, (seats.get(p.clinic_id) ?? 0) + 1);
+  for (const p of seatsRes.rows) seats.set(p.clinic_id, (seats.get(p.clinic_id) ?? 0) + 1);
   const lastPayment = new Map<string, { paid_at: string | null; amount: number }>();
   let thisMonth = 0;
   let allTime = 0;
-  for (const p of paymentsRes.data ?? []) {
+  for (const p of paymentsRes.rows) {
     const amount = Number(p.amount);
     allTime += amount;
     if (p.paid_at && p.paid_at >= monthStart) thisMonth += amount;
@@ -76,7 +99,7 @@ export async function fetchCleanasStats(): Promise<ProductResult> {
   }
 
   const totals: ProductStats["totals"] = { accounts: 0, trialing: 0, paying: 0, grace: 0, locked: 0, canceling: 0, legacyFree: 0 };
-  const accounts: AccountRow[] = (clinicsRes.data ?? []).map((c) => {
+  const accounts: AccountRow[] = clinicsRes.rows.map((c) => {
     const s = subs.get(c.id);
     const owner = owners.get(c.id);
     const periodEnd = s?.current_period_end ? new Date(s.current_period_end) : null;
