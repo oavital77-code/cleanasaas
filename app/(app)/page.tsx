@@ -28,9 +28,10 @@ import { Button } from "@/components/ui/button";
 import { Board, BrowserFrame, CheckCard, Chips, Eyebrow, FactList, GridPaper, Kpi, Orbit, ScheduleList, SidebarRail, Steps, TrustRow } from "@/components/landing";
 import { platformPlanPriceIls } from "@/lib/platform-billing";
 
-// אנגלית/LTR — חריג מכוון, בדיוק כמו דף הבית של click-na (ר' ההערה שם:
-// "the app is Hebrew and right-to-left; this one page is not"). שאר
-// האפליקציה (dashboard/schedule/admin) נשארת עברית/RTL לגמרי.
+// עברית/RTL — כמו כל שאר האפליקציה. עד 22.9.2026 הדף הזה היה באנגלית/LTR
+// (חריג שיובא מ-click-na), אבל הקונה הוא מנהל/ת קליניקה בישראל: עמוד
+// באנגלית גורם לו/ה להניח "זה לא בשבילי" לפני שקרא/ה שורה. ה-dir מגיע
+// מ-app/layout.tsx (lang="he" dir="rtl") ולכן לא נקבע כאן.
 //
 // המוצר נקרא כאן "Cleana" בלבד — "SaaS" הוא שם פנימי, לא user-facing
 // (ר' PROGRESS.md / דרישת המשתמש).
@@ -39,129 +40,128 @@ import { platformPlanPriceIls } from "@/lib/platform-billing";
 // הדמיית חלון דפדפן, אריחי KPI, לוח עמודות, שלבים, אבטחה, מחיר — בטוקנים של
 // Cleana. לשמור את השניים תואמים.
 export const metadata: Metadata = {
-  title: "Cleana — Clinic & Room Management",
+  title: "Cleana — ניהול קליניקה וחדרי טיפול",
   description:
-    "A schedule that never double-books, punch cards and sessions that run themselves, and every therapist books their own slot — for clinics with multiple branches, rooms, and therapists.",
+    "לוח חדרים שלא מתנגש לעולם, כרטיסיות וססיות שמתנהלות לבד, וכל מטפל/ת מזמין/ה את המשבצת שלו/ה — לקליניקות עם כמה סניפים, חדרים ומטפלים/ות.",
 };
 
 // המחיר האחד, מאותו מקור כמו /admin/billing והחיוב עצמו (PLATFORM_PLAN_PRICE_ILS,
 // ברירת מחדל 209). תקופת הניסיון: signup_clinic נותן 30 יום (מיגרציה
 // 20260909000003) — אם משנים שם, לשנות גם כאן.
-// עמוד אנגלי/LTR — "₪209" ולא "209 ₪" של he-IL (ר' formatPriceIls(…, "en") ב-Cleana+).
 const PRICE = {
-  amount: new Intl.NumberFormat("en-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 0 }).format(platformPlanPriceIls()),
-  period: "month, VAT included",
+  amount: new Intl.NumberFormat("he-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 0 }).format(platformPlanPriceIls()),
+  period: "לחודש, כולל מע\"מ",
 };
 const TRIAL_DAYS = 30;
 
-const TRUST = ["No card required", "Live in minutes", "Cancel any time"];
+const TRUST = ["בלי כרטיס אשראי", "עולה באוויר בדקות", "ביטול בכל רגע"];
 
 const CHIPS = [
-  { icon: CalendarDays, label: "Room calendar" },
-  { icon: TicketCheck, label: "Punch cards" },
-  { icon: Layers, label: "Sessions" },
-  { icon: Users, label: "Therapists" },
+  { icon: CalendarDays, label: "לוח חדרים" },
+  { icon: TicketCheck, label: "כרטיסיות" },
+  { icon: Layers, label: "ססיות" },
+  { icon: Users, label: "מטפלים/ות" },
 ];
 
 // שלוש התשובות בסדר שבו מנהל/ת קליניקה נתקל/ת בהן, לא רשימת פיצ'רים.
 const ANSWERS = [
   {
-    title: "Every therapist books their own slot",
-    body: "No phone calls, no WhatsApp back-and-forth. Each therapist sees only the rooms and hours open to them — never someone else's calendar.",
+    title: "כל מטפל/ת מזמין/ה לבד",
+    body: "בלי טלפונים ובלי הודעות הלוך ושוב. כל אחד/ת רואה רק את החדרים והשעות שפתחתם לו/ה — לעולם לא את היומן של מישהו אחר.",
   },
   {
-    title: "No double-booking. Ever.",
-    body: "Overlap prevention lives in the database itself, not just the interface — two therapists can never take the same room at the same time, even down to the same click.",
+    title: "בלי כפל הזמנות. נקודה.",
+    body: "מניעת החפיפה יושבת בבסיס הנתונים עצמו, לא רק בממשק — שני מטפלים לא יכולים לתפוס את אותו חדר באותה שעה, גם לא באותה לחיצה בדיוק.",
   },
   {
-    title: "Punch cards and sessions run themselves",
-    body: "Remaining hours, deposits, and monthly renewals are tracked automatically against real payments. No spreadsheet nobody updates.",
+    title: "כרטיסיות וססיות מתנהלות לבד",
+    body: "שעות שנותרו, פיקדונות וחידושים חודשיים נספרים אוטומטית מול תשלומים אמיתיים. בלי גיליון שאף אחד לא מעדכן.",
   },
 ];
 
 const STEPS = [
   {
     icon: Building2,
-    title: "Set up branches and rooms",
-    text: "Opening hours, room types, buffer between sessions, and the price of an hour. Minutes, not a project.",
+    title: "מקימים סניפים וחדרים",
+    text: "שעות פתיחה, סוגי חדרים, מרווח בין טיפולים ומחיר שעה. דקות, לא פרויקט.",
   },
   {
     icon: Share2,
-    title: "Invite therapists with one link",
-    text: "They join under your clinic, in Hebrew or English, and see exactly the rooms and hours you opened to them.",
+    title: "מזמינים מטפלים/ות בלינק אחד",
+    text: "הם מצטרפים לקליניקה שלכם, בעברית או באנגלית, ורואים בדיוק את החדרים והשעות שפתחתם להם.",
   },
   {
     icon: CalendarCheck2,
-    title: "They book. It balances itself.",
-    text: "Every booking draws from a punch card or a session, every payment tops it up, and the calendar never overlaps.",
+    title: "הם מזמינים. זה מאזן את עצמו.",
+    text: "כל הזמנה יורדת מכרטיסייה או מססיה, כל תשלום מטעין בחזרה, והלוח לעולם לא מתנגש.",
   },
 ];
 
 const CAPACITY = [
-  { icon: Building2, label: "Multiple branches" },
-  { icon: DoorOpen, label: "One shared room calendar" },
-  { icon: Users, label: "Dozens to hundreds of therapists" },
-  { icon: TicketCheck, label: "Punch cards and sessions together" },
-  { icon: ShieldCheck, label: "Full isolation between clinics" },
+  { icon: Building2, label: "כמה סניפים" },
+  { icon: DoorOpen, label: "לוח חדרים משותף אחד" },
+  { icon: Users, label: "עשרות עד מאות מטפלים/ות" },
+  { icon: TicketCheck, label: "כרטיסיות וססיות יחד" },
+  { icon: ShieldCheck, label: "הפרדה מלאה בין קליניקות" },
 ];
 
 /** מה כלול במסלול האחד — הצ'קליסט של כרטיס המחיר. */
 const INCLUDED = [
-  "Unlimited branches, rooms, and therapists",
-  "One shared room calendar that never double-books",
-  "Every therapist books their own slot",
-  "Punch cards and monthly sessions, tracked against real payments",
-  "Payments in your own store, reconciled automatically",
-  "WhatsApp and email reminders",
-  "Full isolation between clinics — by design",
+  "סניפים, חדרים ומטפלים/ות — בלי הגבלה",
+  "לוח חדרים משותף אחד שלא מתנגש לעולם",
+  "כל מטפל/ת מזמין/ה את המשבצת שלו/ה",
+  "כרטיסיות וססיות חודשיות, נספרות מול תשלומים אמיתיים",
+  "תשלומים בחנות שלכם, מתעדכנים אוטומטית",
+  "תזכורות בוואטסאפ ובמייל",
+  "הפרדה מלאה בין קליניקות — לפי תכנון",
 ];
 
 // כמו OMISSIONS ב-click-na: התועלת מנוסחת כמה שנעלם, לא כרשימת יכולות.
 const OMISSIONS = [
-  "No spreadsheet to track hours and deposits.",
-  "No group chat to coordinate who gets which room.",
-  "No risk of double-booking the same room, same hour.",
-  "No therapist ever sees who booked before them — just taken or open.",
+  "אין גיליון אקסל למעקב אחרי שעות ופיקדונות.",
+  "אין קבוצת וואטסאפ לתיאום מי מקבל איזה חדר.",
+  "אין סיכון ששני מטפלים יתפסו את אותו חדר באותה שעה.",
+  "אף מטפל/ת לא רואה מי הזמין לפניו — רק תפוס או פנוי.",
 ];
 
 // עובדות בלבד — כל שורה כאן ניתנת לאימות בקוד ובפרויקט (RLS, audit_log,
 // Supabase eu-central-1, Clerk, הצפנת סודות ווקומרס).
 const SECURITY_INCLUDED = [
-  "Row-level isolation between clinics, enforced in the database itself",
-  "Role-based access — owner, admin, therapist — checked on every action",
-  "Every admin action written to an audit log you can read",
-  "Sign-in with Google or a one-time code — no passwords to leak",
-  "Store integration secrets encrypted at rest",
-  "Encrypted in transit, end to end",
+  "הפרדה ברמת השורה בין קליניקות, נאכפת בבסיס הנתונים עצמו",
+  "הרשאות לפי תפקיד — בעלים, אדמין, מטפל/ת — נבדקות בכל פעולה",
+  "כל פעולת אדמין נרשמת ביומן ביקורת שאפשר לקרוא",
+  "כניסה עם Google או קוד חד-פעמי — אין סיסמאות שידלפו",
+  "סודות החיבור לחנות מוצפנים באחסון",
+  "מוצפן בהעברה, מקצה לקצה",
 ];
 
 const SECURITY_FACTS = [
-  { title: "Supabase · Frankfurt", sub: "Database hosted in the EU" },
-  { title: "Row-level security", sub: "Isolation between clinics" },
-  { title: "Audit log", sub: "Every admin action recorded" },
-  { title: "Clerk", sub: "Sign-in and sessions" },
+  { title: "Supabase · פרנקפורט", sub: "בסיס הנתונים מאוחסן באיחוד האירופי" },
+  { title: "Row-level security", sub: "הפרדה בין קליניקות" },
+  { title: "יומן ביקורת", sub: "כל פעולת אדמין נרשמת" },
+  { title: "Clerk", sub: "כניסה וניהול סשנים" },
 ];
 
 const FAQ = [
   {
-    q: "How do you prevent double-booking?",
-    a: "Overlap prevention is enforced at the database level, not just the UI — two therapists can never take the same room at the same time, even down to the same click.",
+    q: "איך מונעים כפל הזמנות?",
+    a: "מניעת החפיפה נאכפת ברמת בסיס הנתונים, לא רק בממשק — שני מטפלים לא יכולים לתפוס את אותו חדר באותה שעה, גם לא באותה לחיצה בדיוק.",
   },
   {
-    q: "Can one therapist see another's bookings?",
-    a: "No. Availability is exposed only as taken or open — no name, no booking type. No therapist ever sees another's details.",
+    q: "מטפל/ת אחד/ת יכול/ה לראות את ההזמנות של אחר/ת?",
+    a: "לא. הזמינות נחשפת רק כתפוס או פנוי — בלי שם ובלי סוג הזמנה. אף מטפל/ת לא רואה את הפרטים של אחר/ת.",
   },
   {
-    q: "How does payment work?",
-    a: "Every payment — punch card or session — happens in your own store, and updates automatically the moment it's confirmed.",
+    q: "איך עובד התשלום?",
+    a: "כל תשלום — כרטיסייה או ססיה — מתבצע בחנות שלכם, ומתעדכן אוטומטית ברגע שהוא מאושר.",
   },
   {
-    q: "What does Cleana cost?",
-    a: `One plan, ${PRICE.amount} per month, VAT included, per clinic — however many branches, rooms, and therapists you run. The first ${TRIAL_DAYS} days are free with no card. Cancel any time from the admin panel; access continues to the end of the paid month.`,
+    q: "כמה Cleana עולה?",
+    a: `מסלול אחד, ${PRICE.amount} לחודש כולל מע"מ, לקליניקה — בלי קשר לכמה סניפים, חדרים ומטפלים/ות יש לכם. ${TRIAL_DAYS} הימים הראשונים בחינם, בלי כרטיס אשראי. אפשר לבטל בכל רגע מפאנל הניהול; הגישה נמשכת עד סוף החודש ששולם.`,
   },
   {
-    q: "How long does setup take?",
-    a: "Minutes. Create an account, set up branches and rooms, and invite your therapists with one link.",
+    q: "כמה זמן לוקחת ההקמה?",
+    a: "דקות. פותחים חשבון, מקימים סניפים וחדרים, ומזמינים את המטפלים/ות בלינק אחד.",
   },
 ];
 
@@ -174,7 +174,7 @@ export default async function HomePage() {
   if (userId && profile) redirect("/dashboard");
 
   return (
-    <div dir="ltr" className="relative flex flex-1 flex-col">
+    <div className="relative flex flex-1 flex-col">
       <BrandBackdrop />
 
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-sm">
@@ -184,13 +184,13 @@ export default async function HomePage() {
           </Link>
           <div className="flex items-center gap-3 text-sm">
             <Link href="#pricing" className="hidden min-h-11 items-center font-medium text-muted-foreground hover:text-foreground sm:inline-flex">
-              Pricing
+              מחיר
             </Link>
             <Link href="/signup" className="hidden min-h-11 items-center font-medium text-muted-foreground hover:text-foreground sm:inline-flex">
-              Open a clinic
+              פתיחת קליניקה
             </Link>
             <Button asChild size="lg" className="rounded-2xl px-6 font-semibold">
-              <Link href="/login">Log in</Link>
+              <Link href="/login">כניסה</Link>
             </Button>
           </div>
         </div>
@@ -201,25 +201,25 @@ export default async function HomePage() {
         <section className="relative overflow-hidden">
           <GridPaper />
           <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center gap-7 px-5 pt-16 pb-10 text-center md:px-8 md:pt-24">
-            <Eyebrow icon={Sparkles}>Clinic management platform</Eyebrow>
+            <Eyebrow icon={Sparkles}>פלטפורמה לניהול קליניקה</Eyebrow>
             <h1 className="text-[2.6rem] leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-              Everything a clinic needs.
+              כל מה שקליניקה צריכה.
               <br />
-              <span className="text-violet-500">In one place.</span>
+              <span className="text-violet-500">במקום אחד.</span>
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-              A schedule that never gets confused, punch cards that manage themselves, and every therapist books
-              their own slot without looping you in. That&rsquo;s the whole plan — and it&rsquo;s enough.
+              לוח שלא מתבלבל, כרטיסיות שמתנהלות לבד, וכל מטפל/ת מזמין/ה את המשבצת שלו/ה בלי לעבור דרככם.
+              זו כל התוכנית — וזה מספיק.
             </p>
             <div className="flex w-full max-w-md flex-col gap-3">
               <Button asChild size="lg" className="h-14 w-full rounded-2xl text-base font-semibold shadow-lg shadow-violet-500/25">
                 <Link href="/signup">
-                  Open a new clinic
-                  <ArrowRight className="size-5" aria-hidden />
+                  פתיחת קליניקה חדשה
+                  <ArrowRight className="size-5 rtl:rotate-180" aria-hidden />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="h-14 w-full rounded-2xl text-base font-semibold">
-                <Link href="#how-it-works">See how it works</Link>
+                <Link href="#how-it-works">איך זה עובד</Link>
               </Button>
             </div>
             <TrustRow items={TRUST} />
@@ -228,7 +228,7 @@ export default async function HomePage() {
                 ★★★★★
               </span>
               <span>
-                <strong>First {TRIAL_DAYS} days free</strong> · one plan per clinic · no per-seat fees
+                <strong>{TRIAL_DAYS} הימים הראשונים בחינם</strong> · מסלול אחד לקליניקה · בלי תשלום לפי מושב
               </span>
             </div>
           </div>
@@ -244,17 +244,17 @@ export default async function HomePage() {
                     <span className="h-2.5 w-56 rounded-full bg-border-strong" />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <Kpi label="Rooms today" value="11/14" delta="+2" />
-                    <Kpi label="Therapists" value="23" delta="+3" />
-                    <Kpi label="Hours sold" value="412" delta="+8%" />
+                    <Kpi label="חדרים היום" value="11/14" delta="+2" />
+                    <Kpi label="מטפלים/ות" value="23" delta="+3" />
+                    <Kpi label="שעות שנמכרו" value="412" delta="+8%" />
                   </div>
                   <ScheduleList
-                    title="Room 2 · today"
-                    meta="Sunday, 19 Apr"
+                    title="חדר 2 · היום"
+                    meta="ראשון, 19 באפריל"
                     rows={[
-                      { time: "09:00", name: "Noa Levi", status: "Confirmed", tone: "open" },
-                      { time: "10:00", name: "Dan Ari", status: "Held", tone: "held" },
-                      { time: "12:00", name: "Maya Cohen", status: "Session", tone: "booked" },
+                      { time: "09:00", name: "נועה לוי", status: "מאושר", tone: "open" },
+                      { time: "10:00", name: "דן ארי", status: "מוחזק", tone: "held" },
+                      { time: "12:00", name: "מאיה כהן", status: "ססיה", tone: "booked" },
                     ]}
                   />
                 </div>
@@ -283,36 +283,36 @@ export default async function HomePage() {
           <GridPaper />
           <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-5 py-16 md:grid-cols-2 md:px-8 md:py-24">
             <div className="flex flex-col gap-5 text-center md:text-start">
-              <Eyebrow icon={DoorOpen}>The rooms, right now</Eyebrow>
+              <Eyebrow icon={DoorOpen}>החדרים, ברגע זה</Eyebrow>
               <h2 className={H2}>
-                Open, held, booked. <span className="text-violet-500">Nothing else to track.</span>
+                פנוי, מוחזק, מוזמן. <span className="text-violet-500">אין מה עוד לעקוב.</span>
               </h2>
               <p className="text-lg leading-relaxed text-muted-foreground">
-                Every room-hour is one of three things. A booking moves it across the board by itself, a hold
-                expires on its own, and a cancellation moves it back.
+                כל שעת-חדר היא אחד משלושה דברים. הזמנה מזיזה אותה על הלוח לבד, החזקה פגה מעצמה,
+                וביטול מחזיר אותה.
               </p>
             </div>
             <Board
-              title="This morning"
-              badge="12 booked today"
+              title="הבוקר"
+              badge="12 הזמנות היום"
               columns={[
                 {
-                  title: "Open",
+                  title: "פנוי",
                   tone: "open",
                   cards: [
-                    { title: "Room 1 · 11:00", sub: "Talk room" },
-                    { title: "Room 3 · 12:00", sub: "Bodywork" },
+                    { title: "חדר 1 · 11:00", sub: "חדר שיחה" },
+                    { title: "חדר 3 · 12:00", sub: "עבודת גוף" },
                   ],
                   placeholders: 1,
                 },
-                { title: "Held", tone: "held", cards: [{ title: "Dan Ari", sub: "Room 2 · 10:00" }], placeholders: 1 },
+                { title: "מוחזק", tone: "held", cards: [{ title: "דן ארי", sub: "חדר 2 · 10:00" }], placeholders: 1 },
                 {
-                  title: "Booked",
+                  title: "מוזמן",
                   tone: "booked",
                   cards: [
-                    { title: "Noa Levi", sub: "Room 2 · 09:00" },
-                    { title: "Maya Cohen", sub: "Room 2 · 12:00" },
-                    { title: "Yael Shapira", sub: "Room 1 · 09:00" },
+                    { title: "נועה לוי", sub: "חדר 2 · 09:00" },
+                    { title: "מאיה כהן", sub: "חדר 2 · 12:00" },
+                    { title: "יעל שפירא", sub: "חדר 1 · 09:00" },
                   ],
                 },
               ]}
@@ -324,9 +324,9 @@ export default async function HomePage() {
         <section id="how-it-works" className="border-t border-border/60">
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-5 py-16 md:px-8 md:py-24">
             <div className="flex flex-col items-center gap-4 text-center">
-              <Eyebrow icon={Check}>How it works</Eyebrow>
+              <Eyebrow icon={Check}>איך זה עובד</Eyebrow>
               <h2 className={H2}>
-                Three steps. <span className="text-violet-500">Then it runs itself.</span>
+                שלושה שלבים. <span className="text-violet-500">ומשם זה רץ לבד.</span>
               </h2>
             </div>
             <Steps steps={STEPS} />
@@ -336,7 +336,7 @@ export default async function HomePage() {
         {/* Capacity */}
         <section className="border-t border-border/60">
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-10 px-5 py-16 text-center md:px-8 md:py-24">
-            <h2 className={H2}>Built for running a whole clinic, not a single practitioner</h2>
+            <h2 className={H2}>בנוי לניהול קליניקה שלמה, לא מטפל/ת אחד/ת</h2>
             <div className="flex flex-wrap justify-center gap-x-10 gap-y-8">
               {CAPACITY.map(({ icon: Icon, label }) => (
                 <div key={label} className="flex flex-col items-center gap-3">
@@ -355,19 +355,19 @@ export default async function HomePage() {
           <GridPaper />
           <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-5 py-16 md:px-8 md:py-24">
             <div className="flex flex-col items-center gap-4 text-center">
-              <Eyebrow icon={ShieldCheck}>Security &amp; privacy</Eyebrow>
+              <Eyebrow icon={ShieldCheck}>אבטחה ופרטיות</Eyebrow>
               <h2 className={H2}>
-                Your clinic&rsquo;s data. <span className="text-violet-500">Sealed off from every other.</span>
+                המידע של הקליניקה שלכם. <span className="text-violet-500">אטום מכל האחרות.</span>
               </h2>
               <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-                A clinic&rsquo;s bookings, therapists and payments are its own. The separation is enforced where it
-                cannot be bypassed — in the database — and every admin action leaves a trace.
+                ההזמנות, המטפלים/ות והתשלומים של קליניקה שייכים לה בלבד. ההפרדה נאכפת במקום שאי אפשר לעקוף —
+                בבסיס הנתונים — וכל פעולת אדמין משאירה עקבות.
               </p>
             </div>
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2">
               <Orbit center={ShieldCheck} satellites={[Lock, KeyRound, Database, ClipboardList]} />
               <div className="flex flex-col gap-6">
-                <CheckCard title="What's included" items={SECURITY_INCLUDED} />
+                <CheckCard title="מה כלול" items={SECURITY_INCLUDED} />
                 <FactList facts={SECURITY_FACTS} />
               </div>
             </div>
@@ -379,39 +379,39 @@ export default async function HomePage() {
           <div aria-hidden className="pointer-events-none absolute -bottom-40 left-1/2 hidden h-[28rem] w-[44rem] -translate-x-1/2 rounded-full bg-violet-200/40 blur-3xl md:block" />
           <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-5 py-16 md:px-8 md:py-24">
             <div className="flex flex-col items-center gap-4 text-center">
-              <Eyebrow icon={CreditCard}>The plan</Eyebrow>
+              <Eyebrow icon={CreditCard}>המסלול</Eyebrow>
               <h2 className={H2}>
-                One plan. <span className="text-violet-500">The whole clinic in it.</span>
+                מסלול אחד. <span className="text-violet-500">כל הקליניקה בפנים.</span>
               </h2>
               <p className="max-w-lg text-lg leading-relaxed text-muted-foreground">
-                Every clinic gets the full platform from day one — not a partial version waiting on an upgrade.
-                One price per clinic, whatever its size.
+                כל קליניקה מקבלת את הפלטפורמה המלאה מהיום הראשון — לא גרסה חלקית שמחכה לשדרוג.
+                מחיר אחד לקליניקה, בכל גודל.
               </p>
             </div>
 
             <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-violet-200 bg-card shadow-2xl shadow-violet-500/10">
               <div aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-500 via-violet-300 to-violet-500" />
               <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-                <div className="flex flex-col items-center justify-center gap-5 border-b border-border/60 px-6 py-10 text-center md:items-start md:border-r md:border-b-0 md:px-10 md:text-left">
+                <div className="flex flex-col items-center justify-center gap-5 border-b border-border/60 px-6 py-10 text-center md:items-start md:border-e md:border-b-0 md:px-10 md:text-start">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-success-fg/30 bg-success-bg px-3 py-1 text-xs font-semibold text-success-fg">
                     <Check className="size-3.5" aria-hidden />
-                    First {TRIAL_DAYS} days free · no card
+                    {TRIAL_DAYS} הימים הראשונים בחינם · בלי כרטיס
                   </span>
                   <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium text-muted-foreground">Cleana · per clinic</span>
+                    <span className="text-sm font-medium text-muted-foreground">Cleana · לקליניקה</span>
                     <p className="flex flex-wrap items-baseline justify-center gap-x-2 md:justify-start">
                       <span className="text-5xl font-extrabold tabular-nums tracking-tight md:text-6xl">{PRICE.amount}</span>
-                      <span className="text-sm text-muted-foreground">/ {PRICE.period}</span>
+                      <span className="text-sm text-muted-foreground">{PRICE.period}</span>
                     </p>
                   </div>
                   <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-                    One monthly payment after the free trial, however many branches, rooms, and therapists you run.
-                    Cancel any time from the admin panel.
+                    תשלום חודשי אחד אחרי תקופת הניסיון, בלי קשר לכמה סניפים, חדרים ומטפלים/ות יש לכם.
+                    אפשר לבטל בכל רגע מפאנל הניהול.
                   </p>
                   <Button asChild size="lg" className="h-12 w-full rounded-2xl font-semibold md:w-auto">
                     <Link href="/signup">
-                      Start free
-                      <ArrowRight className="size-4" aria-hidden />
+                      להתחיל בחינם
+                      <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
                     </Link>
                   </Button>
                 </div>
@@ -442,7 +442,7 @@ export default async function HomePage() {
         {/* FAQ */}
         <section className="border-t border-border/60">
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-16 md:px-8 md:py-24">
-            <h2 className={`${H2} text-center`}>Questions</h2>
+            <h2 className={`${H2} text-center`}>שאלות</h2>
             <div className="flex flex-col gap-3">
               {FAQ.map((item) => (
                 <div key={item.q} className="rounded-2xl border border-border bg-card p-5 shadow-sm md:p-6">
@@ -459,13 +459,13 @@ export default async function HomePage() {
           <GridPaper />
           <div className="relative mx-auto flex w-full max-w-2xl flex-col items-center gap-6 px-5 py-16 text-center md:px-8 md:py-24">
             <h2 className={H2}>
-              Ready to stop <span className="text-violet-500">coordinating by hand?</span>
+              מוכנים להפסיק <span className="text-violet-500">לתאם ביד?</span>
             </h2>
-            <p className="max-w-md text-lg leading-relaxed text-muted-foreground">Open your clinic now — initial setup takes minutes.</p>
+            <p className="max-w-md text-lg leading-relaxed text-muted-foreground">פתחו את הקליניקה עכשיו — ההקמה לוקחת דקות.</p>
             <Button asChild size="lg" className="h-14 w-full max-w-md rounded-2xl text-base font-semibold shadow-lg shadow-violet-500/25">
               <Link href="/signup">
-                Open a new clinic
-                <ArrowRight className="size-5" aria-hidden />
+                פתיחת קליניקה חדשה
+                <ArrowRight className="size-5 rtl:rotate-180" aria-hidden />
               </Link>
             </Button>
             <TrustRow items={TRUST} />
@@ -473,7 +473,7 @@ export default async function HomePage() {
         </section>
       </main>
 
-      <SiteFooter english />
+      <SiteFooter />
     </div>
   );
 }
