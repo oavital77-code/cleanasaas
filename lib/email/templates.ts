@@ -419,6 +419,36 @@ export function cronFailedAdminEmail(params: { jobName: string; detail: string }
   };
 }
 
+/**
+ * פנייה חדשה מדף הנחיתה, לסופר-אדמיני הפלטפורמה — עברית.
+ *
+ * הליד כבר נשמר ב-platform_leads לפני שהמייל נשלח, ולכן כישלון שליחה לא
+ * מאבד אותו; המייל הוא ההתראה, לא האחסון.
+ */
+export function newLeadEmail(params: {
+  name: string;
+  phone: string;
+  email: string | null;
+  clinicName: string | null;
+  message: string | null;
+  source: string;
+}): EmailContent {
+  const row = (label: string, value: string | null) =>
+    value ? `<p style="margin:4px 0;"><span style="color:#6b7288;">${label}:</span> <strong>${escapeHtml(value)}</strong></p>` : "";
+  return {
+    subject: `פנייה חדשה מ-${params.source} — ${params.name}`,
+    html: emailLayout(`
+      <p>התקבלה פנייה חדשה מדף הנחיתה:</p>
+      ${row("שם", params.name)}
+      ${row("טלפון", params.phone)}
+      ${row("מייל", params.email)}
+      ${row("קליניקה", params.clinicName)}
+      ${params.message ? `<p style="margin-top:12px;color:#6b7288;">הודעה:</p><p style="white-space:pre-wrap;">${escapeHtml(params.message)}</p>` : ""}
+      <p style="color:#6b7288;font-size:13px;margin-top:16px;">הפנייה שמורה גם בדשבורד הבעלים.</p>
+    `),
+  };
+}
+
 /** לנמען/ת שעדיין אין לו/ה פרופיל (רכישה בחנות לפני הרשמה) — עברית. */
 export function wooPurchaseReceivedEmail(params: { hours: number; registerUrl: string }): EmailContent {
   return {

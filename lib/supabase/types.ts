@@ -697,6 +697,59 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_leads: {
+        Row: {
+          clinic_name: string | null
+          created_at: string
+          email: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          message: string | null
+          name: string
+          notes: string | null
+          phone: string
+          source: string
+          status: string
+        }
+        Insert: {
+          clinic_name?: string | null
+          created_at?: string
+          email?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message?: string | null
+          name: string
+          notes?: string | null
+          phone: string
+          source?: string
+          status?: string
+        }
+        Update: {
+          clinic_name?: string | null
+          created_at?: string
+          email?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_leads_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_audit_log: {
         Row: {
           action: string

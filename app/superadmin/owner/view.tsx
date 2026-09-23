@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowUpRight, Check, Clock } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Check, Clock, MessageSquare } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { activeUsersOf, type ProductResult, type ProductStats } from "@/lib/owner/stats";
@@ -19,7 +19,18 @@ const ils = (n: number) => new Intl.NumberFormat("he-IL", { style: "currency", c
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—");
 
 /** התצוגה עצמה, בלי השער — כדי שאפשר יהיה לראות אותה עם נתוני דוגמה. */
-export function OwnerDashboardView({ plus, saas }: { plus: ProductResult; saas: ProductResult }) {
+export type LeadRow = {
+  id: string;
+  created_at: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  clinic_name: string | null;
+  message: string | null;
+  status: string;
+};
+
+export function OwnerDashboardView({ plus, saas, leads }: { plus: ProductResult; saas: ProductResult; leads: LeadRow[] }) {
   const plusStats = plus.ok ? plus.stats : null;
   const saasStats = saas.ok ? saas.stats : null;
   const activeUsers = activeUsersOf(plusStats) + activeUsersOf(saasStats);
@@ -122,6 +133,8 @@ export function OwnerDashboardView({ plus, saas }: { plus: ProductResult; saas: 
           </CardContent>
         </Card>
 
+        <LeadsSection leads={leads} />
+
         <ProductSection title="Cleana+" subtitle="מטפלים עצמאיים · ₪79 לחודש" result={plus} />
         <ProductSection title="CleanaS" subtitle="קליניקות · ₪209 לחודש" result={saas} seats />
       </main>
@@ -209,6 +222,52 @@ function ProductSection({ title, subtitle, result, seats }: { title: string; sub
               })}
             </tbody>
           </table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** פניות מדף הנחיתה — מה שהגיע ועוד לא טופל, ראשון. */
+function LeadsSection({ leads }: { leads: LeadRow[] }) {
+  const fresh = leads.filter((l) => l.status === "new").length;
+  return (
+    <Card className="shadow-e1">
+      <CardHeader className="flex flex-row flex-wrap items-end justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="size-4 text-violet-500" aria-hidden />
+          <CardTitle className="text-lg">פניות מדף הנחיתה</CardTitle>
+        </div>
+        {fresh > 0 && <Pill label="חדשות" value={fresh} tone="warning" />}
+      </CardHeader>
+      <CardContent className="pt-0">
+        {leads.length === 0 ? (
+          <p className="text-sm text-muted-foreground">אין עדיין פניות.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {leads.map((lead) => (
+              <div key={lead.id} className="flex flex-col gap-1.5 rounded-2xl border border-border p-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="font-semibold">
+                    {lead.name}
+                    {lead.clinic_name && <span className="text-muted-foreground"> · {lead.clinic_name}</span>}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{day(lead.created_at)}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                  <a href={`tel:${lead.phone}`} dir="ltr" className="font-medium text-violet-600 hover:underline">
+                    {lead.phone}
+                  </a>
+                  {lead.email && (
+                    <a href={`mailto:${lead.email}`} dir="ltr" className="text-violet-600 hover:underline">
+                      {lead.email}
+                    </a>
+                  )}
+                </div>
+                {lead.message && <p className="text-sm whitespace-pre-wrap text-muted-foreground">{lead.message}</p>}
+              </div>
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>

@@ -14,6 +14,7 @@ import {
   KeyRound,
   Layers,
   Lock,
+  MessageSquare,
   Share2,
   ShieldCheck,
   Sparkles,
@@ -23,6 +24,7 @@ import {
 import { getAuthState } from "@/lib/auth/guards";
 import { BrandBackdrop } from "@/components/brand-backdrop";
 import { Logo } from "@/components/logo";
+import { LeadForm } from "@/components/lead-form";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { Board, BrowserFrame, CheckCard, Chips, Eyebrow, FactList, GridPaper, Kpi, Orbit, ScheduleList, SidebarRail, Steps, TrustRow } from "@/components/landing";
@@ -188,6 +190,9 @@ export default async function HomePage() {
             </Link>
             <Link href="/signup" className="hidden min-h-11 items-center font-medium text-muted-foreground hover:text-foreground sm:inline-flex">
               פתיחת קליניקה
+            </Link>
+            <Link href="#talk" className="hidden min-h-11 items-center font-medium text-muted-foreground hover:text-foreground sm:inline-flex">
+              לדבר איתנו
             </Link>
             <Button asChild size="lg" className="rounded-2xl px-6 font-semibold">
               <Link href="/login">כניסה</Link>
@@ -454,6 +459,27 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* השאירו פרטים — הדלת הרכה לצד ההרשמה העצמית */}
+        <section id="talk" className="scroll-mt-20 border-t border-border/60">
+          <div className="mx-auto grid w-full max-w-5xl items-start gap-10 px-5 py-16 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] md:px-8 md:py-24">
+            <div className="flex flex-col gap-5 text-center md:text-start">
+              <Eyebrow icon={MessageSquare}>לדבר איתנו</Eyebrow>
+              <h2 className={H2}>
+                רוצים לראות את זה <span className="text-violet-500">על הקליניקה שלכם?</span>
+              </h2>
+              <p className="text-lg leading-relaxed text-muted-foreground">
+                השאירו שם וטלפון ונחזור אליכם. אנחנו נשמח גם להקים לכם את הסניפים, החדרים והמטפלים/ות —
+                כדי שתראו את המערכת עם הנתונים האמיתיים שלכם ולא עם דוגמה.
+              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                מעדיפים פשוט להתחיל? <Link href="/signup" className="font-semibold text-violet-500 underline underline-offset-4">פתחו קליניקה</Link>{" "}
+                — {TRIAL_DAYS} הימים הראשונים בחינם, בלי כרטיס אשראי.
+              </p>
+            </div>
+            <LeadForm />
+          </div>
+        </section>
+
         {/* Final CTA */}
         <section className="relative overflow-hidden border-t border-border/60">
           <GridPaper />
@@ -469,6 +495,13 @@ export default async function HomePage() {
               </Link>
             </Button>
             <TrustRow items={TRUST} />
+            <p className="text-sm text-muted-foreground">
+              עוד לא בטוחים?{" "}
+              <Link href="#talk" className="font-semibold text-violet-500 underline underline-offset-4">
+                השאירו פרטים ונחזור אליכם
+              </Link>
+              .
+            </p>
           </div>
         </section>
       </main>
