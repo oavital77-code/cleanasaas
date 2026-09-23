@@ -4,44 +4,44 @@ import { ArrowRight, Check, Sparkles } from "lucide-react";
 import { GridPaper, TrustRow } from "@/components/landing";
 import { CLEANA_PLUS_URL, CLEANA_URL } from "@/lib/hosts";
 
-// אנגלית/LTR — כמו דף הבית הציבורי (ר' app/(app)/page.tsx) וכמו החריג
-// המקורי ב-click-na. עמוד-hub נייטרלי שמציג את שני המוצרים בפועל
+// עברית/RTL — כמו שני דפי הנחיתה של המוצרים מאז 22.9.2026 (היה אנגלית/LTR,
+// חריג שיובא מ-click-na). ה-dir מגיע מ-app/layout.tsx. עמוד-hub נייטרלי שמציג את שני המוצרים בפועל
 // (Cleana, Cleana+) ומקשר אליהם — לא נוגע בקוד/עיצוב של אף אחד מהם,
 // רק מייצג את הצבעים האמיתיים שלהם (Cleana: violet-500 מ-globals.css
 // כאן; Cleana+: טרקוטה/זהב מ-src/app/globals.css של ריפו click-na —
 // hex מחושב מה-HSL שם, לא מומצא).
 export const metadata: Metadata = {
-  title: "CleanaGroup — Cleana & Cleana+",
+  title: "CleanaGroup — Cleana ו-Cleana+",
   description:
-    "CleanaGroup builds the scheduling and management systems behind the practice: Cleana for clinics that rent rooms to many therapists, Cleana+ for independent therapists managing their own clients.",
+    "CleanaGroup בונה את מערכות התזמון והניהול שמאחורי הטיפול: Cleana לקליניקות שמשכירות חדרים למטפלים/ות רבים/ות, Cleana+ למטפלים/ות עצמאיים/ות שמנהלים/ות את המטופלים/ות שלהם/ן.",
 };
 
-const CLEANA_POINTS = ["Overlap-proof room calendar", "Punch cards & recurring sessions", "Every clinic fully isolated"];
+const CLEANA_POINTS = ["לוח חדרים שלא מתנגש", "כרטיסיות וססיות חוזרות", "כל קליניקה מופרדת לגמרי"];
 
 const CLEANA_PLUS_POINTS = [
-  "One link, clients book themselves",
-  "A calendar that holds itself",
-  "Quiet reminders that cut no-shows",
+  "לינק אחד, המטופלים/ות מזמינים לבד",
+  "יומן ששומר על עצמו",
+  "תזכורות שקטות שמצמצמות אי-הגעות",
 ];
 
 const VALUES = [
   {
-    title: "Built the same way",
-    body: "Both products share the same non-negotiables: no double-booking, data that never leaks between accounts, and a calendar that's actually trustworthy.",
+    title: "בנויים באותה דרך",
+    body: "לשני המוצרים אותם עקרונות שלא מתפשרים עליהם: בלי כפל הזמנות, מידע שלא דולף בין חשבונות, ויומן שאפשר באמת לסמוך עליו.",
   },
   {
-    title: "Sized to the job",
-    body: "Running a clinic with dozens of therapists, or running your own practice solo — the tool fits the job, not a bigger version of the same thing bolted on.",
+    title: "בגודל של העבודה",
+    body: "מנהלים קליניקה עם עשרות מטפלים/ות, או עובדים לבד — הכלי מתאים לעבודה, ולא גרסה גדולה יותר של אותו דבר עם תוספות.",
   },
   {
-    title: "Kept separate on purpose",
-    body: "Cleana and Cleana+ are independent systems. A clinic's data and a solo therapist's client list never mix — by design, not by accident.",
+    title: "נפרדים בכוונה",
+    body: "Cleana ו-Cleana+ הן מערכות עצמאיות. המידע של קליניקה ורשימת המטופלים/ות של מטפל/ת עצמאי/ת לא מתערבבים — לפי תכנון, לא במקרה.",
   },
 ];
 
 export default function GroupPage() {
   return (
-    <div dir="ltr" className="flex flex-1 flex-col bg-white text-neutral-900">
+    <div className="flex flex-1 flex-col bg-white text-neutral-900">
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/80 px-5 py-4 backdrop-blur-sm md:px-8">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
           <span className="text-lg font-bold tracking-tight">CleanaGroup</span>
@@ -65,18 +65,18 @@ export default function GroupPage() {
           <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center gap-7 px-5 py-16 text-center md:px-8 md:py-24">
             <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-semibold tracking-wide text-neutral-600 shadow-sm">
               <Sparkles className="size-3.5" aria-hidden />
-              One group, two practice tools
+              קבוצה אחת, שני כלים לעבודה הטיפולית
             </span>
             <h1 className="text-[2.6rem] leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-              The systems behind the practice.
+              המערכות שמאחורי הטיפול.
               <br />
-              <span className="text-violet-500">For clinics</span> and <span style={{ color: "#C6723A" }}>for practitioners.</span>
+              <span className="text-violet-500">לקליניקות</span> ו<span style={{ color: "#C6723A" }}>למטפלים/ות.</span>
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-neutral-600">
-              CleanaGroup builds the scheduling and management systems behind the practice — one for clinics that
-              rent rooms to many therapists, one for therapists managing their own clients.
+              CleanaGroup בונה את מערכות התזמון והניהול שמאחורי הטיפול — אחת לקליניקות שמשכירות חדרים
+              למטפלים/ות רבים/ות, ואחת למטפלים/ות שמנהלים/ות את המטופלים/ות שלהם/ן בעצמם/ן.
             </p>
-            <TrustRow items={["No card required", "Live in minutes", "Cancel any time"]} />
+            <TrustRow items={["בלי כרטיס אשראי", "עולה באוויר בדקות", "ביטול בכל רגע"]} />
           </div>
         </section>
 
@@ -91,12 +91,12 @@ export default function GroupPage() {
                   <circle cx="50" cy="50" r="24" fill="none" stroke="white" strokeWidth="7" />
                 </svg>
                 <div>
-                  <p className="text-xs font-semibold tracking-wide text-violet-600">FOR CLINIC OWNERS</p>
+                  <p className="text-xs font-semibold tracking-wide text-violet-600">לבעלי/ות קליניקות</p>
                   <h2 className="text-2xl font-bold text-neutral-900">Cleana</h2>
                 </div>
               </div>
               <p className="text-neutral-700">
-                Room scheduling, punch cards, and sessions for clinics with multiple branches and therapists.
+                תזמון חדרים, כרטיסיות וססיות לקליניקות עם כמה סניפים ומטפלים/ות.
               </p>
               <ul className="flex flex-col gap-3">
                 {CLEANA_POINTS.map((point) => (
@@ -114,8 +114,8 @@ export default function GroupPage() {
                 href={CLEANA_URL}
                 className="mt-auto inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-violet-500 px-6 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-colors hover:bg-violet-600"
               >
-                Visit Cleana
-                <ArrowRight className="size-4" aria-hidden />
+                ל-Cleana
+                <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
               </a>
             </div>
 
@@ -131,7 +131,7 @@ export default function GroupPage() {
                 </svg>
                 <div>
                   <p className="text-xs font-semibold tracking-wide" style={{ color: "#8E4A1A" }}>
-                    FOR INDEPENDENT THERAPISTS
+                    למטפלים/ות עצמאיים/ות
                   </p>
                   <h2 className="text-2xl font-bold text-neutral-900">
                     Cleana<span style={{ color: "#C99422" }}>+</span>
@@ -139,8 +139,8 @@ export default function GroupPage() {
                 </div>
               </div>
               <p className="text-neutral-700">
-                A booking link your clients understand, and a calendar that never double-books — for
-                practitioners running their own practice.
+                לינק הזמנה שהמטופלים/ות מבינים, ויומן שלא נכפל לעולם — למטפלים/ות שמנהלים/ות
+                את העבודה שלהם/ן בעצמם/ן.
               </p>
               <ul className="flex flex-col gap-3">
                 {CLEANA_PLUS_POINTS.map((point) => (
@@ -157,8 +157,8 @@ export default function GroupPage() {
                 className="mt-auto inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                 style={{ backgroundColor: "#C6723A", boxShadow: "0 10px 15px -3px rgba(198,114,58,0.25)" }}
               >
-                Visit Cleana+
-                <ArrowRight className="size-4" aria-hidden />
+                ל-Cleana+
+                <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
               </a>
             </div>
           </div>
@@ -182,10 +182,10 @@ export default function GroupPage() {
           <span>© CleanaGroup</span>
           <div className="flex items-center gap-6">
             <Link href="/terms" className="hover:text-neutral-900">
-              Terms
+              תנאי שימוש
             </Link>
             <Link href="/privacy" className="hover:text-neutral-900">
-              Privacy
+              מדיניות פרטיות
             </Link>
           </div>
         </div>
