@@ -8,8 +8,8 @@ import { ladder, THRESHOLDS } from "@/lib/owner/thresholds";
 const STATE_LABEL: Record<string, { text: string; cls: string }> = {
   trialing: { text: "ניסיון", cls: "bg-info-bg text-info-fg" },
   active: { text: "משלם", cls: "bg-success-bg text-success-fg" },
-  grace: { text: "חסד", cls: "bg-warning-bg text-warning-fg" },
-  canceling: { text: "מבטל", cls: "bg-subtle text-muted-foreground" },
+  grace: { text: "תקופת חסד", cls: "bg-warning-bg text-warning-fg" },
+  canceling: { text: "בביטול", cls: "bg-subtle text-muted-foreground" },
   locked: { text: "נעול", cls: "bg-danger-bg text-danger" },
   legacy_free: { text: "חינם (ותיק)", cls: "bg-subtle text-muted-foreground" },
   none: { text: "—", cls: "bg-subtle text-muted-foreground" },
@@ -77,11 +77,11 @@ export function OwnerDashboardView({
 
         {/* מספרים ראשיים */}
         <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
-          <Stat label="משתמשים פעילים" value={String(activeUsers)} hint="ניסיון + משלמים + חסד, שני המוצרים" accent />
+          <Stat label="משתמשים פעילים" value={String(activeUsers)} hint="בניסיון, משלמים ובתקופת חסד, בשני המוצרים" accent />
           <Stat label="משלמים" value={String(paying)} />
           <Stat label="בניסיון" value={String(trialing)} />
           <Stat label="הכנסות החודש" value={ils(revenueMonth)} />
-          <Stat label="הכנסות מצטבר" value={ils(revenueAll)} />
+          <Stat label="הכנסות מההתחלה" value={ils(revenueAll)} />
         </section>
 
         {/* מדרגות רכישה */}
@@ -94,7 +94,7 @@ export function OwnerDashboardView({
                 {steps.next && ` המדרגה הבאה בעוד ${steps.next.at - activeUsers} משתמשים.`}
               </p>
             </div>
-            <p className="text-xs text-muted-foreground">מחירים משוערים לפי דפי התמחור הציבוריים. לאמת לפני רכישה.</p>
+            <p className="text-xs text-muted-foreground">המחירים משוערים לפי דפי המחירים הציבוריים. כדאי לבדוק שוב לפני רכישה.</p>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 pt-0">
             {THRESHOLDS.map((t, i) => {
@@ -122,7 +122,7 @@ export function OwnerDashboardView({
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <span className="font-medium">{t.action}</span>
                     <span className="text-sm text-muted-foreground">{t.why}</span>
-                    <span className="text-xs text-muted-foreground">אם לא: {t.risk}</span>
+                    <span className="text-xs text-muted-foreground">הסיכון: {t.risk}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3 md:w-56 md:shrink-0 md:flex-col md:items-end">
                     <span className="text-sm font-semibold tabular-nums">{t.usdPerMonth === 0 ? "חינם" : `$${t.usdPerMonth}/חודש`}</span>
@@ -188,7 +188,7 @@ function ProductSection({ title, subtitle, result, seats }: { title: string; sub
           <Pill label="חשבונות" value={t.accounts} />
           <Pill label="משלמים" value={t.paying} tone="success" />
           <Pill label="ניסיון" value={t.trialing} tone="info" />
-          <Pill label="חסד" value={t.grace} tone="warning" />
+          <Pill label="תקופת חסד" value={t.grace} tone="warning" />
           <Pill label="נעולים" value={t.locked} tone="danger" />
           {t.legacyFree > 0 && <Pill label="חינם ותיק" value={t.legacyFree} />}
           <Pill label="החודש" value={ils(s.revenueIls.thisMonth)} tone="success" />
@@ -202,7 +202,7 @@ function ProductSection({ title, subtitle, result, seats }: { title: string; sub
             <thead className="bg-muted text-right">
               <tr>
                 <th className="p-3 font-medium">שם</th>
-                <th className="hidden p-3 font-medium md:table-cell">אימייל</th>
+                <th className="hidden p-3 font-medium md:table-cell">מייל</th>
                 <th className="p-3 font-medium">מצב</th>
                 {seats && <th className="hidden p-3 font-medium sm:table-cell">מטפלים</th>}
                 <th className="hidden p-3 font-medium sm:table-cell">נרשם</th>
@@ -253,7 +253,7 @@ function LeadsSection({ leads }: { leads: LeadRow[] }) {
       </CardHeader>
       <CardContent className="pt-0">
         {leads.length === 0 ? (
-          <p className="text-sm text-muted-foreground">אין עדיין פניות.</p>
+          <p className="text-sm text-muted-foreground">עוד אין פניות.</p>
         ) : (
           <div className="flex flex-col gap-3">
             {leads.map((lead) => (

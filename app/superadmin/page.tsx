@@ -46,7 +46,7 @@ export default async function SuperadminPage() {
         </div>
 
         {error ? (
-          <p className="text-destructive">שגיאה בטעינת רשימת הקליניקות: {error.message}</p>
+          <p className="text-destructive">לא הצלחנו לטעון את רשימת הקליניקות: {error.message}</p>
         ) : (
           <Card className="shadow-e1 overflow-hidden p-0">
             <CardContent className="overflow-x-auto p-0">
@@ -78,7 +78,7 @@ export default async function SuperadminPage() {
                           <input type="hidden" name="clinic_id" value={c.clinic_id} />
                           <input type="hidden" name="status" value={c.status === "suspended" ? "active" : "suspended"} />
                           <Button type="submit" size="sm" variant={c.status === "suspended" ? "default" : "destructive"}>
-                            {c.status === "suspended" ? "הפעלה" : "השעיה"}
+                            {c.status === "suspended" ? "הפעלה" : "השהיה"}
                           </Button>
                         </form>
                       </td>

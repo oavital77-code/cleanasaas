@@ -26,7 +26,7 @@ export function AppHeader({
         <HeaderLink href="/">בית</HeaderLink>
         <HeaderLink href="/schedule">הזמנת חדר</HeaderLink>
         {isAdmin && <HeaderLink href="/admin/settings">ניהול</HeaderLink>}
-        {isSuperadmin && <HeaderLink href="/superadmin">סופר-אדמין</HeaderLink>}
+        {isSuperadmin && <HeaderLink href="/superadmin">ניהול המערכת</HeaderLink>}
       </nav>
 
       <div className="flex items-center gap-3">

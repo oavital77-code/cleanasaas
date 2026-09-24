@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Cleana",
     short_name: "Cleana",
-    description: "פלטפורמת ניהול השכרת קליניקות רב-דיירית",
+    description: "מערכת לניהול קליניקות וחדרי טיפול",
     start_url: "/",
     display: "standalone",
     background_color: "#fbfbfd",

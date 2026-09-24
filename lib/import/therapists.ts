@@ -183,7 +183,7 @@ export function parseCsv(text: string): string[][] {
 }
 
 // תבנית להורדה — UTF-8 עם BOM כדי ש-Excel יפתח עברית נכון.
-export const TEMPLATE_HEADERS = ["שם מלא", "טלפון", "אימייל", "שעות", "מקצוע"] as const;
+export const TEMPLATE_HEADERS = ["שם מלא", "טלפון", "מייל", "שעות", "מקצוע"] as const;
 export const TEMPLATE_EXAMPLE_ROWS = [
   ["דנה כהן", "052-1234567", "dana@example.com", "10", "פסיכולוגית"],
   ["יוסי לוי", "0541234567", "yossi@example.com", "", "מטפל זוגי"],

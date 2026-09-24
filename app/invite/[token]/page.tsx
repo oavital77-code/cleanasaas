@@ -30,7 +30,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             <CardTitle className="text-xl">קישור ההזמנה לא תקף</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">בקש/י קישור הזמנה חדש מהמנהל/ת שלך.</p>
+            <p className="text-muted-foreground">אפשר לבקש קישור חדש מהנהלת הקליניקה.</p>
           </CardContent>
         </Card>
       </AuthShell>
@@ -44,7 +44,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       <Card className="shadow-e2">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">הצטרפות ל{clinicName}</CardTitle>
-          <CardDescription>הוזמנת כ{invite.role === "admin" ? "אדמין/ית" : "מטפל/ת"}.</CardDescription>
+          <CardDescription>{invite.role === "admin" ? "קיבלת הזמנה להצטרף כמנהל." : "קיבלת הזמנה להצטרף כמטפל."}</CardDescription>
         </CardHeader>
         <CardContent>
           <InviteSignupForm token={token} />

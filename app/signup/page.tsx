@@ -18,24 +18,23 @@ export default function SignupPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-xl">פתיחת קליניקה חדשה</CardTitle>
           <CardDescription>
-            חשבון owner + הקמת הקליניקה שלך — סניפים, חדרים ותמחור נקבעים
-            בשלב הבא.
+            פותחים חשבון לקליניקה. את הסניפים, החדרים והמחירים מגדירים בשלב הבא.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ClerkSignupForm
             submitLabel="המשך"
-            pendingLabel="יוצר/ת קליניקה…"
+            pendingLabel="פותחים את הקליניקה…"
             redirectTo="/onboarding"
             onSubmitBusinessLogic={completeSignupClinicAction}
             extraFields={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="clinic_name">שם העסק</Label>
+                  <Label htmlFor="clinic_name">שם הקליניקה</Label>
                   <Input id="clinic_name" name="clinic_name" required />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="slug">כתובת (slug)</Label>
+                  <Label htmlFor="slug">כתובת באנגלית לקישור הקליניקה</Label>
                   <Input
                     id="slug"
                     name="slug"
@@ -46,7 +45,7 @@ export default function SignupPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="owner_full_name">שם מלא (הבעלים)</Label>
+                  <Label htmlFor="owner_full_name">השם המלא שלך</Label>
                   <Input id="owner_full_name" name="owner_full_name" required />
                 </div>
                 <div className="flex flex-col gap-1.5">

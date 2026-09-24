@@ -9,7 +9,7 @@ export function InviteSignupForm({ token }: { token: string }) {
   return (
     <ClerkSignupForm
       submitLabel="הצטרפות"
-      pendingLabel="מצטרף/ת…"
+      pendingLabel="רגע…"
       redirectTo="/"
       onSubmitBusinessLogic={(formData) => completeInviteAction(token, formData)}
       extraFields={

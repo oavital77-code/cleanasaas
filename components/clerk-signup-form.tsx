@@ -98,7 +98,7 @@ export function ClerkSignupForm({
     try {
       const result = await signUp.attemptEmailAddressVerification({ code });
       if (result.status !== "complete" || !result.createdSessionId) {
-        setError("קוד האימות שגוי");
+        setError("הקוד לא נכון. בדקו ונסו שוב.");
         return;
       }
       await finishWithSession(result.createdSessionId, formSnapshot);
@@ -112,7 +112,7 @@ export function ClerkSignupForm({
   if (pendingVerification) {
     return (
       <form onSubmit={handleVerify} className="flex flex-col gap-4">
-        <p className="text-sm text-muted-foreground">שלחנו קוד אימות לכתובת המייל שהזנת.</p>
+        <p className="text-sm text-muted-foreground">שלחנו קוד אימות למייל שלך.</p>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="code">קוד אימות</Label>
           <Input
@@ -127,7 +127,7 @@ export function ClerkSignupForm({
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={pending}>
-          {pending ? "מאמת/ת…" : "אימות והמשך"}
+          {pending ? "בודקים…" : "אימות והמשך"}
         </Button>
       </form>
     );
@@ -137,7 +137,7 @@ export function ClerkSignupForm({
     <form onSubmit={handleCreate} className="flex flex-col gap-4">
       {extraFields}
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">אימייל</Label>
+        <Label htmlFor="email">מייל</Label>
         <Input id="email" name="email" type="email" required dir="ltr" />
       </div>
       <div className="flex flex-col gap-1.5">
@@ -159,7 +159,7 @@ function clerkErrorMessage(err: unknown): string {
   if (err && typeof err === "object" && "errors" in err) {
     const errors = (err as { errors?: { message?: string; longMessage?: string }[] }).errors;
     const first = errors?.[0];
-    if (first?.longMessage || first?.message) return first.longMessage ?? first.message ?? "שגיאה בהרשמה";
+    if (first?.longMessage || first?.message) return first.longMessage ?? first.message ?? "ההרשמה לא הצליחה";
   }
-  return "שגיאה בהרשמה";
+  return "ההרשמה לא הצליחה";
 }

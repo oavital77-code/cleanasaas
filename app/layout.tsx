@@ -27,7 +27,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Cleana",
-  description: "פלטפורמת ניהול השכרת קליניקות רב-דיירית",
+  description: "מערכת לניהול קליניקות וחדרי טיפול",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

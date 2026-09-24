@@ -19,21 +19,21 @@ export async function completeSignupClinicAction(formData: FormData): Promise<Si
   const ownerPhoneRaw = String(formData.get("owner_phone") ?? "").trim();
 
   if (!clinicName || !slug || !ownerFullName || !ownerPhoneRaw) {
-    return { error: "נא למלא את כל השדות" };
+    return { error: "צריך למלא את כל השדות" };
   }
   // 🔴 E.164 לפני שמירה — profiles.phone משמש לשיוך רכישות Woo ולקישורי
   // WhatsApp (wa.me/Meta), ושניהם נכשלים על "05…" מקומי.
   const ownerPhone = toE164Israel(ownerPhoneRaw);
   if (!ownerPhone) {
-    return { error: "מספר טלפון לא תקין — נייד ישראלי (05X-XXXXXXX)" };
+    return { error: "צריך מספר נייד ישראלי תקין, למשל 050-1234567" };
   }
   if (!/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/.test(slug)) {
-    return { error: "כתובת (slug) לא תקינה — אותיות לועזיות קטנות, ספרות ומקף בלבד" };
+    return { error: "הכתובת יכולה לכלול רק אותיות קטנות באנגלית, ספרות ומקף" };
   }
 
   const email = (await currentUser())?.primaryEmailAddress?.emailAddress;
   if (!email) {
-    return { error: "שגיאה באימות החשבון — נסה/י שוב" };
+    return { error: "לא הצלחנו לאמת את החשבון. נסו שוב." };
   }
 
   const supabase = await createClient();
@@ -58,13 +58,13 @@ export async function completeSignupClinicAction(formData: FormData): Promise<Si
 
 function translateSignupError(code: string): string {
   const map: Record<string, string> = {
-    SLUG_TAKEN: "הכתובת (slug) הזו כבר תפוסה — נסה/י אחרת",
-    INVALID_SLUG: "כתובת (slug) לא תקינה",
-    INVALID_INPUT: "נא למלא את כל השדות",
+    SLUG_TAKEN: "הכתובת הזו כבר תפוסה. נסו כתובת אחרת.",
+    INVALID_SLUG: "הכתובת לא תקינה",
+    INVALID_INPUT: "צריך למלא את כל השדות",
     ALREADY_REGISTERED: "כבר יש לך חשבון במערכת",
   };
   for (const key of Object.keys(map)) {
     if (code.includes(key)) return map[key];
   }
-  return "שגיאה ביצירת הקליניקה";
+  return "פתיחת הקליניקה לא הצליחה. נסו שוב.";
 }

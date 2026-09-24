@@ -30,7 +30,7 @@ export default async function JoinPage({ params }: { params: Promise<{ slug: str
             <CardTitle className="text-xl">קישור ההצטרפות לא זמין</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">בקש/י קישור עדכני מהמנהל/ת של הקליניקה.</p>
+            <p className="text-muted-foreground">אפשר לבקש קישור חדש מהנהלת הקליניקה.</p>
           </CardContent>
         </Card>
       </AuthShell>
@@ -48,7 +48,7 @@ export default async function JoinPage({ params }: { params: Promise<{ slug: str
             <img src={clinicImageUrl} alt={clinic.name} className="mx-auto mb-2 h-28 w-full max-w-xs rounded-field object-cover shadow-e1" />
           )}
           <CardTitle className="text-xl">הצטרפות ל{clinic.name}</CardTitle>
-          <CardDescription>יצירת חשבון מטפל/ת בקליניקה</CardDescription>
+          <CardDescription>פתיחת חשבון מטפל בקליניקה</CardDescription>
         </CardHeader>
         <CardContent>
           <JoinSignupForm slug={slug} />

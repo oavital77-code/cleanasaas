@@ -45,9 +45,9 @@ export default async function OnboardingPage() {
       <AppHeader clinicName={clinic?.name} role={profile.role} />
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 p-6 sm:p-8">
         <div>
-          <h1 className="text-2xl font-semibold">הקמת {clinic?.name}</h1>
+          <h1 className="text-2xl font-semibold">מתחילים: {clinic?.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            שלושה שלבים בסיסיים — הכל ניתן לעריכה מאוחר יותר דרך פאנל הניהול.
+            כמה צעדים קצרים. אפשר לשנות הכול גם אחר כך במסך הניהול.
           </p>
         </div>
 
@@ -110,16 +110,16 @@ export default async function OnboardingPage() {
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="room_type">סוג</Label>
                   <Select id="room_type" name="room_type" className="sm:w-auto">
-                    <option value="talk">שיח</option>
-                    <option value="touch">מגע</option>
+                    <option value="talk">חדר שיחה</option>
+                    <option value="touch">טיפול במגע</option>
                     <option value="podcast">פודקאסט</option>
-                    <option value="group">קבוצתי</option>
+                    <option value="group">חדר קבוצות</option>
                   </Select>
                 </div>
                 <Button type="submit" className="w-full sm:w-auto">הוספת חדר</Button>
               </form>
             ) : (
-              <p className="text-sm text-muted-foreground">הוסיפו סניף קודם.</p>
+              <p className="text-sm text-muted-foreground">קודם צריך להוסיף סניף.</p>
             )}
           </CardContent>
         </Card>
@@ -127,15 +127,15 @@ export default async function OnboardingPage() {
         <Card className="shadow-e1">
           <CardHeader className="flex-row items-center gap-3 space-y-0">
             <StepNumber n={3} />
-            <CardTitle className="text-base font-medium">תמחור כרטיסייה</CardTitle>
-            <CardDescription className="mr-auto">ברירת מחדל — לעריכה בהגדרות</CardDescription>
+            <CardTitle className="text-base font-medium">מחירי כרטיסיות</CardTitle>
+            <CardDescription className="mr-auto">מחירים התחלתיים. אפשר לשנות בהגדרות</CardDescription>
           </CardHeader>
           <CardContent>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-right text-muted-foreground">
                   <th className="font-normal">שעות</th>
-                  <th className="font-normal">₪/שעה</th>
+                  <th className="font-normal">₪ לשעה</th>
                 </tr>
               </thead>
               <tbody>
@@ -153,7 +153,7 @@ export default async function OnboardingPage() {
         <Card className="shadow-e1">
           <CardHeader className="flex-row items-center gap-3 space-y-0">
             <StepNumber n={4} />
-            <CardTitle className="text-base font-medium">מודל ססיה (מנוי חודשי קבוע)</CardTitle>
+            <CardTitle className="text-base font-medium">ססיות (מנוי חודשי)</CardTitle>
           </CardHeader>
           <CardContent>
             <form action={toggleSessionsAction} className="flex flex-wrap items-center gap-3">
@@ -165,7 +165,7 @@ export default async function OnboardingPage() {
                 className="size-4 accent-violet-500"
               />
               <Label htmlFor="sessions_enabled" className="font-normal">
-                יש בעסק שלי גם מודל ססיה, לא רק כרטיסיות
+                אצלנו יש גם ססיות, לא רק כרטיסיות
               </Label>
               <Button type="submit" variant="outline" size="sm">
                 שמירה
@@ -176,7 +176,7 @@ export default async function OnboardingPage() {
 
         <form action={finishOnboardingAction}>
           <Button type="submit" size="lg" className="w-full">
-            סיום — כניסה למערכת
+            סיום וכניסה למערכת
           </Button>
         </form>
       </main>

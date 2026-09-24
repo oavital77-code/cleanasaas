@@ -10,7 +10,7 @@ const SCHEDULE_HE = {
   prevAria: (label: string) => `${label} קודם`,
   nextAria: (label: string) => `${label} הבא`,
   today: "היום",
-  manualBookingTitle: "הזמנה ידנית (משך מותאם אישית)",
+  manualBookingTitle: "הזמנה עם משך אחר",
   youHaveBooking: "יש לך הזמנה",
   // SlotGrid
   hourColumn: "שעה",
@@ -27,9 +27,9 @@ const SCHEDULE_HE = {
   time: "שעה",
   durationHours: "משך (שעות)",
   book: "הזמנה",
-  bookingDone: "ההזמנה בוצעה!",
+  bookingDone: "החדר הוזמן",
   // actions
-  bookingError: "שגיאה בהזמנה",
+  bookingError: "ההזמנה לא הצליחה",
 };
 
 const SCHEDULE_EN: typeof SCHEDULE_HE = {
@@ -69,7 +69,7 @@ const BOOKINGS_HE = {
   upcoming: "קרובות",
   history: "היסטוריה",
   noUpcoming: "אין הזמנות קרובות.",
-  noHistory: "אין עדיין היסטוריה.",
+  noHistory: "עוד אין הזמנות קודמות.",
   cancel: "ביטול",
 };
 
@@ -99,10 +99,10 @@ const PURCHASE_HE = {
   perHourBeforeVat: (price: string) => `${price} לשעה, לפני מע"מ`,
   includesDeposit: (n: number) => `כולל פיקדון של ${n} שעות`,
   totalWithVat: "סה\"כ כולל מע\"מ",
-  noTiers: "עדיין לא הוגדרו מדרגות מחיר בקליניקה.",
+  noTiers: "הקליניקה עוד לא הגדירה כרטיסיות למכירה.",
   howToPayTitle: "איך משלמים",
-  howToPayFallback: "משלמים ישירות לקליניקה. לפרטים — פנו להנהלת הקליניקה.",
-  afterPayment: "אחרי שהקליניקה רושמת את התשלום, הכרטיסייה מופיעה כאן והשעות זמינות להזמנה.",
+  howToPayFallback: "התשלום הוא ישירות לקליניקה. לפרטים אפשר לפנות להנהלת הקליניקה.",
+  afterPayment: "ברגע שהקליניקה רושמת את התשלום, הכרטיסייה מופיעה כאן ואפשר להתחיל להזמין.",
 };
 
 const PURCHASE_EN: typeof PURCHASE_HE = {
@@ -129,7 +129,7 @@ export function getPurchaseDict(locale: Locale) {
 // ---------------------------------------------------------------------------
 const PAYMENTS_HE = {
   title: "תשלומים",
-  empty: "אין עדיין היסטוריית תשלומים.",
+  empty: "עוד אין תשלומים.",
   invoice: "חשבונית",
 };
 
@@ -149,37 +149,37 @@ export function getPaymentsDict(locale: Locale) {
 const SESSIONS_HE = {
   title: "הססיות שלי",
   newRequest: "בקשת ססיה חדשה",
-  notEnabled: "מודל ססיה לא פעיל בקליניקה שלכם.",
-  empty: "אין עדיין בקשת/מנוי ססיה.",
-  weeklyHoursPrice: (hours: number, price: string) => `${hours} שעות שבועיות · ${price}/חודש`,
+  notEnabled: "הקליניקה לא מציעה ססיות כרגע.",
+  empty: "עוד אין לך ססיה.",
+  weeklyHoursPrice: (hours: number, price: string) => `${hours} שעות בשבוע · ${price} לחודש`,
   rejectionReason: (r: string) => `סיבת דחייה: ${r}`,
   nextBilling: (d: string) => `התשלום הבא: ${d}`,
-  activeUntil: (d: string) => `פעיל עד: ${d}`,
-  awaitingPayment: "הססיה אושרה. משלמים ישירות לקליניקה — וברגע שהתשלום נרשם, הססיה נפתחת והמשבצות ננעלות.",
-  requestCancellation: "בקשת ביטול מנוי",
+  activeUntil: (d: string) => `פעילה עד ${d}`,
+  awaitingPayment: "הססיה אושרה. התשלום הוא ישירות לקליניקה, וברגע שהוא נרשם הססיה נפתחת והשעות נשמרות לך.",
+  requestCancellation: "ביטול הססיה",
   // /sessions/new
   newTitle: "בקשת ססיה חדשה",
-  fixedSlotsTitle: "משבצות שבועיות קבועות",
+  fixedSlotsTitle: "השעות הקבועות שלך בכל שבוע",
   fixedSlotsDescription: (min: number, max: number, pricePerHour: string) =>
-    `הססיה היא היקף שבועי קבוע, בחדר/ים ובזמן/ים שתבחרו — ${
+    `בססיה שומרים לך את אותן שעות בכל שבוע, בחדרים ובימים שבוחרים כאן: ${
       min === max ? `${min} שעות בדיוק` : `בין ${min} ל-${max} שעות בשבוע`
-    }, ב-${pricePerHour} לשעה שבועית לחודש (+ מע"מ). הבקשה נשלחת לאישור אדמין ולא בודקת זמינות בפועל מראש.`,
-  submitRequest: "שליחת בקשה לאישור אדמין",
+    }. המחיר הוא ${pricePerHour} לחודש על כל שעה שבועית, לפני מע"מ. הבקשה עוברת לאישור הקליניקה, והקליניקה בודקת שהחדרים פנויים.`,
+  submitRequest: "שליחת הבקשה לאישור הקליניקה",
   // SlotBuilder (משותף גם לאדמין)
   room: "חדר",
   weekday: "יום",
   startTime: "שעת התחלה",
   durationHours: "משך (שעות)",
   remove: "הסרה",
-  addSlot: "הוספת משבצת נוספת",
+  addSlot: "הוספת שעה קבועה",
   totalInRange: (total: number, min: number, max: number) =>
-    min === max ? `סה"כ ${total} מתוך ${min} שעות שבועיות נדרשות` : `סה"כ ${total} שעות שבועיות (נדרש ${min}–${max})`,
+    min === max ? `נבחרו ${total} מתוך ${min} שעות בשבוע` : `נבחרו ${total} שעות בשבוע (צריך בין ${min} ל-${max})`,
   monthlyPrice: (price: string) => `מחיר חודשי: ${price} + מע"מ`,
-  totalWeekly: (total: number) => `סה"כ ${total} שעות שבועיות`,
-  startDateOptional: "תאריך התחלה מבוקש (אופציונלי)",
+  totalWeekly: (total: number) => `סה"כ ${total} שעות בשבוע`,
+  startDateOptional: "מתי להתחיל? (לא חובה)",
   // action
-  invalidSlots: "משבצות לא תקינות",
-  requestError: "שגיאה בשליחת הבקשה",
+  invalidSlots: "חלק מהשעות שנבחרו לא תקינות",
+  requestError: "שליחת הבקשה לא הצליחה",
 };
 
 const SESSIONS_EN: typeof SESSIONS_HE = {

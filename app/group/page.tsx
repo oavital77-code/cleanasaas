@@ -13,29 +13,29 @@ import { CLEANA_PLUS_URL, CLEANA_URL } from "@/lib/hosts";
 export const metadata: Metadata = {
   title: "CleanaGroup — Cleana ו-Cleana+",
   description:
-    "CleanaGroup בונה את מערכות התזמון והניהול שמאחורי הטיפול: Cleana לקליניקות שמשכירות חדרים למטפלים/ות רבים/ות, Cleana+ למטפלים/ות עצמאיים/ות שמנהלים/ות את המטופלים/ות שלהם/ן.",
+    "CleanaGroup מפתחת מערכות לתיאום ולניהול של עבודה טיפולית: Cleana לקליניקות שמשכירות חדרים למטפלים, ו-Cleana+ למטפלים עצמאיים שמנהלים את המטופלים שלהם.",
 };
 
-const CLEANA_POINTS = ["לוח חדרים שלא מתנגש", "כרטיסיות וססיות חוזרות", "כל קליניקה מופרדת לגמרי"];
+const CLEANA_POINTS = ["לוח חדרים בלי התנגשויות", "כרטיסיות וססיות חודשיות", "הפרדה מלאה בין קליניקות"];
 
 const CLEANA_PLUS_POINTS = [
-  "לינק אחד, המטופלים/ות מזמינים לבד",
-  "יומן ששומר על עצמו",
-  "תזכורות שקטות שמצמצמות אי-הגעות",
+  "קישור אחד, והמטופלים קובעים תור בעצמם",
+  "יומן בלי כפל תורים",
+  "תזכורות שמצמצמות ביטולים של הרגע האחרון",
 ];
 
 const VALUES = [
   {
-    title: "בנויים באותה דרך",
-    body: "לשני המוצרים אותם עקרונות שלא מתפשרים עליהם: בלי כפל הזמנות, מידע שלא דולף בין חשבונות, ויומן שאפשר באמת לסמוך עליו.",
+    title: "אותם עקרונות",
+    body: "שני המוצרים בנויים על אותם כללים: אין כפל הזמנות, המידע לא עובר בין חשבונות, והיומן תמיד מדויק.",
   },
   {
-    title: "בגודל של העבודה",
-    body: "מנהלים קליניקה עם עשרות מטפלים/ות, או עובדים לבד — הכלי מתאים לעבודה, ולא גרסה גדולה יותר של אותו דבר עם תוספות.",
+    title: "מותאמים לגודל העבודה",
+    body: "קליניקה עם עשרות מטפלים ומטפל שעובד לבד צריכים כלים שונים. לכן יש שני מוצרים, ולא מוצר אחד עם תוספות.",
   },
   {
     title: "נפרדים בכוונה",
-    body: "Cleana ו-Cleana+ הן מערכות עצמאיות. המידע של קליניקה ורשימת המטופלים/ות של מטפל/ת עצמאי/ת לא מתערבבים — לפי תכנון, לא במקרה.",
+    body: "Cleana ו-Cleana+ הן מערכות נפרדות. המידע של קליניקה ורשימת המטופלים של מטפל עצמאי אף פעם לא מתערבבים.",
   },
 ];
 
@@ -65,18 +65,18 @@ export default function GroupPage() {
           <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center gap-7 px-5 py-16 text-center md:px-8 md:py-24">
             <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-semibold tracking-wide text-neutral-600 shadow-sm">
               <Sparkles className="size-3.5" aria-hidden />
-              קבוצה אחת, שני כלים לעבודה הטיפולית
+              קבוצה אחת, שני כלים לעבודה טיפולית
             </span>
             <h1 className="text-[2.6rem] leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-6xl">
               המערכות שמאחורי הטיפול.
               <br />
-              <span className="text-violet-500">לקליניקות</span> ו<span style={{ color: "#C6723A" }}>למטפלים/ות.</span>
+              <span className="text-violet-500">לקליניקות</span> ו<span style={{ color: "#C6723A" }}>למטפלים.</span>
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-neutral-600">
-              CleanaGroup בונה את מערכות התזמון והניהול שמאחורי הטיפול — אחת לקליניקות שמשכירות חדרים
-              למטפלים/ות רבים/ות, ואחת למטפלים/ות שמנהלים/ות את המטופלים/ות שלהם/ן בעצמם/ן.
+              CleanaGroup מפתחת שתי מערכות: אחת לקליניקות שמשכירות חדרים למטפלים,
+              ואחת למטפלים עצמאיים שמנהלים את התורים והמטופלים שלהם.
             </p>
-            <TrustRow items={["בלי כרטיס אשראי", "עולה באוויר בדקות", "ביטול בכל רגע"]} />
+            <TrustRow items={["בלי כרטיס אשראי", "מוכן לעבודה תוך דקות", "אפשר לבטל בכל זמן"]} />
           </div>
         </section>
 
@@ -91,12 +91,12 @@ export default function GroupPage() {
                   <circle cx="50" cy="50" r="24" fill="none" stroke="white" strokeWidth="7" />
                 </svg>
                 <div>
-                  <p className="text-xs font-semibold tracking-wide text-violet-600">לבעלי/ות קליניקות</p>
+                  <p className="text-xs font-semibold tracking-wide text-violet-600">לבעלי קליניקות</p>
                   <h2 className="text-2xl font-bold text-neutral-900">Cleana</h2>
                 </div>
               </div>
               <p className="text-neutral-700">
-                תזמון חדרים, כרטיסיות וססיות לקליניקות עם כמה סניפים ומטפלים/ות.
+                ניהול חדרים, כרטיסיות וססיות לקליניקות עם כמה סניפים ומטפלים.
               </p>
               <ul className="flex flex-col gap-3">
                 {CLEANA_POINTS.map((point) => (
@@ -131,7 +131,7 @@ export default function GroupPage() {
                 </svg>
                 <div>
                   <p className="text-xs font-semibold tracking-wide" style={{ color: "#8E4A1A" }}>
-                    למטפלים/ות עצמאיים/ות
+                    למטפלים עצמאיים
                   </p>
                   <h2 className="text-2xl font-bold text-neutral-900">
                     Cleana<span style={{ color: "#C99422" }}>+</span>
@@ -139,8 +139,8 @@ export default function GroupPage() {
                 </div>
               </div>
               <p className="text-neutral-700">
-                לינק הזמנה שהמטופלים/ות מבינים, ויומן שלא נכפל לעולם — למטפלים/ות שמנהלים/ות
-                את העבודה שלהם/ן בעצמם/ן.
+                קישור לקביעת תורים שהמטופלים מבינים מיד, ויומן בלי כפל תורים. למטפלים שמנהלים
+                את העבודה שלהם בעצמם.
               </p>
               <ul className="flex flex-col gap-3">
                 {CLEANA_PLUS_POINTS.map((point) => (

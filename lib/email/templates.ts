@@ -34,13 +34,13 @@ export function bookingConfirmedEmail(params: {
   const access = `${formatTimeHe(params.accessStart, tz)} · ${formatTimeHe(params.accessEnd, tz)}`;
   return l === "he"
     ? {
-        subject: `אישור הזמנה — ${params.roomName}, ${formatDateHe(params.startsAt, tz)}`,
+        subject: `ההזמנה אושרה: ${params.roomName}, ${formatDateHe(params.startsAt, tz)}`,
         html: emailLayout(`
       <p>ההזמנה שלך אושרה:</p>
       <p style="font-weight:700;font-size:17px;">${room}</p>
       <p>${when}</p>
-      <p style="color:#6b7288;">🔑 כניסה בפועל: ${formatTimeHe(params.accessStart, tz)} · פינוי: ${formatTimeHe(params.accessEnd, tz)}</p>
-      <p style="color:#6b7288;font-size:13px;">קובץ ICS מצורף — ניתן להוסיף ליומן.</p>
+      <p style="color:#6b7288;">🔑 אפשר להיכנס מ-${formatTimeHe(params.accessStart, tz)} · לפנות את החדר עד ${formatTimeHe(params.accessEnd, tz)}</p>
+      <p style="color:#6b7288;font-size:13px;">צירפנו קובץ שאפשר להוסיף ליומן.</p>
     `),
       }
     : {
@@ -72,11 +72,11 @@ export function bookingCancelledEmail(params: {
   const when = `${escapeHtml(params.roomName)} · ${formatDateHe(params.startsAt, tz)}, ${formatTimeHe(params.startsAt, tz)}`;
   if (l === "he") {
     return {
-      subject: `ההזמנה בוטלה — ${params.roomName}, ${formatDateHe(params.startsAt, tz)}`,
+      subject: `ההזמנה בוטלה: ${params.roomName}, ${formatDateHe(params.startsAt, tz)}`,
       html: emailLayout(`
-      <p>ההזמנה הבאה בוטלה:</p>
+      <p>ההזמנה הזו בוטלה:</p>
       <p style="font-weight:700;">${when}</p>
-      <p>${params.hoursRefunded ? "השעות הוחזרו ליתרה שלך." : "הביטול בוצע בתוך 24 שעות מהמועד — השעות לא הוחזרו."}</p>
+      <p>${params.hoursRefunded ? "השעות הוחזרו ליתרה שלך." : "הביטול היה פחות מ-24 שעות לפני המועד, ולכן השעות לא הוחזרו."}</p>
     `),
     };
   }
@@ -104,11 +104,11 @@ export function punchCardPurchasedEmail(params: {
   const l = L(params.locale);
   if (l === "he") {
     return {
-      subject: `כרטיסייה נרכשה — ${params.hours} שעות`,
+      subject: `הכרטיסייה שלך מוכנה: ${params.hours} שעות`,
       html: emailLayout(`
       <p>הכרטיסייה שלך פעילה:</p>
-      <p style="font-weight:700;">${params.hours} שעות · תוקף עד ${formatDateHe(params.expiresAt)}</p>
-      <p>סה״כ שולם: ${formatCurrencyILS(params.amountTotal)}</p>
+      <p style="font-weight:700;">${params.hours} שעות · בתוקף עד ${formatDateHe(params.expiresAt)}</p>
+      <p>שולם: ${formatCurrencyILS(params.amountTotal)}</p>
       ${params.invoiceUrl ? emailButton(params.invoiceUrl, "לחשבונית") : ""}
     `),
     };
@@ -131,10 +131,10 @@ export function punchCardPurchasedEmail(params: {
 export function lowBalanceEmail(hoursRemaining: number, locale?: string | null): EmailContent {
   if (L(locale) === "he") {
     return {
-      subject: "היתרה שלך עומדת להיגמר",
+      subject: "השעות שלך עומדות להיגמר",
       html: emailLayout(`
-      <p>נותרו לך <strong>${hoursRemaining} שעות</strong> בלבד ביתרה.</p>
-      <p>מומלץ לרכוש כרטיסייה נוספת מהקליניקה כדי לא להישאר בלי אפשרות להזמין.</p>
+      <p>נשארו לך רק <strong>${hoursRemaining} שעות</strong>.</p>
+      <p>כדאי לרכוש כרטיסייה חדשה מהקליניקה, כדי שתוכלו להמשיך להזמין חדרים בלי הפסקה.</p>
     `),
     };
   }
@@ -154,10 +154,10 @@ export function lowBalanceEmail(hoursRemaining: number, locale?: string | null):
 export function cardExpiringEmail(expiresAt: Date, hoursRemaining: number, locale?: string | null): EmailContent {
   if (L(locale) === "he") {
     return {
-      subject: "כרטיסייה עומדת לפוג בקרוב",
+      subject: "הכרטיסייה שלך תפוג בקרוב",
       html: emailLayout(`
-      <p>הכרטיסייה שלך (${hoursRemaining} שעות נותרות) פגה בתאריך <strong>${formatDateHe(expiresAt)}</strong>.</p>
-      <p>שעות שלא ינוצלו עד אז יאבדו.</p>
+      <p>בכרטיסייה שלך נשארו ${hoursRemaining} שעות, והיא בתוקף עד <strong>${formatDateHe(expiresAt)}</strong>.</p>
+      <p>שעות שלא ינוצלו עד אז לא יעברו הלאה.</p>
     `),
     };
   }
@@ -181,11 +181,11 @@ export function sessionRequestedAdminEmail(params: {
   monthlyPrice: number;
 }): EmailContent {
   return {
-    subject: `בקשת ססיה חדשה — ${params.therapistName}`,
+    subject: `בקשת ססיה חדשה מ${params.therapistName}`,
     html: emailLayout(`
       <p>התקבלה בקשת ססיה חדשה:</p>
-      <p style="font-weight:700;">${escapeHtml(params.therapistName)} · ${params.weeklyHours} שעות שבועיות · ${formatCurrencyILS(params.monthlyPrice)}/חודש</p>
-      <p>יש לבדוק זמינות ולאשר/לדחות בפאנל הניהול.</p>
+      <p style="font-weight:700;">${escapeHtml(params.therapistName)} · ${params.weeklyHours} שעות בשבוע · ${formatCurrencyILS(params.monthlyPrice)} לחודש</p>
+      <p>אפשר לבדוק אם החדרים פנויים ולאשר או לדחות את הבקשה במסך הניהול.</p>
     `),
   };
 }
@@ -203,7 +203,7 @@ export function sessionApprovedEmail(params: { instructions: string | null; loca
     return {
       subject: "בקשת הססיה שלך אושרה",
       html: emailLayout(`
-      <p>בקשת הססיה שלך אושרה. התשלום מתבצע ישירות לקליניקה, וברגע שהוא נרשם — הססיה נפתחת והמשבצות ננעלות.</p>
+      <p>בקשת הססיה שלך אושרה. התשלום הוא ישירות לקליניקה, וברגע שהקליניקה רושמת אותו, הססיה נפתחת והשעות נשמרות לך.</p>
       ${how("איך משלמים:")}
     `),
     };
@@ -231,14 +231,14 @@ export function sessionRenewalReminderEmail(params: {
   // גרסת האדמין תמיד בעברית (קבוצת נמענים); גרסת המטפל/ת לפי locale.
   if (params.forAdmin || L(params.locale) === "he") {
     const intro = params.forAdmin
-      ? `<p>המנוי של <strong>${escapeHtml(params.therapistName)}</strong> (${params.weeklyHours} שעות שבועיות) עומד להסתיים אם לא יחודש.</p>`
-      : `<p>מנוי הססיה שלך (${params.weeklyHours} שעות שבועיות) עומד להסתיים.</p>`;
+      ? `<p>הססיה של <strong>${escapeHtml(params.therapistName)}</strong> (${params.weeklyHours} שעות בשבוע) תסתיים אם לא תחודש.</p>`
+      : `<p>הססיה שלך (${params.weeklyHours} שעות בשבוע) עומדת להסתיים.</p>`;
     return {
-      subject: params.forAdmin ? `תזכורת חידוש ססיה — ${params.therapistName}` : "הססיה שלך עומדת להסתיים",
+      subject: params.forAdmin ? `תזכורת לחידוש ססיה: ${params.therapistName}` : "הססיה שלך עומדת להסתיים",
       html: emailLayout(`
       ${intro}
-      <p style="font-weight:700;">תוקף עד ${formatDateHe(params.nextBillingDate)}</p>
-      <p>${params.forAdmin ? "אם לא ישולם עד אז, המטפל/ת לא יוכל/תוכל לקבוע ססיות חדשות. כשהתשלום מגיע — רושמים אותו ברשימת הססיות." : "יש להסדיר את התשלום מול הקליניקה עד לתאריך זה, אחרת לא ניתן יהיה לקבוע ססיות חדשות."}</p>
+      <p style="font-weight:700;">בתוקף עד ${formatDateHe(params.nextBillingDate)}</p>
+      <p>${params.forAdmin ? "אם התשלום לא יגיע עד אז, השעות הקבועות לא יישמרו למטפל. כשהתשלום מגיע, רושמים אותו ברשימת הססיות." : "כדי להמשיך, צריך לשלם לקליניקה עד התאריך הזה. אחרת השעות הקבועות שלך לא יישמרו."}</p>
     `),
     };
   }
@@ -261,9 +261,9 @@ export function sessionRejectedEmail(reason: string, locale?: string | null): Em
     return {
       subject: "בקשת הססיה שלך נדחתה",
       html: emailLayout(`
-      <p>לצערנו בקשת הססיה שלך לא אושרה.</p>
-      <p style="font-weight:700;">סיבה: ${escapeHtml(reason)}</p>
-      <p>ניתן לפנות להנהלת הקליניקה לבירור או להגיש בקשה חדשה.</p>
+      <p>לצערנו, בקשת הססיה שלך לא אושרה.</p>
+      <p style="font-weight:700;">הסיבה: ${escapeHtml(reason)}</p>
+      <p>אפשר לפנות להנהלת הקליניקה לפרטים, או לשלוח בקשה חדשה.</p>
     `),
     };
   }
@@ -284,10 +284,10 @@ export function sessionRejectedEmail(reason: string, locale?: string | null): Em
 export function sessionRenewedEmail(amountTotal: number, invoiceUrl?: string | null, locale?: string | null): EmailContent {
   if (L(locale) === "he") {
     return {
-      subject: "חידוש מנוי ססיה",
+      subject: "הססיה שלך חודשה",
       html: emailLayout(`
-      <p>מנוי הססיה שלך חודש בהצלחה.</p>
-      <p>סכום החיוב: ${formatCurrencyILS(amountTotal)}</p>
+      <p>הססיה שלך חודשה לחודש נוסף.</p>
+      <p>שולם: ${formatCurrencyILS(amountTotal)}</p>
       ${invoiceUrl ? emailButton(invoiceUrl, "לחשבונית") : ""}
     `),
     };
@@ -309,10 +309,10 @@ export function sessionRenewedEmail(amountTotal: number, invoiceUrl?: string | n
 export function paymentFailedEmail(params: { amountTotal: number; context: string; locale?: string | null }): EmailContent {
   if (L(params.locale) === "he") {
     return {
-      subject: "חיוב נכשל",
+      subject: "החיוב לא עבר",
       html: emailLayout(`
-      <p>חיוב בסך ${formatCurrencyILS(params.amountTotal)} עבור ${escapeHtml(params.context)} נכשל.</p>
-      <p>ייתכן שהחשבון יושעה עד להסדרת אמצעי התשלום. יש לפנות להנהלת הקליניקה במידת הצורך.</p>
+      <p>החיוב על סך ${formatCurrencyILS(params.amountTotal)} עבור ${escapeHtml(params.context)} לא עבר.</p>
+      <p>ייתכן שהחשבון יושהה עד שהתשלום יוסדר. לפרטים אפשר לפנות להנהלת הקליניקה.</p>
     `),
     };
   }
@@ -337,10 +337,10 @@ export function overrunRecordedEmail(params: {
 }): EmailContent {
   if (L(params.locale) === "he") {
     return {
-      subject: "נרשמה חריגת זמן",
+      subject: "נרשמה חריגה מהזמן",
       html: emailLayout(`
-      <p>נרשמה חריגה של ${params.minutes} דקות, בסך ${formatCurrencyILS(params.amount)}.</p>
-      <p>${params.source === "deposit" ? "הסכום נוכה מהפיקדון." : "הסכום חויב באמצעי התשלום השמור."}</p>
+      <p>נרשמה חריגה של ${params.minutes} דקות מזמן ההזמנה, בסך ${formatCurrencyILS(params.amount)}.</p>
+      <p>${params.source === "deposit" ? "הסכום ירד מהפיקדון." : "הסכום ממתין לתשלום לקליניקה."}</p>
     `),
     };
   }
@@ -363,12 +363,12 @@ export function overrunRecordedEmail(params: {
  * subscription_id, לא כ-room/time ספציפיים כמו במקור. */
 export function materializationConflictAdminEmail(params: { subscriptionId: string; detail: string }): EmailContent {
   return {
-    subject: "🚨 שגיאה בשיבוץ אוטומטי של ססיה",
+    subject: "🚨 תקלה בשיבוץ האוטומטי של ססיה",
     html: emailLayout(`
-      <p>ניסיון שיבוץ אוטומטי של ססיה נכשל:</p>
+      <p>השיבוץ האוטומטי של ססיה לא הצליח:</p>
       <p style="font-weight:700;">מנוי ${params.subscriptionId}</p>
       <p style="color:#6b7288;font-family:monospace;font-size:13px;">${escapeHtml(params.detail)}</p>
-      <p>נדרשת בדיקה ידנית בפאנל הניהול.</p>
+      <p>צריך לבדוק את זה במסך הניהול.</p>
     `),
   };
 }
@@ -390,12 +390,12 @@ export function bookingReminderEmail(params: {
   if (L(params.locale) === "he") {
     const whenWord = { soon: "עוד מעט", today: "היום", tomorrow: "מחר", later: formatDateHe(params.startsAt, tz) }[lead];
     return {
-      subject: `תזכורת — הזמנה ${whenWord} ב-${params.roomName}`,
+      subject: `תזכורת: הזמנה ${whenWord} ב${params.roomName}`,
       html: emailLayout(`
       <p>תזכורת להזמנה שלך ${whenWord}:</p>
       <p style="font-weight:700;">${room}</p>
       <p>${when}</p>
-      <p style="color:#6b7288;">🔑 כניסה בפועל: ${formatTimeHe(params.accessStart, tz)}</p>
+      <p style="color:#6b7288;">🔑 אפשר להיכנס מ-${formatTimeHe(params.accessStart, tz)}</p>
     `),
     };
   }
@@ -444,7 +444,7 @@ export function newLeadEmail(params: {
   const row = (label: string, value: string | null) =>
     value ? `<p style="margin:4px 0;"><span style="color:#6b7288;">${label}:</span> <strong>${escapeHtml(value)}</strong></p>` : "";
   return {
-    subject: `פנייה חדשה מ-${params.source} — ${params.name}`,
+    subject: `פנייה חדשה מ-${params.source}: ${params.name}`,
     html: emailLayout(`
       <p>התקבלה פנייה חדשה מדף הנחיתה:</p>
       ${row("שם", params.name)}
@@ -462,9 +462,9 @@ export function wooPurchaseReceivedEmail(params: { hours: number; registerUrl: s
   return {
     subject: `הרכישה שלך התקבלה — ${params.hours} שעות מחכות לך ב-Cleana`,
     html: emailLayout(`
-      <p>תודה על הרכישה! כרטיסייה של <strong>${params.hours} שעות</strong> ממתינה לך.</p>
-      <p>כדי להפעיל אותה, יש ליצור חשבון (או להתחבר, אם כבר יש לך אחד) באותה כתובת מייל או מספר טלפון שאיתם רכשת — הכרטיסייה תופעל אוטומטית עם ההרשמה.</p>
-      ${emailButton(params.registerUrl, "יצירת חשבון / התחברות")}
+      <p>תודה על הרכישה! כרטיסייה של <strong>${params.hours} שעות</strong> מחכה לך.</p>
+      <p>כדי להפעיל אותה, צריך להירשם (או להיכנס, אם כבר יש לך חשבון) עם אותו מייל או טלפון שאיתם רכשת. הכרטיסייה תופעל אוטומטית.</p>
+      ${emailButton(params.registerUrl, "להרשמה או כניסה")}
     `),
   };
 }
@@ -474,11 +474,11 @@ export function wooPurchaseReceivedEmail(params: { hours: number; registerUrl: s
 export function clinicWelcomeEmail(params: { clinicName: string; ownerName: string; locale?: string | null }): EmailContent {
   if (L(params.locale) === "he") {
     return {
-      subject: `ברוך/ה הבא/ה ל-Cleana, ${params.ownerName}!`,
+      subject: `${params.ownerName}, הקליניקה שלך ב-Cleana מוכנה`,
       html: emailLayout(`
       <p>שלום ${escapeHtml(params.ownerName)},</p>
-      <p>הקליניקה <strong>${escapeHtml(params.clinicName)}</strong> נפתחה בהצלחה ב-Cleana.</p>
-      <p>השלב הבא: הגדרת סניפים וחדרים, ואז הזמנת המטפלים שלך בקישור אחד מ"מטפלים" בפאנל הניהול.</p>
+      <p>הקליניקה <strong>${escapeHtml(params.clinicName)}</strong> נפתחה ב-Cleana.</p>
+      <p>מה עכשיו? מגדירים סניפים וחדרים, ואז שולחים למטפלים את קישור ההצטרפות שנמצא במסך "מטפלים".</p>
     `),
     };
   }
@@ -498,12 +498,12 @@ export function clinicWelcomeEmail(params: { clinicName: string; ownerName: stri
 
 /** לקבוצת אדמיני הקליניקה — עברית. */
 export function therapistJoinedAdminEmail(params: { therapistName: string; role: "admin" | "therapist" }): EmailContent {
-  const roleLabel = params.role === "admin" ? "אדמין/ית" : "מטפל/ת";
+  const roleLabel = params.role === "admin" ? "מנהל" : "מטפל";
   return {
-    subject: `${roleLabel} חדש/ה הצטרף/ה — ${params.therapistName}`,
+    subject: `הצטרפות חדשה לקליניקה: ${params.therapistName}`,
     html: emailLayout(`
-      <p><strong>${escapeHtml(params.therapistName)}</strong> הצטרף/ה לקליניקה שלך כ${roleLabel}.</p>
-      <p>ניתן לראות ולנהל את הפרופיל שלו/ה תחת "מטפלים" בפאנל הניהול.</p>
+      <p>הצטרפות חדשה לקליניקה: <strong>${escapeHtml(params.therapistName)}</strong>, בתור ${roleLabel}.</p>
+      <p>את הפרטים אפשר לראות ולערוך במסך "מטפלים".</p>
     `),
   };
 }
@@ -522,8 +522,8 @@ export function platformSubscriptionActivatedEmail(params: {
       subject: `המנוי של ${params.clinicName} ב-Cleana פעיל`,
       html: emailLayout(`
       <p>התשלום על המנוי של <strong>${escapeHtml(params.clinicName)}</strong> עבר בהצלחה: ${formatCurrencyILS(params.amount)}.</p>
-      <p>${until ? `החיוב הבא יתבצע ב-${until}. ` : ""}אפשר לבטל בכל רגע מ"מנוי ותשלום" בפאנל הניהול — הביטול נכנס לתוקף בסוף התקופה ששולמה.</p>
-      <p>חשבונית/קבלה נשלחת בנפרד ממערכת הסליקה.</p>
+      <p>${until ? `החיוב הבא יהיה ב-${until}. ` : ""}אפשר לבטל בכל זמן ממסך "המנוי ל-Cleana", והביטול נכנס לתוקף בסוף התקופה ששולמה.</p>
+      <p>החשבונית תישלח אליכם בנפרד ממערכת הסליקה.</p>
     `),
     };
   }
@@ -547,8 +547,8 @@ export function platformPaymentFailedEmail(params: { clinicName: string; graceDa
       subject: `התשלום על המנוי של ${params.clinicName} לא עבר`,
       html: emailLayout(`
       <p>לא הצלחנו לחייב את המנוי של <strong>${escapeHtml(params.clinicName)}</strong> ב-Cleana.</p>
-      <p>הקליניקה ממשיכה לעבוד כרגיל עוד ${params.graceDays} ימים. אחר כך הזמנות חדשות ייחסמו עד שהתשלום יוסדר — התורים הקיימים לא נמחקים.</p>
-      <p>להסדרה: פאנל הניהול → "מנוי ותשלום" → "הפעלת מנוי".</p>
+      <p>הקליניקה תמשיך לעבוד כרגיל עוד ${params.graceDays} ימים. אחר כך לא יהיה אפשר ליצור הזמנות חדשות עד שהתשלום יוסדר. ההזמנות הקיימות לא נמחקות.</p>
+      <p>כדי להסדיר את התשלום: מסך הניהול ← "המנוי ל-Cleana" ← "הפעלת מנוי".</p>
     `),
     };
   }

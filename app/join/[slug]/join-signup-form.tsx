@@ -9,7 +9,7 @@ export function JoinSignupForm({ slug }: { slug: string }) {
   return (
     <ClerkSignupForm
       submitLabel="הצטרפות"
-      pendingLabel="מצטרף/ת…"
+      pendingLabel="רגע…"
       redirectTo="/"
       onSubmitBusinessLogic={(formData) => completeJoinAction(slug, formData)}
       extraFields={

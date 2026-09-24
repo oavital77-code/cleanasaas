@@ -16,17 +16,17 @@ export async function completeInviteAction(token: string, formData: FormData): P
   const fullName = String(formData.get("full_name") ?? "").trim();
   const phoneRaw = String(formData.get("phone") ?? "").trim();
   if (!fullName || !phoneRaw) {
-    return { error: "נא למלא את כל השדות" };
+    return { error: "צריך למלא את כל השדות" };
   }
   // E.164 לפני שמירה — ר' app/signup/actions.ts.
   const phone = toE164Israel(phoneRaw);
   if (!phone) {
-    return { error: "מספר טלפון לא תקין — נייד ישראלי (05X-XXXXXXX)" };
+    return { error: "צריך מספר נייד ישראלי תקין, למשל 050-1234567" };
   }
 
   const email = (await currentUser())?.primaryEmailAddress?.emailAddress;
   if (!email) {
-    return { error: "שגיאה באימות החשבון — נסה/י שוב" };
+    return { error: "לא הצלחנו לאמת את החשבון. נסו שוב." };
   }
 
   const supabase = await createClient();
@@ -66,12 +66,12 @@ async function notifyAdminsOfNewTherapist(clinicId: string, token: string, thera
 function translateInviteError(code: string): string {
   const map: Record<string, string> = {
     INVITE_INVALID: "קישור ההזמנה לא תקף",
-    PLAN_LIMIT_THERAPISTS: "הגיע למספר המטפלים המקסימלי בתוכנית של הקליניקה",
+    PLAN_LIMIT_THERAPISTS: "הקליניקה הגיעה למספר המטפלים המרבי במסלול שלה",
     ALREADY_REGISTERED: "כבר יש לך חשבון במערכת",
-    EMAIL_ALREADY_REGISTERED: "האימייל הזה כבר רשום לחשבון אחר — התחבר/י איתו, או פנה/י למנהל/ת הקליניקה",
+    EMAIL_ALREADY_REGISTERED: "המייל הזה כבר רשום בחשבון אחר. אפשר להיכנס איתו, או לפנות להנהלת הקליניקה.",
   };
   for (const key of Object.keys(map)) {
     if (code.includes(key)) return map[key];
   }
-  return "שגיאה בהצטרפות";
+  return "ההצטרפות לא הצליחה. נסו שוב.";
 }

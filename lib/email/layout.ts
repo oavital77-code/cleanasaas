@@ -27,7 +27,7 @@ export function emailLayout(bodyHtml: string, previewText?: string, locale: Loca
   const align = locale === "he" ? "right" : "left";
   const footer =
     locale === "he"
-      ? "נשלח אוטומטית ממערכת Cleana. לשאלות יש לפנות להנהלת הקליניקה שלך."
+      ? "ההודעה נשלחה אוטומטית ממערכת Cleana. לשאלות אפשר לפנות להנהלת הקליניקה."
       : "Sent automatically by Cleana. For questions, contact your clinic management.";
   return `<!DOCTYPE html>
 <html dir="${dir}" lang="${locale}">

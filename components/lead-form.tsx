@@ -25,7 +25,7 @@ export function LeadForm() {
         </span>
         <p className="text-lg font-bold text-success-fg">קיבלנו. נחזור אליכם.</p>
         <p className="max-w-sm text-sm leading-relaxed text-success-fg/80">
-          בדרך כלל תוך יום עסקים אחד. אם זה דחוף, אפשר פשוט לפתוח קליניקה ולהתחיל — {" "}
+          בדרך כלל תוך יום עסקים. אם זה דחוף, אפשר לפתוח קליניקה ולהתחיל כבר עכשיו.{" "}
           <a href="/signup" className="font-semibold underline underline-offset-2">
             30 הימים הראשונים בחינם
           </a>
@@ -69,20 +69,20 @@ export function LeadForm() {
           name="message"
           rows={3}
           maxLength={2000}
-          placeholder="כמה חדרים, כמה מטפלים/ות, ומה הכי מעצבן היום"
+          placeholder="כמה חדרים ומטפלים יש לכם, ומה הכי מציק לכם היום"
           className="w-full rounded-field border border-border-strong bg-surface px-3 py-2 text-base transition-colors placeholder:text-text-muted focus-visible:border-violet-500 focus-visible:outline-none focus-visible:[box-shadow:var(--focus-ring)] md:text-[14.5px]"
         />
       </div>
 
       <Button type="submit" size="lg" disabled={pending} className="h-12 w-full rounded-2xl font-semibold">
-        {pending ? "שולח…" : "שלחו לי פרטים"}
+        {pending ? "שולחים…" : "חזרו אליי"}
         {!pending && <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />}
       </Button>
 
       {state.error && <p className="text-sm font-medium text-destructive">{state.error}</p>}
 
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
-        הפרטים משמשים רק כדי לחזור אליכם בנוגע ל-Cleana. אפשר לראות איך אנחנו מטפלים במידע ב
+        נשתמש בפרטים רק כדי לחזור אליכם בנוגע ל-Cleana. פרטים נוספים ב
         <a href="/privacy" className="underline underline-offset-2 hover:text-foreground">
           מדיניות הפרטיות
         </a>
