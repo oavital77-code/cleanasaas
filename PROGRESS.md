@@ -219,7 +219,7 @@ trial, והצלחה אחרי דגל זמני ל-`plan='basic'` — עם ניקו
   כמזומן), `/admin/rooms` (CRUD סניפים/חדרים — כתיבה ישירה, לא RPC, מותר
   לפי CLAUDE.md #1), `/admin/settings` (הועבר, נשאר ממוקד תמחור/Woo בלבד —
   "הזמנת מטפלים" עברה ל-`/admin/therapists` כי זה שם המקום שלה במסמך),
-  `/admin/reports` (מונים בסיסיים לחודש), `/admin/audit` (`audit_log`).
+  `/admin/reports` (חמש רובריקות לפי חודש בשעון הקליניקה, פירוט שורות וייצוא CSV לכל רובריקה — `lib/reports/`), `/admin/audit` (`audit_log`).
 - **תשתית**: `/api/ics/[token]` — פיד ICS ציבורי לפי `profiles.ics_token`
   (admin client, כי אין session; מסונן לפרופיל בודד — לא חושף מטפל אחר).
   "שכחתי סיסמה" נוסף כטוגל בתוך `/login` (לא route נפרד, כמו במקור).
