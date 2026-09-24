@@ -11,7 +11,7 @@ import {
   deletePunchCardTierAction,
   toggleSessionsEnabledAction,
   updateSessionPricingAction,
-  updatePaymentSettingsAction,
+  updatePaymentInstructionsAction,
   updateClinicHoursAction,
   updateHolidayPolicyAction,
   updateWhatsAppSettingsAction,
@@ -19,6 +19,7 @@ import {
 import { WhatsAppTestButton } from "./whatsapp-test-button";
 import { suggestedMetaTemplateBody } from "@/lib/whatsapp";
 import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
+import { PAYMENT_INSTRUCTIONS_KEY, PAYMENT_INSTRUCTIONS_MAX, readPaymentInstructions } from "@/lib/payment-instructions";
 import { Trash2 } from "lucide-react";
 
 export default async function AdminSettingsPage({ searchParams }: { searchParams: Promise<{ notice?: string }> }) {
@@ -30,12 +31,13 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
   const noticeText = notice ? t.tierNotices[notice] : undefined;
   const tierNotice = notice?.startsWith("tier_") ? noticeText : undefined;
   const pricingNotice = notice?.startsWith("pricing_") ? noticeText : undefined;
+  const instructionsNotice =
+    notice === "instructions_saved" ? t.instructionsSaved : notice === "instructions_error" ? t.instructionsError : undefined;
 
-  const [{ data: tiers }, { data: settingsRows }, { data: paymentSettings }, { data: clinic }, { data: whatsapp }] =
+  const [{ data: tiers }, { data: settingsRows }, { data: clinic }, { data: whatsapp }] =
     await Promise.all([
       supabase.from("punch_card_tiers").select("*").eq("clinic_id", clinicId).order("sort_order"),
       supabase.from("app_settings").select("key, value").eq("clinic_id", clinicId),
-      supabase.from("clinic_payment_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
       supabase
         .from("clinics")
         .select("name, open_hour, close_hour, sessions_enabled, block_holidays, block_holiday_eves, block_chol_hamoed")
@@ -50,7 +52,7 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
     ]);
 
   const settings = Object.fromEntries((settingsRows ?? []).map((r) => [r.key, r.value]));
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const paymentInstructions = readPaymentInstructions(settings[PAYMENT_INSTRUCTIONS_KEY]) ?? "";
 
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
@@ -266,37 +268,34 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
           </CardContent>
         </Card>
 
-        <Card className="shadow-e1">
+        <Card id="payments" className="shadow-e1 scroll-mt-4">
           <CardHeader>
-            <CardTitle className="text-base font-medium">{t.wooTitle}</CardTitle>
-            <CardDescription>
-              {t.wooDescriptionPrefix}{" "}
-              <code dir="ltr" className="break-all rounded bg-muted px-1 py-0.5 text-xs">
-                {appUrl}/api/woo/webhook/{clinicId}
-              </code>
-            </CardDescription>
+            <CardTitle className="text-base font-medium">{t.paymentsTitle}</CardTitle>
+            <CardDescription>{t.paymentsDescription}</CardDescription>
           </CardHeader>
-          <CardContent>
-            <form action={updatePaymentSettingsAction} className="flex flex-col gap-3">
+          <CardContent className="flex flex-col gap-3">
+            {instructionsNotice && (
+              <p
+                className={`rounded-field px-3 py-2 text-sm ${
+                  notice === "instructions_saved" ? "bg-success-bg text-success-fg" : "bg-warning-bg text-warning-fg"
+                }`}
+              >
+                {instructionsNotice}
+              </p>
+            )}
+            <form action={updatePaymentInstructionsAction} className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="woo_store_url">{t.storeUrl}</Label>
-                <Input id="woo_store_url" name="woo_store_url" dir="ltr" defaultValue={paymentSettings?.woo_store_url ?? ""} placeholder="https://shop.example.com" />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="woo_consumer_key">Consumer Key</Label>
-                <Input id="woo_consumer_key" name="woo_consumer_key" dir="ltr" placeholder={paymentSettings?.woo_consumer_key ? t.configuredPlaceholder : ""} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="woo_consumer_secret">Consumer Secret</Label>
-                <Input id="woo_consumer_secret" name="woo_consumer_secret" type="password" dir="ltr" placeholder={paymentSettings?.woo_consumer_secret ? t.configuredPlaceholder : ""} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="woo_webhook_secret">{t.webhookSecretLabel}</Label>
-                <Input id="woo_webhook_secret" name="woo_webhook_secret" type="password" dir="ltr" placeholder={paymentSettings?.woo_webhook_secret ? t.configuredPlaceholder : ""} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="woo_session_product_id">{t.sessionProductIdLabel}</Label>
-                <Input id="woo_session_product_id" name="woo_session_product_id" type="number" dir="ltr" defaultValue={Number(settings.woo_session_product_id ?? 0)} />
+                <Label htmlFor="payment_instructions">{t.paymentInstructionsLabel}</Label>
+                <textarea
+                  id="payment_instructions"
+                  name="payment_instructions"
+                  rows={4}
+                  maxLength={PAYMENT_INSTRUCTIONS_MAX}
+                  defaultValue={paymentInstructions}
+                  placeholder={t.paymentInstructionsPlaceholder}
+                  className="w-full rounded-field border border-border-strong bg-surface px-3 py-2 text-base transition-colors placeholder:text-text-muted focus-visible:border-violet-500 focus-visible:outline-none focus-visible:[box-shadow:var(--focus-ring)] md:text-[14.5px]"
+                />
+                <p className="text-xs text-muted-foreground">{t.paymentInstructionsHint}</p>
               </div>
               <Button type="submit" className="w-fit">
                 {t.save}

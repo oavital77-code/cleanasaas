@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
 import { parseSessionPricing } from "@/lib/session-pricing";
+import { PAYMENT_INSTRUCTIONS_KEY, normalizePaymentInstructions } from "@/lib/payment-instructions";
 import { sendWhatsAppReminderTemplate } from "@/lib/whatsapp";
 import { formatDateHe, formatTimeHe, DEFAULT_TIMEZONE } from "@/lib/time";
 import { materializeHolidayBlocks } from "@/lib/holiday-blocks";
@@ -199,26 +200,24 @@ export async function updateHolidayPolicyAction(formData: FormData) {
 // (יש לה גישה למפתח ב-vault.decrypted_secrets, שהאפליקציה לעולם לא רואה).
 // שדה ריק (לא הוזן מחדש) → null → הפונקציה שומרת על הערך הקיים, בדיוק
 // כמו הסמנטיקה הקודמת (`if (consumerSecret) update....`).
-export async function updatePaymentSettingsAction(formData: FormData) {
-  await requireClinicAdmin();
+// מצב ידני (24.9.2026): Cleana לא גובה בשם הקליניקה. מה שהקליניקה כן
+// מגדירה הוא איך לשלם לה — טקסט שהמטפלים/ות רואים/ות ליד המחירים. שדה ריק
+// מוחק אותו. אותה תבנית כמו מחירי הססיה: upsert ל-app_settings, ?notice=.
+export async function updatePaymentInstructionsAction(formData: FormData) {
+  const { clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
+  const text = normalizePaymentInstructions(formData.get("payment_instructions"));
 
-  const storeUrl = String(formData.get("woo_store_url") ?? "").trim();
-  const consumerKey = String(formData.get("woo_consumer_key") ?? "").trim();
-  const consumerSecret = String(formData.get("woo_consumer_secret") ?? "").trim();
-  const webhookSecret = String(formData.get("woo_webhook_secret") ?? "").trim();
-  const sessionProductId = Number(formData.get("woo_session_product_id"));
-
-  const { error } = await supabase.rpc("admin_set_clinic_woo_secrets", {
-    p_woo_store_url: storeUrl || undefined,
-    p_woo_consumer_key: consumerKey || undefined,
-    p_woo_consumer_secret: consumerSecret || undefined,
-    p_woo_webhook_secret: webhookSecret || undefined,
-    p_woo_session_product_id: Number.isFinite(sessionProductId) ? sessionProductId : undefined,
-  });
-  if (error) throw new Error(error.message);
+  const { error } = text
+    ? await supabase
+        .from("app_settings")
+        .upsert({ clinic_id: clinicId, key: PAYMENT_INSTRUCTIONS_KEY, value: text }, { onConflict: "clinic_id,key" })
+    : await supabase.from("app_settings").delete().eq("clinic_id", clinicId).eq("key", PAYMENT_INSTRUCTIONS_KEY);
 
   revalidatePath("/admin/settings");
+  revalidatePath("/purchase");
+  revalidatePath("/sessions");
+  redirect(error ? "/admin/settings?notice=instructions_error#payments" : "/admin/settings?notice=instructions_saved#payments");
 }
 
 // 🔴 אותה תבנית כמו Woo: הטוקן מוצפן בתוך admin_set_clinic_whatsapp_settings

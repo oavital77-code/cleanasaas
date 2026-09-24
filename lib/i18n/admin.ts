@@ -545,7 +545,7 @@ const SETTINGS_HE = {
   deleteTier: "הסרת כרטיסייה",
   noTiers: "אין עדיין כרטיסיות — הוסיפו את הראשונה למטה.",
   tiersPaymentNote:
-    "אותן מדרגות משמשות את כל דרכי התשלום: החנות (WooCommerce — מיפוי מוצר→מדרגה), הנפקה ידנית מכרטיס המטפל/ת (מזומן / ביט / העברה) והתצוגה למטפלים/ות. כרטיסייה לא פעילה מוסתרת מכולם אבל כרטיסיות שכבר נרכשו ממנה ממשיכות לעבוד.",
+    "אלה המחירים שהמטפלים/ות רואים/ות. כשמטפל/ת משלם/ת — מנפיקים את הכרטיסייה מהכרטיס שלו/ה (מטפלים ← בחירת המטפל/ת ← הנפקת כרטיסייה). כרטיסייה לא פעילה מוסתרת מכולם, אבל כרטיסיות שכבר הונפקו ממנה ממשיכות לעבוד.",
   tierNotices: {
     tier_invalid: "ערכים לא תקינים — שעות 1–1000, מחיר ≥ 0, פיקדון בין 0 לשעות הכרטיסייה.",
     tier_hours_taken: "כבר קיימת כרטיסייה עם מספר השעות הזה.",
@@ -577,12 +577,15 @@ const SETTINGS_HE = {
   blockHolidayEves: "סגור גם בערבי חג וביום הזיכרון",
   blockCholHamoed: "סגור גם בחול המועד",
   holidaysNote: "הזמנות שכבר נקבעו ביום סגור נשארות; חסימות ידניות לא נוגעים בהן. השינוי חל מיד וגם מתעדכן כל לילה.",
-  wooTitle: "שיטת תשלום — WooCommerce",
-  wooDescriptionPrefix: "חברו את החנות שלכם. כתובת ה-webhook הייעודית שלכם:",
-  storeUrl: "כתובת החנות",
+  paymentsTitle: "איך המטפלים/ות משלמים לכם",
+  paymentsDescription:
+    "Cleana לא גובה בשמכם. המטפלים/ות משלמים/ות לכם ישירות — מזומן, ביט, העברה או אשראי, כמו היום — ואתם רושמים את התשלום: כרטיסייה מהכרטיס של המטפל/ת, ססיה מרשימת הססיות.",
+  paymentInstructionsLabel: "הוראות תשלום שהמטפלים/ות יראו",
+  paymentInstructionsPlaceholder: "למשל: ביט ל-050-1234567, או העברה לבנק לאומי, סניף 123, חשבון 456789. אחרי התשלום — שלחו לנו צילום מסך.",
+  paymentInstructionsHint: "מוצג למטפלים/ות בעמוד הכרטיסיות, בעמוד הססיות ובמייל אישור הססיה.",
+  instructionsSaved: "הוראות התשלום נשמרו.",
+  instructionsError: "שמירת הוראות התשלום נכשלה — נסו שוב.",
   configuredPlaceholder: "•••• מוגדר",
-  webhookSecretLabel: "Webhook Secret (אופציונלי — אם לא מוגדר, נעבוד ב-polling)",
-  sessionProductIdLabel: "Product ID של מוצר הססיה בחנות (0 אם אין מודל ססיה)",
   // WhatsApp reminders
   whatsappTitle: "תזכורות WhatsApp (Meta Cloud API)",
   whatsappDescription:
@@ -619,7 +622,7 @@ const SETTINGS_EN: typeof SETTINGS_HE = {
   deleteTier: "Remove punch card",
   noTiers: "No punch cards yet — add the first one below.",
   tiersPaymentNote:
-    "The same tiers serve every payment route: the store (WooCommerce — product→tier mapping), manual issuance from the therapist's card (cash / Bit / bank transfer) and what therapists see. An inactive tier is hidden from everyone, but cards already bought from it keep working.",
+    "These are the prices therapists see. When a therapist pays, issue the card from their profile (Therapists → pick the therapist → Issue punch card). An inactive tier is hidden from everyone, but cards already issued from it keep working.",
   tierNotices: {
     tier_invalid: "Invalid values — hours 1–1000, price ≥ 0, deposit between 0 and the card's hours.",
     tier_hours_taken: "A punch card with that number of hours already exists.",
@@ -651,12 +654,15 @@ const SETTINGS_EN: typeof SETTINGS_HE = {
   blockHolidayEves: "Also close on holiday eves and Memorial Day",
   blockCholHamoed: "Also close on Chol HaMoed (the days between)",
   holidaysNote: "Bookings already made on a closed day stay; manual blocks are never touched. Applies at once and is refreshed nightly.",
-  wooTitle: "Payment method — WooCommerce",
-  wooDescriptionPrefix: "Connect your store. Your dedicated webhook URL:",
-  storeUrl: "Store URL",
+  paymentsTitle: "How therapists pay you",
+  paymentsDescription:
+    "Cleana does not collect on your behalf. Therapists pay you directly — cash, Bit, transfer or card, as they do today — and you record it: a punch card from the therapist's profile, a session from the sessions list.",
+  paymentInstructionsLabel: "Payment instructions therapists will see",
+  paymentInstructionsPlaceholder: "For example: Bit to 050-1234567, or a transfer to Leumi, branch 123, account 456789. Send us a screenshot once paid.",
+  paymentInstructionsHint: "Shown to therapists on the punch cards page, the sessions page and the session approval email.",
+  instructionsSaved: "Payment instructions saved.",
+  instructionsError: "Saving the payment instructions failed — please try again.",
   configuredPlaceholder: "•••• configured",
-  webhookSecretLabel: "Webhook Secret (optional — without it we fall back to polling)",
-  sessionProductIdLabel: "Product ID of the session product in the store (0 if no session model)",
   whatsappTitle: "WhatsApp reminders (Meta Cloud API)",
   whatsappDescription:
     "An automatic reminder to the therapist before each booking via Meta's official API — recommended with a dedicated clinic number (not the manager's personal WhatsApp). Business-initiated messages must use a template approved in Meta Business Manager.",
