@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthState } from "@/lib/auth/guards";
 import { fetchCleanaPlusStats, fetchCleanasStats } from "@/lib/owner/stats";
+import { platformPlanPriceIls } from "@/lib/platform-billing";
 import { OwnerDashboardView } from "./view";
 
 export const dynamic = "force-dynamic";
@@ -27,5 +28,5 @@ export default async function OwnerDashboardPage() {
     .limit(100);
 
   const [plus, saas] = await Promise.all([fetchCleanaPlusStats(), fetchCleanasStats()]);
-  return <OwnerDashboardView plus={plus} saas={saas} leads={leads ?? []} />;
+  return <OwnerDashboardView plus={plus} saas={saas} leads={leads ?? []} saasPriceIls={platformPlanPriceIls()} />;
 }

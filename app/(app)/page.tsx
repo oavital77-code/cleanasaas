@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 };
 
 // המחיר האחד, מאותו מקור כמו /admin/billing והחיוב עצמו (PLATFORM_PLAN_PRICE_ILS,
-// ברירת מחדל 209). תקופת הניסיון: signup_clinic נותן 30 יום (מיגרציה
+// ברירת מחדל 179). תקופת הניסיון: signup_clinic נותן 30 יום (מיגרציה
 // 20260909000003) — אם משנים שם, לשנות גם כאן.
 const PRICE = {
   amount: new Intl.NumberFormat("he-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 0 }).format(platformPlanPriceIls()),

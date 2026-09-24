@@ -54,6 +54,12 @@ end $$;
 do $$ declare r text; begin
   r := platform_apply_payment(null, 'tx_wrong', '000', 5, 209, null, 'tok_1');
   assert r = 'amount_mismatch', 'wrong amount, got ' || r;
+  -- מחיר ירד (209 → 179) בזמן שדף תשלום במחיר הישן היה פתוח: מי ששילם יותר
+  -- מופעל. רק תשלום חסר נדחה (20260924000001).
+  r := platform_apply_payment((select clinic_id from t_c), 'tx_old_price', '000', 209, 179);
+  assert r = 'activated', 'paying the old, higher price still activates, got ' || r;
+  r := platform_apply_payment((select clinic_id from t_c), 'tx_under', '000', 150, 179);
+  assert r = 'amount_mismatch', 'paying less than the price is still refused, got ' || r;
   r := platform_apply_payment('00000000-0000-0000-0000-000000000000', 'tx_nobody', '000', 209, 209);
   assert r = 'unknown_clinic', 'unknown clinic, got ' || r;
 end $$;

@@ -30,7 +30,18 @@ export type LeadRow = {
   status: string;
 };
 
-export function OwnerDashboardView({ plus, saas, leads }: { plus: ProductResult; saas: ProductResult; leads: LeadRow[] }) {
+export function OwnerDashboardView({
+  plus,
+  saas,
+  leads,
+  saasPriceIls,
+}: {
+  plus: ProductResult;
+  saas: ProductResult;
+  leads: LeadRow[];
+  /** המחיר מאותו מקור כמו החיוב עצמו (platformPlanPriceIls) — לא מספר שמוקלד כאן. */
+  saasPriceIls: number;
+}) {
   const plusStats = plus.ok ? plus.stats : null;
   const saasStats = saas.ok ? saas.stats : null;
   const activeUsers = activeUsersOf(plusStats) + activeUsersOf(saasStats);
@@ -136,7 +147,7 @@ export function OwnerDashboardView({ plus, saas, leads }: { plus: ProductResult;
         <LeadsSection leads={leads} />
 
         <ProductSection title="Cleana+" subtitle="מטפלים עצמאיים · ₪79 לחודש" result={plus} />
-        <ProductSection title="CleanaS" subtitle="קליניקות · ₪209 לחודש" result={saas} seats />
+        <ProductSection title="CleanaS" subtitle={`קליניקות · ${ils(saasPriceIls)} לחודש`} result={saas} seats />
       </main>
     </div>
   );

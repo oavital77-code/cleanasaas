@@ -129,7 +129,7 @@ supabase/tests/run.sh
 | `RESEND_API_KEY` · `RESEND_FROM_EMAIL` | מיילים |
 | `CLERK_WEBHOOK_SIGNING_SECRET` | ל-`/api/webhooks/clerk` (`user.deleted` בלבד) |
 | `PAYPLUS_API_KEY` · `PAYPLUS_SECRET_KEY` · `PAYPLUS_PAYMENT_PAGE_UID` | שלושתם או שהתשלום לא מוצע |
-| `PLATFORM_PLAN_PRICE_ILS` | מחיר חודשי בש"ח. ברירת מחדל בקוד: **209** |
+| `PLATFORM_PLAN_PRICE_ILS` | מחיר חודשי בש"ח. ברירת מחדל בקוד: **179** (לא מוגדר ב-Vercel — ברירת המחדל היא שקובעת) |
 | `NEXT_PUBLIC_SENTRY_DSN` · `SENTRY_ORG` · `SENTRY_PROJECT` · `SENTRY_AUTH_TOKEN` | ניטור. בלי DSN — מנוטרל |
 | `OWNER_STATS_SECRET` | סוד משותף לדשבורד הבעלים — ר' פרק 11 |
 
@@ -271,7 +271,7 @@ select has_function_privilege('anon', 'admin_do_something()', 'execute');  -- ח
 זה החיוב ש**אנחנו** גובים מקליניקה על השימוש במערכת — נפרד לגמרי מ-
 WooCommerce, שבו קליניקה גובה מהמטפלים שלה.
 
-**209 ₪ לחודש כולל מע"מ** (`PLATFORM_PLAN_PRICE_ILS`), **30 יום התנסות**,
+**179 ₪ לחודש כולל מע"מ** (`PLATFORM_PLAN_PRICE_ILS`; היה 209 עד 24.9.2026), **30 יום התנסות**,
 ואז **7 ימי חסד** לפני השעיה.
 
 ```
