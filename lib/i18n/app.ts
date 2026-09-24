@@ -87,7 +87,8 @@ export function getBookingsDict(locale: Locale) {
 }
 
 // ---------------------------------------------------------------------------
-// /purchase (+ success/failure, ClaimButton, claimPendingPurchaseAction)
+// /purchase — מחירים והוראות תשלום. אין כאן תשלום: המטפל/ת משלם/ת לקליניקה,
+// והקליניקה מנפיקה את הכרטיסייה (מצב ידני, 24.9.2026).
 // ---------------------------------------------------------------------------
 const PURCHASE_HE = {
   title: "רכישת כרטיסייה",
@@ -97,25 +98,11 @@ const PURCHASE_HE = {
   tierHours: (n: number) => `${n} שעות`,
   perHourBeforeVat: (price: string) => `${price} לשעה, לפני מע"מ`,
   includesDeposit: (n: number) => `כולל פיקדון של ${n} שעות`,
-  buyInStore: "לרכישה בחנות",
-  storeNotConfigured: "החנות טרם הוגדרה",
+  totalWithVat: "סה\"כ כולל מע\"מ",
   noTiers: "עדיין לא הוגדרו מדרגות מחיר בקליניקה.",
-  alreadyPaidTitle: "שילמתם כבר?",
-  alreadyPaidDescription: "הרכישה בדרך כלל משתייכת אליכם אוטומטית תוך דקות. אם לא — אפשר לבדוק ידנית.",
-  // ClaimButton
-  checking: "בודק/ת…",
-  claimButton: "כבר שילמתי — בדיקת רכישה ממתינה",
-  // action
-  noPendingPurchase: "לא נמצאה רכישה ממתינה לשיוך כרגע.",
-  claimed: (hours: number) => `שויכה רכישה אחת (${hours} שעות נוספו).`,
-  // success
-  successTitle: "התשלום התקבל",
-  successBody: 'השעות אמורות להתווסף אליכם תוך דקות. אם הן לא הופיעו — אפשר לבדוק ב-"רכישת כרטיסייה".',
-  backToPurchase: "חזרה למסך הרכישה",
-  // failure
-  failureTitle: "התשלום לא הושלם",
-  failureBody: "שום דבר לא חויב. אפשר לנסות שוב, או לפנות לניהול הקליניקה.",
-  tryAgain: "ניסיון נוסף",
+  howToPayTitle: "איך משלמים",
+  howToPayFallback: "משלמים ישירות לקליניקה. לפרטים — פנו להנהלת הקליניקה.",
+  afterPayment: "אחרי שהקליניקה רושמת את התשלום, הכרטיסייה מופיעה כאן והשעות זמינות להזמנה.",
 };
 
 const PURCHASE_EN: typeof PURCHASE_HE = {
@@ -126,21 +113,11 @@ const PURCHASE_EN: typeof PURCHASE_HE = {
   tierHours: (n) => `${n} hours`,
   perHourBeforeVat: (price) => `${price} per hour, before VAT`,
   includesDeposit: (n) => `Includes a ${n}-hour deposit`,
-  buyInStore: "Buy in store",
-  storeNotConfigured: "Store not configured yet",
+  totalWithVat: "Total, VAT included",
   noTiers: "No price tiers have been set up in the clinic yet.",
-  alreadyPaidTitle: "Already paid?",
-  alreadyPaidDescription: "Purchases are usually matched to you automatically within minutes. If not, you can check manually.",
-  checking: "Checking…",
-  claimButton: "I already paid — check for a pending purchase",
-  noPendingPurchase: "No pending purchase was found to match right now.",
-  claimed: (hours) => `One purchase was matched (${hours} hours added).`,
-  successTitle: "Payment received",
-  successBody: 'Your hours should be added within minutes. If they don\'t show up, check under "Buy Punch Card".',
-  backToPurchase: "Back to purchase",
-  failureTitle: "Payment not completed",
-  failureBody: "Nothing was charged. You can try again or contact the clinic management.",
-  tryAgain: "Try again",
+  howToPayTitle: "How to pay",
+  howToPayFallback: "Pay the clinic directly. For details, contact the clinic management.",
+  afterPayment: "Once the clinic records your payment, the punch card appears here and the hours are ready to book.",
 };
 
 export function getPurchaseDict(locale: Locale) {
@@ -176,9 +153,9 @@ const SESSIONS_HE = {
   empty: "אין עדיין בקשת/מנוי ססיה.",
   weeklyHoursPrice: (hours: number, price: string) => `${hours} שעות שבועיות · ${price}/חודש`,
   rejectionReason: (r: string) => `סיבת דחייה: ${r}`,
-  nextBilling: (d: string) => `חיוב הבא: ${d}`,
+  nextBilling: (d: string) => `התשלום הבא: ${d}`,
   activeUntil: (d: string) => `פעיל עד: ${d}`,
-  payInStore: "לתשלום בחנות",
+  awaitingPayment: "הססיה אושרה. משלמים ישירות לקליניקה — וברגע שהתשלום נרשם, הססיה נפתחת והמשבצות ננעלות.",
   requestCancellation: "בקשת ביטול מנוי",
   // /sessions/new
   newTitle: "בקשת ססיה חדשה",
@@ -208,9 +185,9 @@ const SESSIONS_EN: typeof SESSIONS_HE = {
   empty: "No session request or subscription yet.",
   weeklyHoursPrice: (hours, price) => `${hours} weekly hours · ${price}/month`,
   rejectionReason: (r) => `Rejection reason: ${r}`,
-  nextBilling: (d) => `Next charge: ${d}`,
+  nextBilling: (d) => `Next payment due: ${d}`,
   activeUntil: (d) => `Active until: ${d}`,
-  payInStore: "Pay in store",
+  awaitingPayment: "Your session was approved. Pay the clinic directly — as soon as the payment is recorded, the session opens and the slots are locked in.",
   requestCancellation: "Request subscription cancellation",
   newTitle: "New session request",
   fixedSlotsTitle: "Fixed weekly slots",

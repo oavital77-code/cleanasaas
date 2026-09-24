@@ -4,7 +4,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import type { Locale } from "./index";
 
 // locale ל-client components שמתחת ל-AppShell (SlotGrid, BookingForm,
-// SlotBuilder, AdminSlotGrid, AssignForm, ClaimButton…). Server components
+// SlotBuilder, AdminSlotGrid, AssignForm, LeadForm…). Server components
 // לא צריכים את זה — יש להם profile.locale ישירות מ-requireTherapistProfile.
 //
 // ברירת מחדל "he" (לא "en") — אותה רשת ביטחון כמו normalizeLocale: רכיב

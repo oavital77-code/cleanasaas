@@ -6,7 +6,9 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { requestCancellationAction } from "./actions";
-import { getCommonDict, getSessionsDict, normalizeLocale } from "@/lib/i18n";
+import { getPurchaseDict, getCommonDict, getSessionsDict, normalizeLocale } from "@/lib/i18n";
+import { PaymentInstructions } from "@/components/payment-instructions";
+import { PAYMENT_INSTRUCTIONS_KEY, readPaymentInstructions } from "@/lib/payment-instructions";
 
 const STATUS_TONE: Record<string, string> = {
   requested: "bg-warning-bg text-warning-fg",
@@ -24,16 +26,23 @@ export default async function SessionsPage() {
   const locale = normalizeLocale(profile.locale);
   const t = getSessionsDict(locale);
   const c = getCommonDict(locale);
+  const p = getPurchaseDict(locale);
 
-  const [{ data: clinic }, { data: subscriptions }, { data: paymentSettings }] = await Promise.all([
+  const [{ data: clinic }, { data: subscriptions }, { data: instructionsRow }] = await Promise.all([
     supabase.from("clinics").select("name, sessions_enabled").eq("id", profile.clinic_id).single(),
     supabase
       .from("session_subscriptions")
       .select("*, session_slots(weekday, start_time, end_time, rooms(name))")
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
-    supabase.from("clinic_payment_settings").select("woo_store_url").eq("clinic_id", profile.clinic_id).maybeSingle(),
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("clinic_id", profile.clinic_id)
+      .eq("key", PAYMENT_INSTRUCTIONS_KEY)
+      .maybeSingle(),
   ]);
+  const instructions = readPaymentInstructions(instructionsRow?.value);
 
   const isAdmin = profile.role === "owner" || profile.role === "admin";
   const hasOpenSubscription = (subscriptions ?? []).some((s) =>
@@ -87,11 +96,10 @@ export default async function SessionsPage() {
               {s.effective_end_date && <p>{t.activeUntil(formatDateHe(new Date(s.effective_end_date)))}</p>}
 
               {s.status === "awaiting_payment" && (
-                <Button asChild size="sm" className="w-fit">
-                  <a href={paymentSettings?.woo_store_url ?? "#"} target="_blank" rel="noreferrer">
-                    {t.payInStore}
-                  </a>
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <p>{t.awaitingPayment}</p>
+                  <PaymentInstructions text={instructions} title={p.howToPayTitle} fallback={p.howToPayFallback} />
+                </div>
               )}
 
               {s.status === "active" && (

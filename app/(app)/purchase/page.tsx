@@ -2,36 +2,40 @@ import { requireTherapistProfile } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrencyILS, formatDateHe } from "@/lib/time";
 import { AppShell } from "@/components/app-shell";
+import { PaymentInstructions } from "@/components/payment-instructions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ClaimButton } from "./claim-button";
 import { getPurchaseDict, normalizeLocale } from "@/lib/i18n";
+import { PAYMENT_INSTRUCTIONS_KEY, readPaymentInstructions } from "@/lib/payment-instructions";
 
-// CLEANASITEMAPANDDESIGN §2 מסך 4 — [לאפיון תשלום]: התשלום עצמו קורה
-// תמיד בחנות ה-Woo של הקליניקה (CLAUDE.md סעיף 6), לא כאן. המסך הזה רק
-// מציג את מדרגות המחיר שהאדמין הגדיר (/admin/settings) ומפנה החוצה לחנות.
+// CLEANASITEMAPANDDESIGN §2 מסך 4. מצב ידני (24.9.2026): אין כאן תשלום.
+// המטפל/ת רואה את המדרגות שהקליניקה הגדירה ואת הוראות התשלום שלה, משלם/ת
+// לקליניקה ישירות, והקליניקה מנפיקה את הכרטיסייה מהכרטיס שלו/ה
+// (admin_issue_punch_card) — ואז היא מופיעה כאן למעלה.
 export default async function PurchasePage() {
   const { userId, profile } = await requireTherapistProfile();
   const supabase = await createClient();
   const t = getPurchaseDict(normalizeLocale(profile.locale));
 
-  const [{ data: clinic }, { data: tiers }, { data: paymentSettings }, { data: vatSetting }, { data: cards }] =
-    await Promise.all([
-      supabase.from("clinics").select("name").eq("id", profile.clinic_id).single(),
-      supabase.from("punch_card_tiers").select("*").eq("clinic_id", profile.clinic_id).eq("active", true).order("sort_order"),
-      supabase.from("clinic_payment_settings").select("woo_store_url").eq("clinic_id", profile.clinic_id).maybeSingle(),
-      supabase.from("app_settings").select("value").eq("clinic_id", profile.clinic_id).eq("key", "vat_rate").maybeSingle(),
-      supabase
-        .from("punch_cards")
-        .select("id, hours_remaining, expires_at, active")
-        .eq("user_id", userId)
-        .eq("active", true)
-        .order("expires_at"),
-    ]);
+  const [{ data: clinic }, { data: tiers }, { data: settingsRows }, { data: cards }] = await Promise.all([
+    supabase.from("clinics").select("name").eq("id", profile.clinic_id).single(),
+    supabase.from("punch_card_tiers").select("*").eq("clinic_id", profile.clinic_id).eq("active", true).order("sort_order"),
+    supabase
+      .from("app_settings")
+      .select("key, value")
+      .eq("clinic_id", profile.clinic_id)
+      .in("key", ["vat_rate", PAYMENT_INSTRUCTIONS_KEY]),
+    supabase
+      .from("punch_cards")
+      .select("id, hours_remaining, expires_at, active")
+      .eq("user_id", userId)
+      .eq("active", true)
+      .order("expires_at"),
+  ]);
 
-  const vatRate = typeof vatSetting?.value === "number" ? vatSetting.value : 0.18;
+  const settings = Object.fromEntries((settingsRows ?? []).map((r) => [r.key, r.value]));
+  const vatRate = typeof settings.vat_rate === "number" ? settings.vat_rate : 0.18;
+  const instructions = readPaymentInstructions(settings[PAYMENT_INSTRUCTIONS_KEY]);
   const isAdmin = profile.role === "owner" || profile.role === "admin";
-  const storeUrl = paymentSettings?.woo_store_url;
 
   return (
     <AppShell side="app" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale} isAdmin={isAdmin}>
@@ -64,16 +68,12 @@ export default async function PurchasePage() {
                   <CardTitle className="text-lg">{t.tierHours(tier.hours)}</CardTitle>
                   <CardDescription>{t.perHourBeforeVat(formatCurrencyILS(tier.price_per_hour))}</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-3">
+                <CardContent className="flex flex-col gap-1">
                   <p className="tabular-nums text-2xl font-semibold">{formatCurrencyILS(total)}</p>
+                  <p className="text-xs text-muted-foreground">{t.totalWithVat}</p>
                   {tier.deposit_hours > 0 && (
                     <p className="text-xs text-muted-foreground">{t.includesDeposit(tier.deposit_hours)}</p>
                   )}
-                  <Button asChild disabled={!storeUrl}>
-                    <a href={storeUrl ?? "#"} target="_blank" rel="noreferrer">
-                      {storeUrl ? t.buyInStore : t.storeNotConfigured}
-                    </a>
-                  </Button>
                 </CardContent>
               </Card>
             );
@@ -81,15 +81,10 @@ export default async function PurchasePage() {
           {(!tiers || tiers.length === 0) && <p className="text-sm text-muted-foreground">{t.noTiers}</p>}
         </div>
 
-        <Card className="shadow-e1">
-          <CardHeader>
-            <CardTitle className="text-base font-medium">{t.alreadyPaidTitle}</CardTitle>
-            <CardDescription>{t.alreadyPaidDescription}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ClaimButton />
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-2">
+          <PaymentInstructions text={instructions} title={t.howToPayTitle} fallback={t.howToPayFallback} />
+          <p className="text-xs text-muted-foreground">{t.afterPayment}</p>
+        </div>
       </div>
     </AppShell>
   );
