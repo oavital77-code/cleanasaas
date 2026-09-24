@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bookingReminderEmail } from "./templates";
+import { bookingReminderEmail, sessionApprovedEmail } from "./templates";
 
 const base = {
   roomName: "חדר 3",
@@ -76,5 +76,25 @@ describe("bookingReminderEmail", () => {
       locale: "he",
     });
     expect(subject).toContain("מחר");
+  });
+});
+
+describe("sessionApprovedEmail", () => {
+  it("tells the therapist to pay the clinic, with the clinic's own instructions", () => {
+    const { subject, html } = sessionApprovedEmail({ instructions: "ביט ל-050-1234567", locale: "he" });
+    expect(subject).toContain("אושרה");
+    expect(html).toContain("ביט ל-050-1234567");
+    expect(html).not.toContain("href");
+  });
+
+  it("still says how it works when the clinic has not written instructions", () => {
+    const { html } = sessionApprovedEmail({ instructions: null, locale: "he" });
+    expect(html).toContain("לקליניקה");
+    expect(html).not.toContain("href");
+  });
+
+  it("escapes the clinic's text", () => {
+    const { html } = sessionApprovedEmail({ instructions: "<script>x</script>", locale: "en" });
+    expect(html).not.toContain("<script>");
   });
 });

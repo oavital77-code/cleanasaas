@@ -6,6 +6,7 @@ import { requireClinicAdmin } from "@/lib/auth/guards";
 import { sendEmail } from "@/lib/email/resend";
 import { sessionApprovedEmail, sessionRejectedEmail } from "@/lib/email/templates";
 import { getAdminSessionsDict, normalizeLocale } from "@/lib/i18n";
+import { PAYMENT_INSTRUCTIONS_KEY, readPaymentInstructions } from "@/lib/payment-instructions";
 
 export async function approveSessionAction(formData: FormData) {
   const { clinicId } = await requireClinicAdmin();
@@ -65,24 +66,27 @@ export async function rejectSessionAction(formData: FormData) {
   revalidatePath("/admin/sessions");
 }
 
-// 🔴 CLAUDE.md #6: אין דף תשלום שנוצר דינמית — התשלום מתבצע בחנות ה-Woo של
-// הקליניקה עצמה (clinic_payment_settings.woo_store_url), אותו קישור בדיוק
-// שמוצג ב-UI (/sessions). לא בונים כאן payment link חדש.
+// מצב ידני (24.9.2026): אין לינק לתשלום. המייל אומר למטפל/ת לשלם לקליניקה
+// ומצרף את הוראות התשלום שהיא כתבה בהגדרות. נשלח תמיד — קודם הוא נשלח רק
+// אם הוגדרה חנות Woo, כך שבקליניקה בלי חנות המטפל/ת לא ידע/ה שאושר/ה.
 export async function notifyTherapistOfApproval(
   supabase: Awaited<ReturnType<typeof createClient>>,
   clinicId: string,
   subscriptionId: string,
 ) {
-  const [{ data: sub }, { data: paymentSettings }] = await Promise.all([
+  const [{ data: sub }, { data: instructionsRow }] = await Promise.all([
     supabase.from("session_subscriptions").select("user_id").eq("id", subscriptionId).maybeSingle(),
-    supabase.from("clinic_payment_settings").select("woo_store_url").eq("clinic_id", clinicId).maybeSingle(),
+    supabase.from("app_settings").select("value").eq("clinic_id", clinicId).eq("key", PAYMENT_INSTRUCTIONS_KEY).maybeSingle(),
   ]);
-  if (!sub || !paymentSettings?.woo_store_url) return;
+  if (!sub) return;
 
   const { data: profile } = await supabase.from("profiles").select("email, locale").eq("id", sub.user_id).maybeSingle();
   if (!profile) return;
 
-  const { subject, html } = sessionApprovedEmail(paymentSettings.woo_store_url, profile.locale);
+  const { subject, html } = sessionApprovedEmail({
+    instructions: readPaymentInstructions(instructionsRow?.value),
+    locale: profile.locale,
+  });
   await sendEmail({ to: profile.email, subject, html });
 }
 

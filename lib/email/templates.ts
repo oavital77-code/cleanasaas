@@ -134,7 +134,7 @@ export function lowBalanceEmail(hoursRemaining: number, locale?: string | null):
       subject: "היתרה שלך עומדת להיגמר",
       html: emailLayout(`
       <p>נותרו לך <strong>${hoursRemaining} שעות</strong> בלבד ביתרה.</p>
-      <p>מומלץ לרכוש כרטיסייה נוספת כדי לא להישאר בלי אפשרות להזמין.</p>
+      <p>מומלץ לרכוש כרטיסייה נוספת מהקליניקה כדי לא להישאר בלי אפשרות להזמין.</p>
     `),
     };
   }
@@ -143,7 +143,7 @@ export function lowBalanceEmail(hoursRemaining: number, locale?: string | null):
     html: emailLayout(
       `
       <p>Only <strong>${hoursRemaining} hours</strong> are left in your balance.</p>
-      <p>We recommend buying another punch card so you can keep booking.</p>
+      <p>We recommend buying another punch card from your clinic so you can keep booking.</p>
     `,
       undefined,
       "en",
@@ -190,13 +190,21 @@ export function sessionRequestedAdminEmail(params: {
   };
 }
 
-export function sessionApprovedEmail(paymentUrl: string, locale?: string | null): EmailContent {
-  if (L(locale) === "he") {
+/**
+ * מצב ידני (24.9.2026): אין לינק לתשלום. המטפל/ת משלם/ת לקליניקה לפי
+ * ההוראות שהיא כתבה בהגדרות, והקליניקה רושמת את התשלום — ואז הססיה נפתחת.
+ */
+export function sessionApprovedEmail(params: { instructions: string | null; locale?: string | null }): EmailContent {
+  const how = (label: string) =>
+    params.instructions
+      ? `<p style="color:#6b7288;margin-top:12px;">${label}</p><p style="white-space:pre-wrap;">${escapeHtml(params.instructions)}</p>`
+      : "";
+  if (L(params.locale) === "he") {
     return {
       subject: "בקשת הססיה שלך אושרה",
       html: emailLayout(`
-      <p>בקשת הססיה שלך אושרה. יש להשלים תשלום כדי לנעול את המשבצות.</p>
-      ${emailButton(paymentUrl, "מעבר לתשלום")}
+      <p>בקשת הססיה שלך אושרה. התשלום מתבצע ישירות לקליניקה, וברגע שהוא נרשם — הססיה נפתחת והמשבצות ננעלות.</p>
+      ${how("איך משלמים:")}
     `),
     };
   }
@@ -204,8 +212,8 @@ export function sessionApprovedEmail(paymentUrl: string, locale?: string | null)
     subject: "Your session request was approved",
     html: emailLayout(
       `
-      <p>Your session request was approved. Complete the payment to lock in your slots.</p>
-      ${emailButton(paymentUrl, "Go to payment")}
+      <p>Your session request was approved. Pay the clinic directly; as soon as the payment is recorded, the session opens and your slots are locked in.</p>
+      ${how("How to pay:")}
     `,
       undefined,
       "en",
@@ -230,7 +238,7 @@ export function sessionRenewalReminderEmail(params: {
       html: emailLayout(`
       ${intro}
       <p style="font-weight:700;">תוקף עד ${formatDateHe(params.nextBillingDate)}</p>
-      <p>${params.forAdmin ? "אם לא יחודש עד אז, המטפל/ת לא יוכל/תוכל לקבוע ססיות חדשות." : 'יש לחדש דרך "הססיות שלי" ב-Cleana עד לתאריך זה, אחרת לא ניתן יהיה לקבוע ססיות חדשות.'}</p>
+      <p>${params.forAdmin ? "אם לא ישולם עד אז, המטפל/ת לא יוכל/תוכל לקבוע ססיות חדשות. כשהתשלום מגיע — רושמים אותו ברשימת הססיות." : "יש להסדיר את התשלום מול הקליניקה עד לתאריך זה, אחרת לא ניתן יהיה לקבוע ססיות חדשות."}</p>
     `),
     };
   }
@@ -240,7 +248,7 @@ export function sessionRenewalReminderEmail(params: {
       `
       <p>Your session subscription (${params.weeklyHours} weekly hours) is about to end.</p>
       <p style="font-weight:700;">Valid until ${formatDateHe(params.nextBillingDate)}</p>
-      <p>Renew it under "My Sessions" in Cleana by that date, otherwise new sessions cannot be scheduled.</p>
+      <p>Settle the payment with your clinic by that date, otherwise new sessions cannot be scheduled.</p>
     `,
       undefined,
       "en",

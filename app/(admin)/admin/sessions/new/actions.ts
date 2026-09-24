@@ -12,7 +12,7 @@ export type AdminCreateSessionState = { error?: string };
 // 🔴 CLAUDE.md #5: admin_create_session היא ססיה חופשית לגמרי — בלי בדיקת
 // התנגשות, ישר ל-awaiting_payment (מדלגת רק על שלב "requested"; התשלום
 // עצמו לעולם לא מדולג). לכן אותו מייל בדיוק כמו אישור בקשה רגילה
-// (notifyTherapistOfApproval) — גם כאן יש לינק לתשלום אמיתי בחנות ה-Woo.
+// (notifyTherapistOfApproval) — אותו מייל: משלמים לקליניקה, לפי הוראות התשלום שלה.
 export async function adminCreateSessionAction(
   _prev: AdminCreateSessionState,
   formData: FormData,
