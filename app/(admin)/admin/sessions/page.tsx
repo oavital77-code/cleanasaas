@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { approveSessionAction, rejectSessionAction } from "./actions";
-import { getAdminSessionsDict, getCommonDict, normalizeLocale } from "@/lib/i18n";
+import { approveSessionAction, recordSessionPaymentAction, rejectSessionAction } from "./actions";
+import { getAdminSessionsDict, getAdminTherapistDetailDict, getCommonDict, normalizeLocale } from "@/lib/i18n";
 
 const STATUS_TONE: Record<string, string> = {
   requested: "bg-warning-bg text-warning-fg",
@@ -26,6 +26,8 @@ export default async function AdminSessionsPage() {
   const locale = normalizeLocale(profile.locale);
   const t = getAdminSessionsDict(locale);
   const c = getCommonDict(locale);
+  // אותה רשימת אמצעי תשלום כמו בהנפקת כרטיסייה ידנית בכרטיס המטפל/ת.
+  const methods = getAdminTherapistDetailDict(locale).paymentMethods;
 
   const [{ data: clinic }, { data: subscriptions, error: subscriptionsError }] = await Promise.all([
     supabase.from("clinics").select("name").eq("id", clinicId).single(),
@@ -45,6 +47,32 @@ export default async function AdminSessionsPage() {
 
   const queue = (subscriptions ?? []).filter((s) => s.status === "requested");
   const rest = (subscriptions ?? []).filter((s) => s.status !== "requested");
+
+  // מה admin_record_session_payment מקבל: ממתינה → תשלום ראשון; פעילה (או
+  // שפגה אחרי ששולמה) → החודש הבא. ססיה שפגה בלי ששולמה אף פעם — לא.
+  const payable = (s: NonNullable<typeof subscriptions>[number]) =>
+    s.status === "awaiting_payment" ||
+    s.status === "active" ||
+    s.status === "pending_cancellation" ||
+    (s.status === "expired" && s.next_billing_date !== null);
+
+  function RecordPaymentForm({ s }: { s: NonNullable<typeof subscriptions>[number] }) {
+    return (
+      <form action={recordSessionPaymentAction} className="flex flex-wrap items-end gap-2">
+        <input type="hidden" name="subscription_id" value={s.id} />
+        <Select name="method" aria-label={t.paymentMethod} defaultValue="bit" className="flex-1 md:h-9 sm:flex-none">
+          {Object.entries(methods).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </Select>
+        <Button type="submit" size="sm" variant={s.status === "awaiting_payment" ? "default" : "outline"}>
+          {s.status === "awaiting_payment" ? t.recordPayment : t.recordRenewal}
+        </Button>
+      </form>
+    );
+  }
 
   function SlotList({ s }: { s: NonNullable<typeof subscriptions>[number] }) {
     return (
@@ -121,11 +149,23 @@ export default async function AdminSessionsPage() {
             <h2 className="text-sm font-medium text-muted-foreground">{t.otherSessions}</h2>
             {rest.map((s) => (
               <Card key={s.id} className="shadow-e1">
-                <CardContent className="flex items-center justify-between p-4 text-sm">
-                  <span>{t.restSummary((s.profiles as { full_name?: string } | null)?.full_name ?? "", s.weekly_hours)}</span>
-                  <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${STATUS_TONE[s.status] ?? "bg-subtle"}`}>
-                    {c.sessionStatusShort[s.status] ?? s.status}
-                  </span>
+                <CardContent className="flex flex-col gap-3 p-4 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{t.restSummary((s.profiles as { full_name?: string } | null)?.full_name ?? "", s.weekly_hours)}</span>
+                    <span className={`rounded-pill px-2.5 py-1 text-xs font-medium ${STATUS_TONE[s.status] ?? "bg-subtle"}`}>
+                      {c.sessionStatusShort[s.status] ?? s.status}
+                    </span>
+                  </div>
+                  {s.status === "awaiting_payment" && <p className="text-xs text-muted-foreground">{t.awaitingPaymentHint}</p>}
+                  {payable(s) && (
+                    <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-end sm:justify-between">
+                      <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+                        <span>{t.amountDue(formatCurrencyILS(s.monthly_price))}</span>
+                        {s.next_billing_date && <span>{t.paidUntil(formatDateHe(new Date(s.next_billing_date)))}</span>}
+                      </div>
+                      <RecordPaymentForm s={s} />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

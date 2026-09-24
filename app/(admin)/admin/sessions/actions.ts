@@ -22,6 +22,34 @@ export async function approveSessionAction(formData: FormData) {
   revalidatePath("/admin/sessions");
 }
 
+const PAYMENT_METHODS = ["cash", "bit", "paybox", "credit_card", "other"] as const;
+type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+/**
+ * מצב ידני: המטפל/ת משלם/ת לקליניקה ישירות, ובעל/ת הקליניקה רושם/ת את זה
+ * כאן. תשלום ראשון פותח ססיה שממתינה; תשלום על ססיה פעילה דוחה את מועד
+ * החיוב בחודש (admin_record_session_payment, 20260924000002).
+ */
+export async function recordSessionPaymentAction(formData: FormData) {
+  await requireClinicAdmin();
+  const subscriptionId = String(formData.get("subscription_id") ?? "");
+  const methodRaw = String(formData.get("method") ?? "cash");
+  const method: PaymentMethod = (PAYMENT_METHODS as readonly string[]).includes(methodRaw) ? (methodRaw as PaymentMethod) : "cash";
+  const note = String(formData.get("note") ?? "").trim();
+  if (!subscriptionId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_record_session_payment", {
+    p_subscription_id: subscriptionId,
+    p_method: method,
+    p_note: note || undefined,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/sessions");
+  revalidatePath("/admin/payments");
+}
+
 export async function rejectSessionAction(formData: FormData) {
   const { profile } = await requireClinicAdmin();
   const subscriptionId = String(formData.get("subscription_id") ?? "");
