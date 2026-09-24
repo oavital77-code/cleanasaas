@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 
-// סימון תשלום ססיה כשולם במזומן/ידנית — משמש רק לתשלומי ססיה (initial או
-// recurring); כרטיסייה תמיד עוברת דרך חנות ה-Woo (CLAUDE.md #6), אין מסלול
-// מזומן לכרטיסייה.
+// סימון שורת תשלום ססיה ממתינה כשולמה. מאז המצב הידני (24.9.2026) תשלומי
+// ססיה נרשמים מרשימת הססיות (admin_record_session_payment), שיוצרת את השורה
+// ומסמנת אותה באותה פעולה — הכפתור הזה נשאר לשורות ממתינות שנוצרו לפני כן.
+// כרטיסייה נרשמת מהכרטיס של המטפל/ת (admin_issue_punch_card).
 export async function markSessionPaymentCashAction(formData: FormData) {
   await requireClinicAdmin();
   const paymentId = String(formData.get("payment_id") ?? "");

@@ -446,6 +446,8 @@ const PAYMENTS_HE = {
   colAmount: "סכום",
   colStatus: "סטטוס",
   colDate: "תאריך",
+  colMethod: "אמצעי",
+  intro: "כל תשלום שנרשם בקליניקה. רישום תשלום חדש: כרטיסייה — מהכרטיס של המטפל/ת; ססיה — מרשימת הססיות.",
   markPaidCash: "סימון כשולם במזומן",
 };
 
@@ -456,6 +458,8 @@ const PAYMENTS_EN: typeof PAYMENTS_HE = {
   colAmount: "Amount",
   colStatus: "Status",
   colDate: "Date",
+  colMethod: "Method",
+  intro: "Every payment recorded at the clinic. To record a new one: a punch card from the therapist's profile, a session from the sessions list.",
   markPaidCash: "Mark as paid in cash",
 };
 
