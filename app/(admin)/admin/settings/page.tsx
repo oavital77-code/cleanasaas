@@ -20,6 +20,8 @@ import { WhatsAppTestButton } from "./whatsapp-test-button";
 import { suggestedMetaTemplateBody } from "@/lib/whatsapp";
 import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
 import { PAYMENT_INSTRUCTIONS_KEY, PAYMENT_INSTRUCTIONS_MAX, readPaymentInstructions } from "@/lib/payment-instructions";
+import { SESSION_KEYS, readSessionPricing, sessionMonthlyPrice } from "@/lib/session-pricing";
+import { formatCurrencyILS } from "@/lib/time";
 import { Trash2 } from "lucide-react";
 
 export default async function AdminSettingsPage({ searchParams }: { searchParams: Promise<{ notice?: string }> }) {
@@ -53,6 +55,7 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
 
   const settings = Object.fromEntries((settingsRows ?? []).map((r) => [r.key, r.value]));
   const paymentInstructions = readPaymentInstructions(settings[PAYMENT_INSTRUCTIONS_KEY]) ?? "";
+  const sessionPricing = readSessionPricing(settings);
 
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
@@ -180,20 +183,31 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
 
             {clinic?.sessions_enabled && (
               <div className="border-t border-border pt-4">
-                <h3 className="mb-3 text-sm font-medium">{t.sessionPricingTitle}</h3>
+                <h3 className="mb-1 text-sm font-medium">{t.sessionPricingTitle}</h3>
+                <p className="mb-3 text-xs text-muted-foreground">{t.sessionPricingDescription}</p>
                 <form action={updateSessionPricingAction} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                   <div className="flex flex-col gap-1">
-                    <Label className="text-xs">{t.sessionBaseHours}</Label>
-                    <Input name="session_base_hours" type="number" min={1} max={1000} step={1} required defaultValue={Number(settings.session_base_hours ?? 5)} className="w-full sm:w-24" />
+                    <Label className="text-xs">{t.sessionMinHours}</Label>
+                    <Input name={SESSION_KEYS.minHours} type="number" min={0.5} max={168} step={0.5} required defaultValue={sessionPricing.minHours} className="w-full sm:w-28" />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label className="text-xs">{t.sessionBasePrice}</Label>
-                    <Input name="session_base_price" type="number" min={0} step="0.01" required defaultValue={Number(settings.session_base_price ?? 600)} className="w-full sm:w-28" />
+                    <Label className="text-xs">{t.sessionMaxHours}</Label>
+                    <Input name={SESSION_KEYS.maxHours} type="number" min={0.5} max={168} step={0.5} required defaultValue={sessionPricing.maxHours} className="w-full sm:w-28" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs">{t.sessionPricePerHour}</Label>
+                    <Input name={SESSION_KEYS.pricePerHour} type="number" min={0} step="0.01" required defaultValue={sessionPricing.pricePerHour} className="w-full sm:w-32" />
                   </div>
                   <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
                     {t.save}
                   </Button>
                 </form>
+                <p className="mt-2 text-xs tabular-nums text-muted-foreground">
+                  {t.sessionPricingExample(
+                    sessionPricing.maxHours,
+                    formatCurrencyILS(sessionMonthlyPrice(sessionPricing.maxHours, sessionPricing.pricePerHour)),
+                  )}
+                </p>
               </div>
             )}
           </CardContent>

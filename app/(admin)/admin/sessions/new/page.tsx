@@ -7,17 +7,22 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { adminCreateSessionAction } from "./actions";
 import { getAdminSessionsDict, normalizeLocale } from "@/lib/i18n";
+import { SESSION_KEYS, readSessionPricing } from "@/lib/session-pricing";
 
 export default async function AdminNewSessionPage() {
   const { profile, clinicId } = await requireClinicAdmin();
   const supabase = await createClient();
   const t = getAdminSessionsDict(normalizeLocale(profile.locale));
 
-  const [{ data: clinic }, { data: rooms }, { data: users }] = await Promise.all([
+  const [{ data: clinic }, { data: rooms }, { data: users }, { data: settingsRows }] = await Promise.all([
     supabase.from("clinics").select("name").eq("id", clinicId).single(),
     supabase.from("rooms").select("id, name").eq("clinic_id", clinicId).eq("active", true).order("sort_order"),
     supabase.from("profiles").select("id, full_name").eq("clinic_id", clinicId).eq("status", "active").order("full_name"),
+    supabase.from("app_settings").select("key, value").eq("clinic_id", clinicId).in("key", Object.values(SESSION_KEYS)),
   ]);
+  // admin_create_session אוכף את אותו טווח כמו בקשת מטפל/ת — כאן רואים אותו מראש
+  // במקום לגלות אותו כשגיאה אחרי השליחה.
+  const pricing = readSessionPricing(Object.fromEntries((settingsRows ?? []).map((r) => [r.key, r.value])));
 
   return (
     <AppShell side="admin" clinicName={clinic?.name} fullName={profile.full_name} locale={profile.locale}>
@@ -34,6 +39,7 @@ export default async function AdminNewSessionPage() {
               <SlotBuilder
                 rooms={rooms}
                 action={adminCreateSessionAction}
+                pricing={pricing}
                 submitLabel={t.createSession}
                 pendingLabel={t.creating}
                 extraFields={

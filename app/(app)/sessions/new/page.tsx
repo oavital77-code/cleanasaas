@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { SlotBuilder } from "@/components/slot-builder";
 import { requestSessionAction } from "../actions";
 import { getCommonDict, getSessionsDict, normalizeLocale } from "@/lib/i18n";
+import { SESSION_KEYS, readSessionPricing } from "@/lib/session-pricing";
+import { formatCurrencyILS } from "@/lib/time";
 
 export default async function NewSessionPage() {
   const { profile } = await requireTherapistProfile();
@@ -14,15 +16,20 @@ export default async function NewSessionPage() {
   const t = getSessionsDict(locale);
   const c = getCommonDict(locale);
 
-  const [{ data: clinic }, { data: rooms }, { data: baseHoursSetting }] = await Promise.all([
+  const [{ data: clinic }, { data: rooms }, { data: settingsRows }] = await Promise.all([
     supabase.from("clinics").select("name, sessions_enabled").eq("id", profile.clinic_id).single(),
     supabase.from("rooms").select("id, name").eq("clinic_id", profile.clinic_id).eq("active", true).order("sort_order"),
-    supabase.from("app_settings").select("value").eq("clinic_id", profile.clinic_id).eq("key", "session_base_hours").maybeSingle(),
+    supabase
+      .from("app_settings")
+      .select("key, value")
+      .eq("clinic_id", profile.clinic_id)
+      .in("key", Object.values(SESSION_KEYS)),
   ]);
 
   if (!clinic?.sessions_enabled) redirect("/sessions");
 
-  const baseHours = typeof baseHoursSetting?.value === "number" ? baseHoursSetting.value : 5;
+  // אותו טווח ומחיר שה-DB אוכף ב-request_session (session_pricing).
+  const pricing = readSessionPricing(Object.fromEntries((settingsRows ?? []).map((r) => [r.key, r.value])));
   const isAdmin = profile.role === "owner" || profile.role === "admin";
 
   return (
@@ -33,14 +40,16 @@ export default async function NewSessionPage() {
         <Card className="shadow-e1">
           <CardHeader>
             <CardTitle className="text-base font-medium">{t.fixedSlotsTitle}</CardTitle>
-            <CardDescription>{t.fixedSlotsDescription(baseHours)}</CardDescription>
+            <CardDescription>
+              {t.fixedSlotsDescription(pricing.minHours, pricing.maxHours, formatCurrencyILS(pricing.pricePerHour))}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {rooms && rooms.length > 0 ? (
               <SlotBuilder
                 rooms={rooms}
                 action={requestSessionAction}
-                requiredHours={baseHours}
+                pricing={pricing}
                 submitLabel={t.submitRequest}
                 pendingLabel={c.sending}
               />

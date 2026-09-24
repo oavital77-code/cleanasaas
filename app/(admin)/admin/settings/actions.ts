@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireClinicAdmin } from "@/lib/auth/guards";
 import { getAdminSettingsDict, normalizeLocale } from "@/lib/i18n";
-import { parseSessionPricing } from "@/lib/session-pricing";
+import { SESSION_KEYS, parseSessionPricing } from "@/lib/session-pricing";
 import { PAYMENT_INSTRUCTIONS_KEY, normalizePaymentInstructions } from "@/lib/payment-instructions";
 import { sendWhatsAppReminderTemplate } from "@/lib/whatsapp";
 import { formatDateHe, formatTimeHe, DEFAULT_TIMEZONE } from "@/lib/time";
@@ -131,19 +131,22 @@ export async function updateSessionPricingAction(formData: FormData) {
   const supabase = await createClient();
 
   // אותה תבנית כמו מדרגות הכרטיסייה: ערך לא תקין חוזר כ-?notice= ולא נשמר.
+  // טווח ומחיר לשעה (20260925000001); ההגדרות הישנות נשארות, והחדשות קודמות להן.
   const parsed = parseSessionPricing({
-    baseHours: formData.get("session_base_hours"),
-    basePrice: formData.get("session_base_price"),
+    minHours: formData.get(SESSION_KEYS.minHours),
+    maxHours: formData.get(SESSION_KEYS.maxHours),
+    pricePerHour: formData.get(SESSION_KEYS.pricePerHour),
   });
   if (!parsed.ok) redirect("/admin/settings?notice=pricing_invalid#sessions");
-  const { baseHours, basePrice } = parsed.value;
+  const { minHours, maxHours, pricePerHour } = parsed.value;
 
   const { error } = await supabase
     .from("app_settings")
     .upsert(
       [
-        { clinic_id: clinicId, key: "session_base_price", value: basePrice },
-        { clinic_id: clinicId, key: "session_base_hours", value: baseHours },
+        { clinic_id: clinicId, key: SESSION_KEYS.minHours, value: minHours },
+        { clinic_id: clinicId, key: SESSION_KEYS.maxHours, value: maxHours },
+        { clinic_id: clinicId, key: SESSION_KEYS.pricePerHour, value: pricePerHour },
       ],
       { onConflict: "clinic_id,key" },
     );

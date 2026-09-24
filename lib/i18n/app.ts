@@ -160,8 +160,10 @@ const SESSIONS_HE = {
   // /sessions/new
   newTitle: "בקשת ססיה חדשה",
   fixedSlotsTitle: "משבצות שבועיות קבועות",
-  fixedSlotsDescription: (baseHours: number) =>
-    `הססיה היא היקף שבועי קבוע — ${baseHours} שעות בדיוק, בחדר/ים ובזמן/ים שתבחרו. הבקשה נשלחת לאישור אדמין ולא בודקת זמינות בפועל מראש.`,
+  fixedSlotsDescription: (min: number, max: number, pricePerHour: string) =>
+    `הססיה היא היקף שבועי קבוע, בחדר/ים ובזמן/ים שתבחרו — ${
+      min === max ? `${min} שעות בדיוק` : `בין ${min} ל-${max} שעות בשבוע`
+    }, ב-${pricePerHour} לשעה שבועית לחודש (+ מע"מ). הבקשה נשלחת לאישור אדמין ולא בודקת זמינות בפועל מראש.`,
   submitRequest: "שליחת בקשה לאישור אדמין",
   // SlotBuilder (משותף גם לאדמין)
   room: "חדר",
@@ -170,7 +172,9 @@ const SESSIONS_HE = {
   durationHours: "משך (שעות)",
   remove: "הסרה",
   addSlot: "הוספת משבצת נוספת",
-  totalOfRequired: (total: number, required: number) => `סה"כ ${total} מתוך ${required} שעות שבועיות נדרשות`,
+  totalInRange: (total: number, min: number, max: number) =>
+    min === max ? `סה"כ ${total} מתוך ${min} שעות שבועיות נדרשות` : `סה"כ ${total} שעות שבועיות (נדרש ${min}–${max})`,
+  monthlyPrice: (price: string) => `מחיר חודשי: ${price} + מע"מ`,
   totalWeekly: (total: number) => `סה"כ ${total} שעות שבועיות`,
   startDateOptional: "תאריך התחלה מבוקש (אופציונלי)",
   // action
@@ -191,8 +195,10 @@ const SESSIONS_EN: typeof SESSIONS_HE = {
   requestCancellation: "Request subscription cancellation",
   newTitle: "New session request",
   fixedSlotsTitle: "Fixed weekly slots",
-  fixedSlotsDescription: (baseHours) =>
-    `A session is a fixed weekly amount — exactly ${baseHours} hours, in the room(s) and time(s) you choose. The request goes to the admin for approval and does not check actual availability in advance.`,
+  fixedSlotsDescription: (min, max, pricePerHour) =>
+    `A session is a fixed weekly amount in the room(s) and time(s) you choose — ${
+      min === max ? `exactly ${min} hours` : `between ${min} and ${max} hours a week`
+    }, at ${pricePerHour} per weekly hour per month (+ VAT). The request goes to the admin for approval and does not check actual availability in advance.`,
   submitRequest: "Send request for admin approval",
   room: "Room",
   weekday: "Day",
@@ -200,7 +206,9 @@ const SESSIONS_EN: typeof SESSIONS_HE = {
   durationHours: "Duration (hours)",
   remove: "Remove",
   addSlot: "Add another slot",
-  totalOfRequired: (total, required) => `Total ${total} of ${required} required weekly hours`,
+  totalInRange: (total, min, max) =>
+    min === max ? `Total ${total} of ${min} required weekly hours` : `Total ${total} weekly hours (${min}–${max} required)`,
+  monthlyPrice: (price) => `Monthly price: ${price} + VAT`,
   totalWeekly: (total) => `Total ${total} weekly hours`,
   startDateOptional: "Requested start date (optional)",
   invalidSlots: "Invalid slots",

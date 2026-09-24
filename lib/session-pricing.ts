@@ -1,33 +1,83 @@
 /**
- * מחירי מודל הססיה שאדמין קליניקה שומר בטופס ההגדרות.
+ * תמחור מודל הססיה: טווח שעות שבועיות ומחיר לשעה שבועית (לחודש, לפני מע"מ).
+ * ססיה של H שעות עולה H × מחיר לחודש.
  *
- * 🔴 בלי ולידציה, `Number(formData.get(...))` על שדה ריק הוא 0, על טקסט הוא
- * NaN, ועל שניהם ה-upsert ל-app_settings עובר בשקט — כלומר "מחיר" NaN או
- * שלילי שמוצג למטפלים/ות ונכנס לחישוב הססיה. אותה תבנית בדיוק כמו
- * parseTierFields של הכרטיסיות, שכבר עושה זאת נכון.
+ * עד 25.9.2026 הססיה הייתה בגודל אחד — בדיוק session_base_hours ב-
+ * session_base_price. readSessionPricing נופל חזרה לשני אלה בדיוק כמו
+ * session_pricing() ב-DB (20260925000001): min = max = base hours, מחיר לשעה =
+ * base price / base hours. אותם מספרים בשני הצדדים, או שהמסך יציג מחיר אחר
+ * מזה שנשמר.
  */
-const MAX_HOURS = 1000;
-const MAX_PRICE = 1_000_000;
+export const SESSION_KEYS = {
+  minHours: "session_min_hours",
+  maxHours: "session_max_hours",
+  pricePerHour: "session_price_per_hour",
+  legacyHours: "session_base_hours",
+  legacyPrice: "session_base_price",
+} as const;
+
+const DEFAULT_HOURS = 5;
+const DEFAULT_PRICE = 600;
+/** שבוע שלם. גבול עליון שפוי, לא מדיניות. */
+const MAX_WEEKLY_HOURS = 168;
+const MAX_PRICE_PER_HOUR = 100_000;
+const HOUR_STEP = 0.5;
 
 export interface SessionPricing {
-  baseHours: number;
-  basePrice: number;
+  minHours: number;
+  maxHours: number;
+  pricePerHour: number;
 }
 
 export type SessionPricingResult = { ok: true; value: SessionPricing } | { ok: false };
 
-function num(raw: unknown): number | null {
-  const trimmed = String(raw ?? "").trim();
-  if (!/^\d+(?:\.\d+)?$/.test(trimmed)) return null;
-  const n = Number(trimmed);
-  return Number.isFinite(n) ? n : null;
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+function num(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
 }
 
-export function parseSessionPricing(raw: { baseHours: unknown; basePrice: unknown }): SessionPricingResult {
-  const baseHours = num(raw.baseHours);
-  const basePrice = num(raw.basePrice);
-  if (baseHours === null || basePrice === null) return { ok: false };
-  if (!Number.isInteger(baseHours) || baseHours < 1 || baseHours > MAX_HOURS) return { ok: false };
-  if (basePrice > MAX_PRICE) return { ok: false };
-  return { ok: true, value: { baseHours, basePrice } };
+/** הגדרות app_settings של קליניקה (key → value) → התמחור בפועל. */
+export function readSessionPricing(settings: Record<string, unknown>): SessionPricing {
+  const legacyHours = num(settings[SESSION_KEYS.legacyHours]) ?? DEFAULT_HOURS;
+  const legacyPrice = num(settings[SESSION_KEYS.legacyPrice]) ?? DEFAULT_PRICE;
+  return {
+    minHours: num(settings[SESSION_KEYS.minHours]) ?? legacyHours,
+    maxHours: num(settings[SESSION_KEYS.maxHours]) ?? legacyHours,
+    pricePerHour:
+      num(settings[SESSION_KEYS.pricePerHour]) ?? (legacyHours > 0 ? round2(legacyPrice / legacyHours) : round2(DEFAULT_PRICE / DEFAULT_HOURS)),
+  };
+}
+
+/** המחיר החודשי (לפני מע"מ) — אותו round(hours × price, 2) שה-DB שומר. */
+export function sessionMonthlyPrice(hours: number, pricePerHour: number): number {
+  return round2(hours * pricePerHour);
+}
+
+export function hoursInRange(hours: number, pricing: SessionPricing): boolean {
+  return hours >= pricing.minHours - 1e-9 && hours <= pricing.maxHours + 1e-9;
+}
+
+/** "3" / "10" / "120" מהטופס → תמחור תקין, או סירוב. */
+export function parseSessionPricing(raw: { minHours: unknown; maxHours: unknown; pricePerHour: unknown }): SessionPricingResult {
+  const strict = (v: unknown) => {
+    const s = String(v ?? "").trim();
+    return /^\d+(?:\.\d+)?$/.test(s) ? Number(s) : null;
+  };
+  const minHours = strict(raw.minHours);
+  const maxHours = strict(raw.maxHours);
+  const pricePerHour = strict(raw.pricePerHour);
+  if (minHours === null || maxHours === null || pricePerHour === null) return { ok: false };
+
+  const onGrid = (h: number) => Math.abs(Math.round(h / HOUR_STEP) * HOUR_STEP - h) < 1e-9;
+  if (!onGrid(minHours) || !onGrid(maxHours)) return { ok: false };
+  if (minHours < HOUR_STEP || maxHours > MAX_WEEKLY_HOURS || minHours > maxHours) return { ok: false };
+  if (pricePerHour > MAX_PRICE_PER_HOUR) return { ok: false };
+
+  return { ok: true, value: { minHours, maxHours, pricePerHour: round2(pricePerHour) } };
 }

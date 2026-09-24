@@ -6,18 +6,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { getCommonDict, getSessionsDict } from "@/lib/i18n";
+import { hoursInRange, sessionMonthlyPrice, type SessionPricing } from "@/lib/session-pricing";
+import { formatCurrencyILS } from "@/lib/time";
 import { useLocale } from "@/lib/i18n/context";
 
 type Row = { room_id: string; weekday: number; start_time: string; duration: number };
 type SlotFormState = { error?: string };
 
-// משותף לבקשת ססיה ע"י מטפל/ת (request_session — משבצות = בדיוק
-// requiredHours) ולקביעה חופשית ע"י אדמין (admin_create_session — בלי
-// מגבלת שעות). ה-action מקבל שדה נסתר בשם slots (JSON) בתוך ה-FormData.
+// משותף לבקשת ססיה ע"י מטפל/ת (request_session) ולקביעה ישירה ע"י אדמין
+// (admin_create_session). שניהם אוכפים ב-DB את טווח השעות של הקליניקה
+// (session_pricing, 20260925000001), ולכן שניהם מקבלים כאן את אותו pricing —
+// הכפתור נפתח רק בתוך הטווח, והמחיר החודשי מוצג תוך כדי. ה-action מקבל שדה
+// נסתר בשם slots (JSON) בתוך ה-FormData.
 export function SlotBuilder({
   rooms,
   action,
-  requiredHours,
+  pricing,
   submitLabel,
   pendingLabel,
   extraFields,
@@ -25,7 +29,7 @@ export function SlotBuilder({
 }: {
   rooms: { id: string; name: string }[];
   action: (state: SlotFormState, formData: FormData) => Promise<SlotFormState>;
-  requiredHours?: number;
+  pricing?: SessionPricing;
   submitLabel: string;
   pendingLabel: string;
   extraFields?: ReactNode;
@@ -36,11 +40,11 @@ export function SlotBuilder({
   const c = getCommonDict(locale);
   const [state, formAction, pending] = useActionState(action, {});
   const [rows, setRows] = useState<Row[]>([
-    { room_id: rooms[0]?.id ?? "", weekday: 0, start_time: "09:00", duration: requiredHours ?? 1 },
+    { room_id: rooms[0]?.id ?? "", weekday: 0, start_time: "09:00", duration: pricing?.minHours ?? 1 },
   ]);
 
   const totalHours = rows.reduce((sum, r) => sum + r.duration, 0);
-  const matches = requiredHours === undefined || Math.abs(totalHours - requiredHours) < 0.001;
+  const matches = pricing === undefined || hoursInRange(totalHours, pricing);
 
   function updateRow(i: number, patch: Partial<Row>) {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -144,10 +148,17 @@ export function SlotBuilder({
         <Button type="button" variant="outline" size="sm" onClick={addRow}>
           {t.addSlot}
         </Button>
-        {requiredHours !== undefined ? (
-          <p className={`text-sm tabular-nums ${matches ? "text-success" : "text-warning-fg"}`}>
-            {t.totalOfRequired(totalHours, requiredHours)}
-          </p>
+        {pricing !== undefined ? (
+          <div className="flex flex-col items-end gap-0.5 text-sm tabular-nums">
+            <p className={matches ? "text-success" : "text-warning-fg"}>
+              {t.totalInRange(totalHours, pricing.minHours, pricing.maxHours)}
+            </p>
+            {matches && (
+              <p className="text-muted-foreground">
+                {t.monthlyPrice(formatCurrencyILS(sessionMonthlyPrice(totalHours, pricing.pricePerHour)))}
+              </p>
+            )}
+          </div>
         ) : (
           <p className="text-sm tabular-nums text-muted-foreground">{t.totalWeekly(totalHours)}</p>
         )}
