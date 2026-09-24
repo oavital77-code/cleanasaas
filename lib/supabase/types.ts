@@ -1673,6 +1673,18 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: undefined
       }
+      admin_record_session_payment: {
+        Args: {
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_note?: string
+          p_subscription_id: string
+        }
+        Returns: {
+          amount_total: number
+          kind: string
+          payment_id: string
+        }[]
+      }
       admin_renew_session_term: {
         Args: { p_subscription_id: string; p_term_months: number }
         Returns: undefined
